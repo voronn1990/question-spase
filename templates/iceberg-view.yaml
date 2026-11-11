@@ -1,0 +1,46 @@
+# Nested fragment for an accepted OP-PROJECTION or OP-REVERSE OPERATOR result.
+# This is not a standalone artifact type or a second knowledge store.
+iceberg_view:
+  view_id: "ICE-CURRENT-001"
+  view_kind: "CURRENT_REALITY"
+  revision: "1"
+  input_snapshot: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  normative_vector_binding:
+    anchor_kind: "LOCAL_ACCEPTED_VECTOR"
+    vector_id: "RESULT-OP-VECTOR-001"
+    vector_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    revision: "1"
+    approval_binding_id: "APPROVAL-001"
+    approval_sha256: "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+    applicability_result_id: "RESULT-BANK-APPLICABILITY-001"
+    goal_claim_path: "/goal"
+  source_bindings:
+    - {source_kind: "ACCEPTED_RESULT", source_id: "H-001", source_sha256: "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0", source_path: "hypotheses/H-001.yaml"}
+  members:
+    - element_kind: "ASSUMPTION"
+      ref_type: "H"
+      ref_id: "H-001"
+      canonical_claim_path: "/claim"
+      source_binding: {source_kind: "ACCEPTED_RESULT", source_id: "H-001", source_sha256: "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0", source_path: "hypotheses/H-001.yaml"}
+      origin_position_refs:
+        - {framing_result_id: "RESULT-P01-FRAMING-001", framing_result_sha256: "23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01", position_id: "ICEPOS-P01-001", seed_id: "IP-P01-001", origin_role: "P-01"}
+        - {framing_result_id: "RESULT-P03-FRAMING-001", framing_result_sha256: "3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012", position_id: "ICEPOS-P03-001", seed_id: "IP-P03-004", origin_role: "P-03"}
+      materiality: "changes D-001 and C-001"
+      scope: "declared operating conditions"
+  semantic_edge_ids: ["EDGE-ICE-001"]
+  open_q_ids: ["Q-017"]
+  coverage_limit: "defined G/R, known critical unknowns and declared research obligations"
+  knowledge_status: "DERIVED"
+  workflow_status: "ACCEPTED"
+semantic_edges:
+  - id: "EDGE-ICE-001"
+    relation: "CAUSES_HYPOTHESIS"
+    from_type: "H"
+    from_id: "H-001"
+    to_type: "D"
+    to_id: "D-001"
+    scope: "declared operating conditions"
+    combination_kind: "SINGLE"
+    knowledge_status: "HYPOTHESIS"
+    evidence_ids: []
+    distinguishing_check_id: "Q-017"

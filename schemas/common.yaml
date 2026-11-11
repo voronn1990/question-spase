@@ -1,0 +1,36 @@
+schema_version: "question-space-v4"
+id: "SCHEMA-COMMON"
+required_fields:
+  - "schema_version"
+  - "id"
+  - "run_id"
+  - "input_snapshot"
+  - "author_role"
+  - "agent_id"
+  - "knowledge_status"
+  - "workflow_status"
+  - "source_refs"
+  - "related_ids"
+  - "revision"
+  - "created_at"
+  - "updated_at"
+lexical_types:
+  identifiers: "quoted string matching [A-Za-z0-9._-]+ where an identifier is required"
+  versions_and_timestamps: "quoted strings"
+  hashes: "lowercase SHA-256 strings"
+knowledge_status: ["OBSERVED", "DERIVED", "HYPOTHESIS", "REFUTED", "UNKNOWN"]
+workflow_status: ["RUNNING", "ACCEPTED", "BLOCKED", "REJECTED", "STALE", "NOT_RUN", "NEEDS_RECHECK"]
+agent_id: "opaque nonempty string; native values such as /root/role-run are valid and must not be used as paths"
+strict_yaml: "duplicate keys, aliases, anchors, explicit tags and implicit ambiguous scalars are rejected; controller-generated strings are quoted"
+lifecycle_selectors:
+  current_source_outcomes: ["result_id", "sha256", "path", "assignment_id", "attempt_id"]
+  current_final_audit: ["result_id", "sha256", "path", "assignment_id", "attempt_id"]
+  invariant: "selectors bind immutable accepted results; a successor declares supersedes and forms one unambiguous linear lineage; history is never overwritten"
+graph_contract:
+  semantic_edges: "typed research relations across existing endpoints plus G/R/H under schemas/iceberg-view.yaml; cycles are allowed and do not determine execution order"
+  evidence_provenance_edges: "E-to-E derivation only; exact accepted E endpoints; acyclic; circular support never confirms a claim"
+  execution_edges: "typed consumer dependencies across E/H/Q/D/REVIEW/T/C; acyclic; E-to-E derivation belongs in evidence_provenance_edges; G/R remain immutable inputs"
+  dependency_edges: "legacy compatibility input only; new results use the three explicit edge classes"
+abc_normative_source: "references/contracts-v4.1.md; phase, role, template and validator must not redefine the three directions"
+methodology_features:
+  DOUBLE_ICEBERG_V1: "required immutable snapshot marker for every new current-release run; unmarked old snapshots are legacy-qualified only and cannot pass Double-Iceberg gates"

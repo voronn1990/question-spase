@@ -1,0 +1,13 @@
+schema_version: "question-space-v4"
+id: "SCHEMA-GATE"
+required_fields: ["gate_id", "input_snapshot", "required_objects", "completed_checks", "content_review", "unresolved_critical", "decision", "allowed_next", "blocked_dependencies", "evidence_refs"]
+gate_ids: ["GATE-1", "GATE-2", "GATE-3", "GATE-4", "GATE-5", "GATE-6"]
+canonical_path: "GATE-1..5 use runs/<run_id>/gates/GATE-N.yaml; GATE-6 uses runs/<run_id>/gates/GATE-6/<audit-result-id>.yaml"
+phase_minimums:
+  GATE-1: "immutable admitted bank/input plus accepted FRAMING for the problem/bank"
+  GATE-2: "selected current SOURCE_OUTCOMES, exact answer targets and complete original-Q coverage"
+  GATE-3: "substantive REVIEW outputs bound to the exact reviewed targets"
+  GATE-4: "accepted SYNTHESIS with substantive comparison_protocol, chosen_mechanism and genuine alternatives"
+  GATE-5: "every stage in current_plan_projection with complete plan contracts"
+  GATE-6: "selected current FINAL_AUDIT bound to the exact current core"
+required_objects_rule: "agent-supplied required_objects may add checks but cannot replace the phase minimum"

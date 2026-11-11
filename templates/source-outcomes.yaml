@@ -1,0 +1,29 @@
+schema_version: "question-space-v4"
+id: "SOURCE-OUTCOMES-001"
+run_id: "RUN-1"
+input_snapshot: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+author_role: "P-01"
+agent_id: "actual-substantive-agent-id"
+knowledge_status: "DERIVED"
+workflow_status: "ACCEPTED"
+source_refs: ["input/bank.yaml", "answers/Q-001.yaml"]
+related_ids: ["Q-001"]
+revision: "1"
+created_at: "2026-10-21T09:00:00Z"
+updated_at: "2026-10-21T09:00:00Z"
+artifact_type: "SOURCE_OUTCOMES"
+assignment_id: "ASG-SOURCE-OUTCOMES-001"
+attempt_id: "ATT-001"
+records:
+  - record_kind: "SOURCE_OUTCOME"
+    original_q_ids: ["Q-001"]
+    q_id: "Q-001"
+    parent_source_ids: []
+    source_disposition: "KEPT"
+    disposition_target_ids: ["Q-001"]
+    answer_status: "ANSWERED"
+    knowledge_state: "DERIVED"
+    author_assignment_id: "ASG-P01-PRIMARY-001"
+    answer_result_id: "RESULT-Q-001"
+    evidence_ids: ["E-001"]
+derived_questions: []

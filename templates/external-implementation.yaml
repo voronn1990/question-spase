@@ -1,0 +1,104 @@
+# Typed EXTERNAL_IMPLEMENTATION scaffold. Replace every example ID, hash, URL,
+# timestamp and finding with exact observed values. This file is not evidence,
+# approval, a GitHub call, TESTED status, transfer validation or permission.
+schema_version: "question-space-v4"
+id: "E-EXT-001"
+run_id: "RUN-1"
+input_snapshot: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+author_role: "P-01"
+agent_id: "actual-agent-id"
+knowledge_status: "DERIVED"
+workflow_status: "ACCEPTED"
+source_refs:
+  - "RAW-EXT-001"
+related_ids:
+  - "Q-001"
+  - "D-001"
+revision: "1"
+created_at: "2026-10-22T00:00:00Z"
+updated_at: "2026-10-22T00:00:00Z"
+artifact_type: "EVIDENCE"
+assignment_id: "ASG-EVIDENCE-001"
+attempt_id: "ATT-001"
+evidence_subkind: "EXTERNAL_IMPLEMENTATION"
+authority_class: "C_EXTERNAL_IMPLEMENTATION"
+reference_status: "INSPECTED"
+question_ids:
+  - "Q-001"
+decision_ids:
+  - "D-001"
+discovery:
+  route: "ALTERNATIVE_MECHANISM"
+  source: "capability-oriented search"
+  tool_id: "runtime-discovered-read-tool"
+  query: "required capability and constraints"
+  retrieved_at: "2026-10-22T00:00:00Z"
+repository:
+  full_name: "owner/repository"
+  url: "https://github.com/owner/repository"
+  commit_sha: "0123456789abcdef0123456789abcdef01234567"
+  commit_permalink: "https://github.com/owner/repository/commit/0123456789abcdef0123456789abcdef01234567"
+implementation:
+  mechanism: "concrete implemented mechanism"
+  inputs:
+    - "input class"
+  conditions:
+    - "condition under which the mechanism operates"
+  assumptions:
+    - "assumption made by the implementation"
+  material_refs:
+    - path: "path/to/file.ext"
+      functions:
+        - "qualified.function"
+      permalink: "https://github.com/owner/repository/blob/0123456789abcdef0123456789abcdef01234567/path/to/file.ext"
+      read_scope: "exact full file, byte range, or line range"
+      content_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      cached_artifact:
+        path: "evidence/raw/E-EXT-001-material-01.bin"
+        sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      retrieved_at: "2026-10-22T00:00:00Z"
+tests_inspected:
+  - path: "path/to/test.ext"
+    named_checks:
+      - "test_name"
+    permalink: "https://github.com/owner/repository/blob/0123456789abcdef0123456789abcdef01234567/path/to/test.ext"
+    content_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+check_receipts: []
+version_fix_history: []
+current_limits:
+  - "current observed or documented limit"
+maturity:
+  status: "UNKNOWN"
+  basis: "UNKNOWN"
+license:
+  status: "UNKNOWN"
+  identifier: "UNKNOWN"
+  source_path: "UNKNOWN"
+  content_sha256: "UNKNOWN"
+  use_limits: []
+origin:
+  origin_family: "origin-family-id"
+  primary_repository: "UNKNOWN"
+  relationship: "UNKNOWN"
+  evidence_refs: []
+interpretation: "bounded conclusion supported by the inspected bytes"
+disposition: "DEFER"
+disposition_basis: "transfer applicability remains unverified"
+transfer:
+  target_conditions:
+    - "target condition to compare"
+  applicability_evidence_ids: []
+  limits: []
+  new_risks: []
+unknown_fields:
+  - "maturity.status"
+  - "maturity.basis"
+  - "license.status"
+  - "license.identifier"
+  - "license.source_path"
+  - "license.content_sha256"
+  - "license.use_limits"
+  - "origin.primary_repository"
+  - "origin.relationship"
+  - "transfer.limits"
+  - "transfer.new_risks"

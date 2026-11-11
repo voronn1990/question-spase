@@ -1,0 +1,153 @@
+schema_version: "question-space-v4"
+id: "S-001"
+run_id: "RUN-1"
+input_snapshot: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+author_role: "PLAN-AUTHOR"
+agent_id: "actual-plan-author-id"
+knowledge_status: "DERIVED"
+workflow_status: "ACCEPTED"
+source_refs: ["D-001", "E-001"]
+related_ids: ["R-001", "T-001", "C-001", "T-002", "C-002"]
+revision: "1"
+created_at: "2026-10-21T09:00:00Z"
+updated_at: "2026-10-21T09:00:00Z"
+artifact_type: "PLAN"
+assignment_id: "ASG-PLAN-001"
+attempt_id: "ATT-001"
+plan_version: "1"
+owner: "named owner"
+result: "one observable accepted stage result"
+sections: ["1", "2", "3", "4", "5", "6", "7", "8"]
+identity_result:
+  stage_id: "S-001"
+  plan_version: "1"
+  owner: "named owner"
+  requirements: ["R-001"]
+  decisions: ["D-001"]
+  accepted_result: "one observable accepted stage result"
+iceberg_trace:
+  view_bindings:
+    - {view_id: "ICE-CURRENT-001", view_kind: "CURRENT_REALITY", result_id: "RESULT-OP-PROJECTION-001", result_sha256: "23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01", revision: "1"}
+    - {view_id: "ICE-DESIRED-001", view_kind: "DESIRED_REALITY", result_id: "RESULT-OP-REVERSE-001", result_sha256: "3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012", revision: "1"}
+  g_refs: ["RESULT-OP-VECTOR-001"]
+  r_refs: ["R-001"]
+  capability_or_unknown_refs: ["H-001"]
+  q_refs: ["Q-001"]
+  e_refs: ["E-001"]
+  d_refs: ["D-001"]
+  stage_refs: ["S-001"]
+  task_refs: ["T-001"]
+  check_refs: ["C-001"]
+  useful_result: "one observable accepted stage result"
+local_execution_graph:
+  predecessors: []
+  entry: "ENTRY-S-001"
+  initial_state: "declared state"
+  first_task: "T-001"
+  edges:
+    - {from: "ENTRY-S-001", to: "T-001"}
+    - {from: "T-001", to: "T-002"}
+    - {from: "T-002", to: "EXIT-S-001"}
+  bounded_iterations: []
+  parallel_waves: []
+  write_conflict_policy: "one writer per path; serialize any declared conflict"
+  exit: "EXIT-S-001"
+  next_stages: []
+inputs_contracts:
+  inputs:
+    - {id: "INPUT-EXISTING-001", input_kind: "EXISTING", contract: "meaning, schema, units and freshness", consumer_ids: ["T-001"], source_id: "E-001", version: "1", identity: "accepted E identity", accepted_hash: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}
+    - {id: "INPUT-PLANNED-001", input_kind: "PLANNED", contract: "future result contract without a fabricated hash", consumer_ids: ["T-002"], producer_task_id: "T-001", output_id: "OUTPUT-001", acceptance_check_id: "C-001"}
+    - {id: "INPUT-EXTERNAL-001", input_kind: "EXTERNAL", contract: "owner-supplied availability contract", consumer_ids: ["T-001"], source: "named external source", owner: "named source owner", availability_condition: "observable availability condition", availability_status: "UNAVAILABLE", blocked_consumer_ids: ["T-001"]}
+  outputs:
+    - {id: "OUTPUT-001", path: "artifact/T-001.yaml", producer_task_id: "T-001", acceptance_check_id: "C-001", consumer_ids: ["T-002"], contract: "meaning, schema and units", availability: "UNCONDITIONAL", branch_guard: "true", acceptance_status: "PLANNED"}
+    - {id: "OUTPUT-002", path: "artifact/T-002.yaml", producer_task_id: "T-002", acceptance_check_id: "C-002", consumer_ids: [], contract: "accepted handoff artifact", availability: "UNCONDITIONAL", branch_guard: "true", acceptance_status: "PLANNED"}
+tasks:
+  - id: "T-001"
+    owner: "named task owner"
+    execution_status: "NOT_STARTED"
+    result: "observable task result"
+    procedure: "finite executable procedure"
+    algorithms: []
+    inputs: ["INPUT-EXISTING-001", "INPUT-EXTERNAL-001"]
+    dependencies: []
+    outputs: ["artifact/T-001.yaml"]
+    errors_recovery: "bounded recovery and compensation"
+    resources: "finite time, compute, data and money"
+    acceptance_criteria: ["C-001"]
+    checks: ["C-001"]
+    r_refs: ["R-001"]
+    d_refs: ["D-001"]
+    e_refs: ["E-001"]
+    branch_guard: "true"
+    writes: ["one-owned-path"]
+    serialized_with: []
+  - id: "T-002"
+    owner: "named downstream task owner"
+    execution_status: "NOT_STARTED"
+    result: "observable downstream task result"
+    procedure: "consume OUTPUT-001 only after C-001 accepts it"
+    algorithms: []
+    inputs: ["INPUT-PLANNED-001"]
+    dependencies: ["T-001"]
+    outputs: ["artifact/T-002.yaml"]
+    errors_recovery: "bounded recovery and compensation"
+    resources: "finite time, compute, data and money"
+    acceptance_criteria: ["C-002"]
+    checks: ["C-002"]
+    r_refs: ["R-001"]
+    d_refs: ["D-001"]
+    e_refs: ["E-001"]
+    branch_guard: "true"
+    writes: ["one-owned-downstream-path"]
+    serialized_with: []
+outputs_handoff:
+  artifacts: ["artifact/T-002.yaml"]
+  consumers: []
+  allowed_next_stages: []
+  forbidden_transitions: []
+acceptance_exit:
+  - id: "C-001"
+    property: "required observable property"
+    task_id: "T-001"
+    inputs: ["OUTPUT-001"]
+    preconditions: []
+    environment: "declared environment"
+    procedure: "exact check"
+    expected_observation: "pass rule"
+    negative_check: "negative control"
+    boundary_check: "boundary control"
+    sensitivity_check: "sensitivity control"
+    checker: "competent nonauthor"
+  - id: "C-002"
+    property: "required observable downstream property"
+    task_id: "T-002"
+    inputs: ["OUTPUT-002"]
+    preconditions: ["C-001 is accepted"]
+    environment: "declared environment"
+    procedure: "exact downstream check"
+    expected_observation: "pass rule"
+    negative_check: "negative control"
+    boundary_check: "boundary control"
+    sensitivity_check: "sensitivity control"
+    checker: "competent nonauthor"
+resources_stop:
+  budget: "finite budget"
+  estimate_basis: "stated basis"
+  monitoring: "observable monitoring"
+  stop_action: "defined stop and failure action"
+errors_recovery_evidence:
+  retry: "bounded retry"
+  idempotency: "declared idempotency key"
+  compensation: "declared compensation"
+  checkpoint: "after accepted task atom"
+  existing: ["E-001"]
+  future_not_run: []
+  drift_recheck: []
+
+
+# Required when the immutable snapshot pins ARCHITECTURE_GRAPH_V1.
+# Illustrative hashes: replace with exact accepted synthesis bytes and canonical graph.
+architecture_ref:
+  synthesis_id: "SYNTHESIS-001"
+  synthesis_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  graph_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"

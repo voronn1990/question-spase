@@ -1,0 +1,42 @@
+schema_version: "question-space-v4"
+id: "SCHEMA-DOUBLE-ICEBERG-V1"
+methodology_feature: "DOUBLE_ICEBERG_V1"
+storage_contract: "iceberg_view is a nested projection inside an accepted OP-PROJECTION or OP-REVERSE OPERATOR result; it is not an artifact type or second knowledge store"
+snapshot_rule: "every new current-release GOAL_TO_PLAN or BANK_TO_PLAN snapshot pins methodology_features including DOUBLE_ICEBERG_V1; absent marker is legacy-qualified only and cannot claim this feature"
+view_required_fields: ["view_id", "view_kind", "revision", "input_snapshot", "normative_vector_binding", "source_bindings", "members", "semantic_edge_ids", "open_q_ids", "coverage_limit", "knowledge_status", "workflow_status"]
+view_kinds: ["CURRENT_REALITY", "DESIRED_REALITY"]
+view_owners: {CURRENT_REALITY: "OP-PROJECTION", DESIRED_REALITY: "OP-REVERSE"}
+view_lineage: "initial view omits supersedes_view_id; successor result and nested view both bind the exact prior result/view; each kind is gapless and branchless with one non-stale head"
+current_binding_fields: ["view_id", "view_kind", "result_id", "result_sha256", "revision"]
+normative_vector_binding_required_fields: ["anchor_kind", "vector_id", "vector_sha256", "revision", "approval_binding_id", "approval_sha256", "applicability_result_id", "goal_claim_path"]
+anchor_kinds: ["LOCAL_ACCEPTED_VECTOR", "IMPORTED_APPROVED_VECTOR"]
+goal_endpoint: "typed semantic endpoint (G, vector_id) resolves goal_claim_path in exact vector_sha256 bytes; it is not a new user goal or synthetic goal_id"
+source_binding_required_fields: ["source_kind", "source_id", "source_sha256", "source_path"]
+source_kinds: ["ACCEPTED_RESULT", "IMMUTABLE_INPUT"]
+member_required_fields: ["element_kind", "ref_type", "ref_id", "canonical_claim_path", "source_binding", "origin_position_refs", "materiality", "scope"]
+element_kinds: ["CONDITION", "CAPABILITY", "OBSTACLE", "ASSUMPTION", "MECHANISM", "OBSERVATION", "UNKNOWN"]
+member_ref_types: ["G", "R", "Q", "E", "D", "H"]
+member_rule: "canonical_claim_path resolves an exact field inside bound canonical bytes; the view does not duplicate claim prose or promote knowledge status"
+semantic_edge_required_fields: ["id", "relation", "from_type", "from_id", "to_type", "to_id", "scope", "combination_kind", "knowledge_status", "evidence_ids", "distinguishing_check_id"]
+semantic_relations: ["NECESSARY_FOR", "SUFFICIENT_FOR_NOT_G", "RISK_FOR", "CAUSES_HYPOTHESIS", "CAUSAL_INFLUENCE", "CORRELATES_WITH", "MECHANISM_DEPENDS_ON", "ENABLES", "ALTERNATIVE_TO", "CONTRADICTS", "BYPASSES", "MITIGATES", "FEEDBACK_WITH"]
+causal_confirmation_required_fields: ["intervention_evidence_ids", "temporal_order_evidence_ids", "mechanism_evidence_ids", "competing_explanation_evidence_ids"]
+causal_relation_rules:
+  CAUSES_HYPOTHESIS: "knowledge_status is HYPOTHESIS or UNKNOWN; requires a finite distinguishing check and omits causal_confirmation"
+  CAUSAL_INFLUENCE: "knowledge_status is DERIVED; requires causal_confirmation whose four nonempty lists contain exact accepted E ids and are subsets of evidence_ids; confirmation is bounded by scope"
+  OTHER: "every other relation omits causal_confirmation"
+combination_kinds: ["SINGLE", "AND", "OR", "SEQUENCE", "SHARED_FAILURE", "FEEDBACK"]
+combination_rule: "non-SINGLE requires nonempty combination_id; SEQUENCE also requires a unique positive decimal sequence_index; inapplicable fields are omitted"
+graph_rule: "semantic graph accepts G/R/H and cycles; evidence provenance remains exact E-to-E DAG; execution DAG accepts H as a knowledge consumer but G/R are immutable inputs"
+framing_position_required_fields: ["position_id", "origin_role", "origin_assignment_id", "input_snapshot", "elements", "relations"]
+framing_element_required_fields: ["seed_id", "candidate_view", "element_kind", "statement", "scope", "g_refs", "r_refs", "materiality", "knowledge_status", "source_refs", "finite_check"]
+framing_relation_required_fields: ["seed_edge_id", "relation", "from_seed_id", "to_seed_id", "scope", "combination_kind", "knowledge_status", "finite_check"]
+framing_candidate_views: ["CURRENT_REALITY", "DESIRED_REALITY", "CROSS_VIEW"]
+framing_seed_knowledge_status: ["OBSERVED", "DERIVED", "HYPOTHESIS", "UNKNOWN"]
+finite_check_required_fields: ["check_kind", "procedure", "discriminating_outcomes"]
+finite_check_kinds: ["SOURCE", "OBSERVATION", "EXPERIMENT", "NOT_CURRENTLY_AVAILABLE"]
+finite_check_rule: "NOT_CURRENTLY_AVAILABLE additionally requires unavailable_basis; blind seed does not require accepted H or Q"
+origin_position_ref_required_fields: ["framing_result_id", "framing_result_sha256", "position_id", "seed_id", "origin_role"]
+origin_rule: "common/shared canonical H and its view member retain at least two exact accepted seed refs with distinct P roles; origin_role alone is insufficient"
+framing_rule: "for DOUBLE_ICEBERG_V1 all ten accepted blind P FRAMING results contain nonempty own-origin elements before foreign P, bank or preferred-mechanism exposure"
+phase_rule: "GATE-4 and later require exact current heads of both views and SYNTHESIS bindings; earlier gates enforce blind positions and resulting Q/E/review obligations without fabricating final views"
+stale_rule: "only exact superseded ancestors in the selected view lineage with no current consumer are historical nonblocking OPERATOR results; unrelated stale OPERATOR or stale head remains blocking"

@@ -1,0 +1,63 @@
+schema_version: "question-space-v4"
+id: "RESULT-P01-FRAMING-001"
+run_id: "RUN-1"
+input_snapshot: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+author_role: "P-01"
+agent_id: "actual-agent-id"
+knowledge_status: "HYPOTHESIS"
+workflow_status: "ACCEPTED"
+source_refs: ["HANDOFF-001"]
+related_ids: ["R-001"]
+revision: "1"
+created_at: "2026-10-21T09:00:00Z"
+updated_at: "2026-10-21T09:00:00Z"
+artifact_type: "FRAMING"
+assignment_id: "ASG-P01-FRAMING-001"
+attempt_id: "ATT-001"
+role_competence: "bounded professional competence"
+competence_boundary: "explicit outside area"
+launch_mode: "fresh-context"
+inherited_history: "none"
+allowed_paths: ["runs/RUN-1/state/blind-packet.yaml"]
+disclosure_read_log: []
+voluntary_file_reads: ["runs/RUN-1/state/blind-packet.yaml"]
+automatic_context_exposure:
+  class: "SYSTEM_OR_ROLE_INJECTED"
+  contains_bank_or_foreign_results: "NO"
+  description: "bounded runtime instructions automatically supplied before the task"
+protocol_blindness: "VERIFIED"
+technical_isolation: "NOT_REQUIRED"
+bank_seen: "false"
+foreign_results_seen: "false"
+iceberg_position:
+  position_id: "ICEPOS-P01-001"
+  origin_role: "P-01"
+  origin_assignment_id: "ASG-P01-FRAMING-001"
+  input_snapshot: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  elements:
+    - seed_id: "IP-P01-001"
+      candidate_view: "CURRENT_REALITY"
+      element_kind: "ASSUMPTION"
+      statement: "one exact blind assumption or unknown; replace with substantive content"
+      scope: "declared applicability scope"
+      g_refs: ["RESULT-OP-VECTOR-001"]
+      r_refs: ["R-001"]
+      materiality: "exact decision or check that can change"
+      knowledge_status: "HYPOTHESIS"
+      source_refs: []
+      finite_check:
+        check_kind: "OBSERVATION"
+        procedure: "finite procedure that distinguishes competing outcomes"
+        discriminating_outcomes: ["supports", "refutes", "remains unknown"]
+  relations: []
+object_model: "explicit object model"
+causal_model: "explicit causal model"
+contribution_to_goal: "specific contribution to G"
+assumptions: []
+alternatives: []
+opportunities: []
+not_g_classes: []
+required_evidence: []
+outside_competence: []
+supersedes: []
+

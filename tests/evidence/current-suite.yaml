@@ -1,0 +1,39 @@
+{
+  "candidate_manifest_sha256": "c3232eb73240fc94bfc1d9f55cc18ffb200ba6c4064219e3458bc5138ae41740",
+  "checks": [
+    {
+      "id": "resource-independent",
+      "observation": "Five independent local tests, 94 resource-control subprocesses and 58 armed CLI calls, 40.24 seconds, 71344 KiB. All 114 source hashes unchanged. This is local structural evidence, not native provider evidence.",
+      "receipt_sha256": "f204faf1b0b776f67558398f74f92757a0b1ccb9f2fc1f32bb9a2188504b7c43",
+      "status": "PASS",
+      "subject_sha256": "c3232eb73240fc94bfc1d9f55cc18ffb200ba6c4064219e3458bc5138ae41740"
+    },
+    {
+      "id": "fixture-views",
+      "observation": "Seven existing graph-view regressions pass after 19 literal example-path replacements in one fixture. Runtime files unchanged.",
+      "receipt_sha256": "1bbe690b1e27d6c46b55b3f0089e7c8d1c748bc3b470885eb3b01256d0123733",
+      "status": "PASS",
+      "subject_sha256": "c3232eb73240fc94bfc1d9f55cc18ffb200ba6c4064219e3458bc5138ae41740"
+    },
+    {
+      "id": "resource-author",
+      "observation": "Thirty targeted author tests and two armed scenarios with 58 CLI calls passed on this earlier fixture-identical-runtime cut. Independent source critic admitted the five-path repair for structural publication.",
+      "receipt_sha256": "c78e578cfd9316ada10249bf1915795fe79bc103e59bbcdc84235a7506164675",
+      "status": "PASS",
+      "subject_sha256": "9dd909cb7a95204ad895d85c82ba0c70748a7c11f0521c3b60aefae467898753"
+    },
+    {
+      "id": "graph-fanout-local",
+      "observation": "Earlier bounded independent 90-call graph control: seventeen distinct reviewed alternatives retained, circular and wrong-source graphs refused, optional versus declared cache behavior checked; 49.85 seconds and 73792 KiB. Not a new run on final candidate.",
+      "receipt_sha256": "445b1635615e2fac5b3d43d5f35eb88aedb04b7fdbe3810284b53ea4e174a467",
+      "status": "PASS",
+      "subject_sha256": "9f0aa672dc6e6ac34f348cd4a3430e397e11e9c449b67248e00c2eda741948c8"
+    }
+  ],
+  "qualification": "LOCAL_STRUCTURAL_ONLY",
+  "readme_sha256": "3a178ed96b7a058d4320b0920738f4ceb2ba89de28aa57c2ebd0258b20e98fd6",
+  "receipt_scope": "Supplied public local check observations, each bound to its own exact subject. Receipt digests identify external records. The packager verifies package bytes.",
+  "schema_version": "question-space-public-check-receipts-v1",
+  "verification_metadata_sha256": "015ba27cc0413f70448a9aa180eb4824800a177b43cf44acb40357bb24fd1999",
+  "version": "4.3.0-rc1"
+}

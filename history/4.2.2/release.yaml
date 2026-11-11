@@ -1,0 +1,13 @@
+{
+  "core_manifest_path": "tests/evidence/package-core.yaml",
+  "core_manifest_sha256": "901c24b951edbeaf082d2f9f384a99206b3e855a136b892ad66587d8322c30ed",
+  "current_suite_path": "tests/evidence/current-suite.yaml",
+  "current_suite_sha256": "9ddcc6d584c6d071eaeee341003187708064dbd07fcbdc5799afddd96097630a",
+  "name": "question-space",
+  "qualification": "STRUCTURAL_ONLY",
+  "qualification_path": "tests/evidence/qualification.yaml",
+  "qualification_sha256": "8e88955d6718cbf23b2e4616f2ba72d5bd649c6a9579d265c52cc3735996ac83",
+  "schema_version": "question-space-portable-release-v1",
+  "scope": "Portable repaired skill; STRUCTURAL_ONLY with explicit qualification limits",
+  "version": "4.2.2"
+}

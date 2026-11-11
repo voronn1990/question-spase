@@ -1,0 +1,25 @@
+schema_version: "question-space-applicability-frontier-v1"
+intake:
+  subject: "Accepted immutable EVIDENCE with command_intake_scope and applicability_scope_version."
+  receipt_fields:
+    scope_version: "Exact applicability_scope_version from the evidence."
+    cursor: "Positive decimal string for the intake journal position."
+    intake_cut: "Exact prior command revision."
+review:
+  subject: "An independent accepted REVIEW of the exact evidence result ID and raw hash."
+  disposition: ["SAME", "NEW", "DISJOINT", "UNKNOWN"]
+  proof_fields:
+    scope_version: "Exact intake scope version."
+    cursor: "Exact intake journal position."
+    cutoff: "Positive decimal string for the last journal row reviewed."
+    cut_sha256: "Exact raw SHA-256 of that last journal row."
+    reason: "Nonempty scoped rationale."
+    consumers: "Exact sorted affected result IDs reviewed."
+    lineage: "Empty mapping except for NEW, which requires question_or_alternative_id, decision_id and discriminator."
+durable_projection:
+  mutation: "APPLICABILITY_FRONTIER_ADVANCE"
+  current_field: "applicability_frontier"
+  anchor_by: "Exact evidence result ID"
+  anchor_fields: ["position", "sha256", "affected_result_ids"]
+  marker: "The current transition binds an exact command journal projection and its accepted E/REVIEW backing."
+  missing_tail: "A missing anchored row holds its affected result IDs until authenticated recovery."

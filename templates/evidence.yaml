@@ -1,0 +1,27 @@
+schema_version: "question-space-v4"
+id: "E-001"
+run_id: "RUN-1"
+input_snapshot: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+author_role: "P-01"
+agent_id: "actual-evidence-producer-id"
+knowledge_status: "OBSERVED"
+workflow_status: "ACCEPTED"
+source_refs: ["source-or-tool-address"]
+related_ids: ["Q-001", "D-001"]
+revision: "1"
+created_at: "2026-10-21T09:00:00Z"
+updated_at: "2026-10-21T09:00:00Z"
+artifact_type: "EVIDENCE"
+assignment_id: "ASG-EVIDENCE-001"
+attempt_id: "ATT-001"
+changed: "UNCHANGED"
+procedure: "reproducible evidence procedure"
+input_hash: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+tool_id: "tool-name"
+tool_version: "tool-name 1.0"
+policy_hash: "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+exposure_key: "declared-exposure"
+freshness: "2026-10-21T09:00:00Z"
+observation: "addressable observed result"
+limitations: []
+

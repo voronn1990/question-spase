@@ -1,0 +1,82 @@
+schema_version: "question-space-v4"
+id: "AUDIT-001"
+run_id: "RUN-1"
+input_snapshot: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+author_role: "FINAL-AUDITOR"
+agent_id: "actual-auditor-id"
+knowledge_status: "OBSERVED"
+workflow_status: "ACCEPTED"
+source_refs: ["state/release-cores/RELEASE-001.yaml"]
+related_ids: ["R-001", "Q-001", "D-001", "C-001"]
+revision: "1"
+created_at: "2026-10-21T09:00:00Z"
+updated_at: "2026-10-21T09:00:00Z"
+artifact_type: "FINAL_AUDIT"
+assignment_id: "ASG-FINAL-AUDIT-001"
+attempt_id: "ATT-001"
+core_manifest_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+independence_mode: "INDEPENDENT"
+auditor_independence: "auditor did not author the plan or last normative fix"
+auditor_exposure: []
+iceberg_view_bindings:
+  - {view_id: "ICE-CURRENT-001", view_kind: "CURRENT_REALITY", result_id: "RESULT-OP-PROJECTION-001", result_sha256: "23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01", revision: "1"}
+  - {view_id: "ICE-DESIRED-001", view_kind: "DESIRED_REALITY", result_id: "RESULT-OP-REVERSE-001", result_sha256: "3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012", revision: "1"}
+iceberg_probes:
+  missing_or_shared_assumption: {procedure: "challenge exact seed origins and dependencies", result: "OPEN-001", evidence_refs: ["E-001"], affected_ids: ["H-001", "D-001"]}
+  false_necessity_or_causality: {procedure: "test relation kind, scope and causal confirmation", result: "NOT_VERIFIED", evidence_refs: ["E-001"], affected_ids: ["EDGE-ICE-001"]}
+  impossible_capability: {procedure: "trace required capability to available inputs and forward check", result: "PASS", evidence_refs: ["E-001"], affected_ids: ["H-002"]}
+  missed_failure_combination: {procedure: "probe AND OR SEQUENCE shared failure and feedback", result: "PASS", evidence_refs: ["E-001"], affected_ids: ["ICE-CURRENT-001"]}
+  stronger_bypass: {procedure: "construct a materially different route outside synthesis shortlist", result: "NOT_FOUND_WITH_BASIS", evidence_refs: ["E-001"], affected_ids: ["D-001"]}
+areas:
+  "1": "PASS"
+  "2": "PASS"
+  "3": "NOT_VERIFIED"
+  "4": "PASS"
+  "5": "PASS"
+  "6": "PASS"
+  "7": "PASS"
+  "8": "PASS"
+area_details:
+  "1": {ids: ["R-001"], files: ["input/snapshot.yaml"], hashes: ["0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"], procedure: "check exact input and goal", findings: ["exact source and parsed bank resolve to the snapshot"], counterexample_result: "no counterexample in declared scope", alternative_result: "no stronger framing found", limitations: [], defect_ids: [], open_condition_ids: [], readiness_impact: "none"}
+  "2": {ids: ["Q-001"], files: ["answers/source-outcomes/SOURCE-OUTCOMES-001.yaml"], hashes: ["0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"], procedure: "resolve selected current outcome and exact accepted answer for every original Q", findings: ["all declared current source outcomes resolve"], counterexample_result: "no missing original Q", alternative_result: "FILL-IN: record the strongest materially better alternative actually examined and its result; if none applies, record the concrete reason within this area's declared scope", limitations: [], defect_ids: [], open_condition_ids: [], readiness_impact: "none"}
+  "3": {ids: ["E-001"], files: ["evidence/E-001.yaml"], hashes: ["0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"], procedure: "check grounds, competing causes and causality", findings: ["one central causal premise remains untested"], counterexample_result: "plausible competing cause remains", alternative_result: "finite distinguishing experiment is available", limitations: ["central premise is not yet observed"], defect_ids: [], open_condition_ids: ["OPEN-001"], readiness_impact: "plan cannot be READY"}
+  "4": {ids: ["REVIEW-001"], files: ["reviews/REVIEW-001.yaml"], hashes: ["0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"], procedure: "resolve critique, operators and critical reviews", findings: ["required accepted reviews resolve"], counterexample_result: "no uncovered critical decision", alternative_result: "FILL-IN: record the strongest materially better alternative actually examined and its result; if none applies, record the concrete reason within this area's declared scope", limitations: [], defect_ids: [], open_condition_ids: [], readiness_impact: "none"}
+  "5": {ids: ["D-001"], files: ["decisions/D-001.yaml"], hashes: ["0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"], procedure: "compare architecture and practical alternatives", findings: ["chosen mechanism follows the frozen protocol"], counterexample_result: "no decisive architecture counterexample", alternative_result: "tested alternatives are weaker in declared scope", limitations: [], defect_ids: [], open_condition_ids: [], readiness_impact: "none"}
+  "6": {ids: ["S-000", "T-001"], files: ["plan/S-000.yaml", "plan/S-001.yaml"], hashes: ["0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"], procedure: "resolve eight sections, stage/task DAG and write ownership", findings: ["plan references resolve and no write conflict was found"], counterexample_result: "cycle and conflicting-writer probes rejected", alternative_result: "FILL-IN: record the strongest materially better alternative actually examined and its result; if none applies, record the concrete reason within this area's declared scope", limitations: [], defect_ids: [], open_condition_ids: [], readiness_impact: "none"}
+  "7": {ids: ["C-001"], files: ["plan/S-001.yaml"], hashes: ["0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"], procedure: "check failures and acceptance controls", findings: ["negative, boundary and sensitivity checks are defined"], counterexample_result: "false-success probe rejected", alternative_result: "FILL-IN: record the strongest materially better alternative actually examined and its result; if none applies, record the concrete reason within this area's declared scope", limitations: [], defect_ids: [], open_condition_ids: [], readiness_impact: "none"}
+  "8": {ids: ["AUDIT-001"], files: ["state/release-cores/RELEASE-001.yaml"], hashes: ["0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"], procedure: "check pre-audit core, last fix and readiness mapping", findings: ["audit binds exact pre-audit core; GATE-6 remains the next artifact"], counterexample_result: "core tamper probe rejected", alternative_result: "FILL-IN: record the strongest materially better alternative actually examined and its result; if none applies, record the concrete reason within this area's declared scope", limitations: [], defect_ids: [], open_condition_ids: ["OPEN-001"], readiness_impact: "quality and plan remain NOT_READY"}
+defects: []
+counterexample_results: ["central competing cause remains plausible"]
+alternative_results: ["run the finite distinguishing experiment before READY"]
+verdict: "RESEARCH_REQUIRED"
+verdict_reasons: ["OPEN-001 leaves the central premise NOT_VERIFIED"]
+last_fix_status: "CHECKED"
+readiness:
+  package: "READY"
+  runtime: "UNVERIFIED"
+  quality: "NOT_READY"
+  plan: "NOT_READY"
+  implementation: "NOT_READY"
+  effect: "NOT_READY"
+plan_readiness: "NOT_READY"
+implementation_status: "NOT_RUN"
+effect_status: "NOT_RUN"
+open_conditions:
+  - {id: "OPEN-001", area_ids: ["3", "8"], criticality: "CRITICAL", condition: "central causal premise is unresolved", next_path: "execute the finite distinguishing experiment", goal_requirement_impact: "R-001 and the central mechanism remain unverified", admissibility_basis: "not admissible for READY", early_check_id: "C-EARLY-001", gated_dependency_ids: ["T-001"], condition_kind: "CENTRAL_UNCERTAINTY", affected_requirement_ids: ["R-001"], affected_decision_ids: ["D-001"]}
+allowed_next_action: "execute the bounded research stage"
+claim_limits: ["audit does not prove future implementation or effect"]
+
+# Required when the immutable snapshot pins ARCHITECTURE_GRAPH_V1.
+# Illustrative hashes: replace with exact accepted synthesis bytes and canonical graph.
+architecture_ref:
+  synthesis_id: "SYNTHESIS-001"
+  synthesis_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  graph_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+architecture_review:
+  structural_report_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  semantic_outcome: "NOT_VERIFIED"
+  procedure: "FILL-IN: independently test resource-to-goal path, all required inputs, contract transitions and central mechanism"
+  observation: "FILL-IN: actual observation within the declared check scope"
+  evidence_ids: []
+  findings: []
+  limits: ["A connected graph alone does not establish functional, scientific or economic validity"]

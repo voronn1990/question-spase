@@ -1,0 +1,231 @@
+schema_version: "question-space-v4"
+id: "SYNTHESIS-001"
+run_id: "RUN-1"
+input_snapshot: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+author_role: "OP-SYNTHESIS"
+agent_id: "actual-synthesis-agent-id"
+knowledge_status: "DERIVED"
+workflow_status: "ACCEPTED"
+source_refs: ["D-001", "E-001", "REVIEW-001"]
+related_ids: ["R-001", "Q-001", "T-001", "C-001"]
+revision: "1"
+created_at: "2026-10-21T09:00:00Z"
+updated_at: "2026-10-21T09:00:00Z"
+artifact_type: "SYNTHESIS"
+assignment_id: "ASG-OP-SYNTHESIS-001"
+attempt_id: "ATT-001"
+iceberg_view_bindings:
+  - {view_id: "ICE-CURRENT-001", view_kind: "CURRENT_REALITY", result_id: "RESULT-OP-PROJECTION-001", result_sha256: "23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01", revision: "1"}
+  - {view_id: "ICE-DESIRED-001", view_kind: "DESIRED_REALITY", result_id: "RESULT-OP-REVERSE-001", result_sha256: "3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012", revision: "1"}
+comparison_protocol: "frozen A/B/C protocol"
+abc_normative_contract: "references/contracts-v4.1.md#a-b-c-три-направления-поиска"
+chosen_mechanism: "selected mechanism and contracts"
+chosen_mechanism_id: "MECHANISM-SELECTED"
+alternatives:
+  - {id: "ALT-A", direction: "A", mechanism: "deep improvement of the current approach while preserving justified strengths", comparison: "same frozen inputs, conditions, criteria, budget and attempt accounting", outcome: "SELECTED_OR_REJECTED_WITH_BASIS"}
+  - {id: "ALT-B", direction: "B", mechanism: "fundamental redesign of the central mechanism or limiting premise", comparison: "same frozen inputs, conditions, criteria, budget and attempt accounting", outcome: "SELECTED_OR_REJECTED_WITH_BASIS"}
+  - {id: "ALT-C", direction: "C", mechanism: "construction from the end goal without attachment to the current arrangement", comparison: "same frozen inputs, conditions, criteria, budget and attempt accounting", outcome: "SELECTED_OR_REJECTED_WITH_BASIS"}
+alternative_search_limit: "honestly record fewer genuine architectures when the bounded search finds fewer; parameter variations do not count"
+hybrid_basis: "NONE_OR_SEPARATELY_TESTED_INTERACTIONS"
+semantic_edges:
+  - {id: "EDGE-ICE-001", relation: "CONTRADICTS", from_type: "D", from_id: "D-ALT-001", to_type: "D", to_id: "D-001", scope: "declared comparison scope", combination_kind: "SINGLE", knowledge_status: "DERIVED", evidence_ids: ["E-001"], distinguishing_check_id: "Q-001"}
+iceberg_mechanism_trace:
+  chosen: {member_refs: ["ICE-CURRENT-001#H-001", "ICE-DESIRED-001#H-002"], edge_ids: ["EDGE-ICE-001"], e_refs: ["E-001"], d_refs: ["D-001"]}
+  alternatives:
+    - {alternative_id: "ALT-A", disposition: "USES", member_refs: ["ICE-CURRENT-001#H-001"], edge_ids: ["EDGE-ICE-001"], e_refs: ["E-001"], d_refs: ["D-001"]}
+evidence_provenance_edges:
+  - {from_type: "E", from_id: "E-001", to_type: "E", to_id: "E-002"}
+execution_edges:
+  - {from_type: "E", from_id: "E-002", to_type: "Q", to_id: "Q-001"}
+  - {from_type: "Q", from_id: "Q-001", to_type: "D", to_id: "D-001"}
+  - {from_type: "D", from_id: "D-001", to_type: "REVIEW", to_id: "REVIEW-001"}
+  - {from_type: "REVIEW", from_id: "REVIEW-001", to_type: "T", to_id: "T-001"}
+  - {from_type: "T", from_id: "T-001", to_type: "C", to_id: "C-001"}
+node_status:
+  "E:E-001": "ACCEPTED"
+  "E:E-002": "ACCEPTED"
+  "Q:Q-001": "ACCEPTED"
+  "D:D-001": "ACCEPTED"
+  "REVIEW:REVIEW-001": "ACCEPTED"
+  "T:T-001": "NOT_RUN"
+  "C:C-001": "NOT_RUN"
+open_conditions: []
+next_consumer: "PLAN-AUTHOR"
+
+# Same illustrative graph as templates/architecture-graph.yaml; never load a second runtime source.
+architecture_graph:
+  "contracts":
+  - "acceptance_check_ids":
+    - "C-001"
+    "availability": "canonical plan availability"
+    "error_behavior": "reject invalid payload and retain evidence"
+    "external_conditions": []
+    "format": "application/yaml"
+    "id": "CONTRACT-001"
+    "plan_refs":
+    - "contract_id": "INPUT-001"
+      "kind": "INPUT"
+      "stage_id": "S-000"
+    - "contract_id": "OUTPUT-001"
+      "kind": "OUTPUT"
+      "path": "artifact/result.yaml"
+      "stage_id": "S-000"
+    "semantics": "ordered integer records"
+    "version": "1"
+  "edges":
+  - "check_ids": []
+    "conditions": []
+    "from_id": "T-001"
+    "id": "EDGE-001"
+    "kind": "IMPLEMENTS"
+    "meaning": "T-001 IMPLEMENTS ALGORITHM-T-001"
+    "scope": "EXECUTION"
+    "to_id": "ALGORITHM-T-001"
+  - "check_ids": []
+    "conditions": []
+    "from_id": "ALGORITHM-T-001"
+    "id": "EDGE-002"
+    "kind": "REALIZES"
+    "meaning": "ALGORITHM-T-001 REALIZES CAPABILITY-001"
+    "scope": "EXECUTION"
+    "to_id": "CAPABILITY-001"
+  - "check_ids": []
+    "conditions": []
+    "from_id": "CAPABILITY-001"
+    "id": "EDGE-003"
+    "kind": "CONTRIBUTES_TO"
+    "meaning": "CAPABILITY-001 CONTRIBUTES_TO G-001"
+    "scope": "EXECUTION"
+    "to_id": "G-001"
+  - "check_ids": []
+    "conditions": []
+    "from_id": "CAPABILITY-001"
+    "id": "EDGE-004"
+    "kind": "CONTRIBUTES_TO"
+    "meaning": "CAPABILITY-001 CONTRIBUTES_TO R-001"
+    "scope": "EXECUTION"
+    "to_id": "R-001"
+  - "check_ids": []
+    "conditions": []
+    "from_id": "T-001"
+    "id": "EDGE-005"
+    "kind": "PRODUCES"
+    "meaning": "T-001 PRODUCES DATA-OUTPUT-001"
+    "scope": "EXECUTION"
+    "to_id": "DATA-OUTPUT-001"
+  - "check_ids": []
+    "conditions": []
+    "contract_id": "CONTRACT-001"
+    "from_id": "DATA-INPUT-001"
+    "id": "EDGE-006"
+    "input_id": "INPUT-001"
+    "kind": "CONSUMES"
+    "meaning": "DATA-INPUT-001 CONSUMES T-001"
+    "scope": "EXECUTION"
+    "to_id": "T-001"
+  - "check_ids": []
+    "conditions": []
+    "contract_id": "CONTRACT-001"
+    "from_id": "DATA-OUTPUT-001"
+    "id": "EDGE-007"
+    "input_id": "OUTPUT-001"
+    "kind": "CONSUMES"
+    "meaning": "DATA-OUTPUT-001 CONSUMES C-001"
+    "scope": "EXECUTION"
+    "to_id": "C-001"
+  - "check_ids": []
+    "conditions": []
+    "from_id": "C-001"
+    "id": "EDGE-008"
+    "kind": "VERIFIES"
+    "meaning": "C-001 VERIFIES DATA-OUTPUT-001"
+    "scope": "EVIDENCE"
+    "to_id": "DATA-OUTPUT-001"
+  - "check_ids": []
+    "conditions": []
+    "from_id": "C-001"
+    "id": "EDGE-009"
+    "kind": "CONTRIBUTES_TO"
+    "meaning": "C-001 CONTRIBUTES_TO G-001"
+    "scope": "EXECUTION"
+    "to_id": "G-001"
+  "id": "ARCH-001"
+  "implementation_map": []
+  "mechanisms":
+  - "id": "MECHANISM-SELECTED"
+    "status": "SELECTED"
+  "nodes":
+  - "id": "ALGORITHM-T-001"
+    "kind": "ALGORITHM"
+    "label": "ALGORITHM-T-001"
+    "mechanism_id": "MECHANISM-SELECTED"
+    "required": "true"
+    "subsystem_id": "main"
+  - "expected_observation": "expected payload"
+    "id": "C-001"
+    "kind": "C"
+    "label": "C-001"
+    "mechanism_id": "MECHANISM-SELECTED"
+    "procedure": "run bounded acceptance"
+    "required": "true"
+    "stage_id": "S-000"
+    "subsystem_id": "main"
+    "task_id": "T-001"
+  - "id": "CAPABILITY-001"
+    "kind": "CAPABILITY"
+    "label": "CAPABILITY-001"
+    "mechanism_id": "MECHANISM-SELECTED"
+    "required": "true"
+    "subsystem_id": "main"
+  - "accepted_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+    "availability": "EXISTING"
+    "contract_id": "CONTRACT-001"
+    "id": "DATA-INPUT-001"
+    "kind": "DATA"
+    "label": "DATA-INPUT-001"
+    "mechanism_id": "MECHANISM-SELECTED"
+    "required": "true"
+    "source_id": "E-001"
+    "subsystem_id": "main"
+    "version": "1"
+  - "availability": "PLANNED"
+    "contract_id": "CONTRACT-001"
+    "id": "DATA-OUTPUT-001"
+    "kind": "DATA"
+    "label": "DATA-OUTPUT-001"
+    "mechanism_id": "MECHANISM-SELECTED"
+    "plan_ref":
+      "output_id": "OUTPUT-001"
+      "stage_id": "S-000"
+    "required": "true"
+    "subsystem_id": "main"
+  - "existing_id": "VECTOR-001"
+    "id": "G-001"
+    "kind": "G"
+    "label": "G-001"
+    "mechanism_id": "MECHANISM-SELECTED"
+    "required": "true"
+    "subsystem_id": "main"
+  - "id": "R-001"
+    "kind": "R"
+    "label": "R-001"
+    "mechanism_id": "MECHANISM-SELECTED"
+    "required": "true"
+    "subsystem_id": "main"
+  - "id": "S-000"
+    "kind": "S"
+    "label": "S-000"
+    "mechanism_id": "MECHANISM-SELECTED"
+    "required": "true"
+    "subsystem_id": "main"
+  - "id": "T-001"
+    "kind": "T"
+    "label": "T-001"
+    "mechanism_id": "MECHANISM-SELECTED"
+    "required": "true"
+    "stage_id": "S-000"
+    "subsystem_id": "main"
+  "project_kind": "NEW"
+  "revision": "1"
+  "schema_version": "question-space-architecture-v1"
+  "selected_mechanism_id": "MECHANISM-SELECTED"

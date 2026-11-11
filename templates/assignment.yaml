@@ -1,0 +1,32 @@
+schema_version: "question-space-v4"
+assignment_id: "ASG-P01-PRIMARY-001"
+attempt_id: "ATT-001"
+role_id: "P-01"
+agent_id: "actual-agent-id"
+input_snapshot: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+artifact_type: "PRIMARY"
+result_id: "RESULT-P01-PRIMARY-001"
+output_path: "positions/P-01-primary.yaml"
+dependency_hashes:
+  - "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+assigned_ids:
+  requirements: ["R-001"]
+  questions: ["Q-001"]
+  decisions: []
+  evidence: []
+allowed_reads: ["runs/RUN-1/input/snapshot.yaml"]
+sole_writer_paths: ["runs/RUN-1/positions/P-01-primary.yaml"]
+authority: "research-only"
+expected_consumer: "OP-SYNTHESIS"
+acceptance_criteria:
+  - "Every assigned question has an addressed outcome."
+finite_budget: "one bounded assignment"
+deadline: "environment-defined finite deadline"
+checkpoint_interval: "after every completed assigned question"
+stop_condition: "accepted output or exhausted bounded attempt"
+recovery_rule: "resume only from the recorded checkpoint"
+idempotency_key: "assignment_id+attempt_id+exact_result_sha256"
+exposure_constraints:
+  bank_access: "assigned-only"
+  foreign_primary_results: "forbidden-before-own-freeze"
+

@@ -1,0 +1,13 @@
+{
+  "core_manifest_path": "tests/evidence/package-core.yaml",
+  "core_manifest_sha256": "446697e34e9025baf3fa8a13f02ce0412d635322ffab82104664a1714bcca890",
+  "current_suite_path": "tests/evidence/current-suite.yaml",
+  "current_suite_sha256": "781f73b38fd82038f21953f42d84e2253dfaae4ca66cdd6e69889c77976fd17c",
+  "name": "question-space",
+  "qualification": "LOCAL_STRUCTURAL_ONLY",
+  "qualification_path": "tests/evidence/qualification.yaml",
+  "qualification_sha256": "70202a63cb9ac88d463674af68658a17d3f9a436aa0f55ea0bc4ccaf9634cd99",
+  "schema_version": "question-space-portable-release-v1",
+  "scope": "Release candidate for review with local structural qualification.",
+  "version": "4.3.0-rc1"
+}
