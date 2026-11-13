@@ -1,0 +1,45 @@
+{
+  "capabilities": {
+    "implementation": "NOT_RUN",
+    "measured_v3_comparison": "NOT_RUN",
+    "native18": "NOT_RUN",
+    "observed_effect": "NOT_RUN",
+    "quality_calibration": "NOT_RUN",
+    "runtime_acl_attestation": "NOT_RUN",
+    "signed_org_attestation": "NOT_RUN",
+    "token_savings": "NOT_MEASURED"
+  },
+  "claim_boundary": "Package integrity, structural tests, installation, native research quality, implementation and observed effect are separate. No FULL_V4_READY or QUALITY_CALIBRATED claim.",
+  "core_manifest_path": "tests/evidence/package-core.yaml",
+  "core_manifest_sha256": "901c24b951edbeaf082d2f9f384a99206b3e855a136b892ad66587d8322c30ed",
+  "current_suite_path": "tests/evidence/current-suite.yaml",
+  "current_suite_report_sha256": "b933e5c14155b31d25a1293fe81cfdb98e7ee21e67a8f7dc4d7ef9e466f0f470",
+  "current_suite_sha256": "9ddcc6d584c6d071eaeee341003187708064dbd07fcbdc5799afddd96097630a",
+  "current_suite_status": "PASS; bounded supplied report/log hashes checked",
+  "historical_prior_session": {
+    "neutral_50_question_case": "Prior source reports partial positions/answers/reviews/synthesis; those claims are not current verified receipts. Prior final plan acceptance, eighteenth-role audit and complete seal were not established.",
+    "old_suite_and_scoped_review_claims": "Historical source claims only; no current PASS inferred from old hashes or prose.",
+    "prior_qualification_sha256": "e0216320645f79071b81d54251826040f4d21552b65aaadc6f716e7d4f24ae62",
+    "status": "REFERENCE_ONLY; prior qualification is retained by exact hash; no old suite or review is reused as current proof"
+  },
+  "independent_review_references": [
+    {
+      "applicability": "REFERENCE_ONLY; current-subject independent closure is not inferred by packaging",
+      "filename": "final-review.json",
+      "reported_status": "PASS_SCOPED_FINAL_AUTHORED_PRODUCT_REVIEW",
+      "sha256": "81d7129afcda18d56506bbbe84b3a04d6885d9897b20b4c5294a61ff5a365625"
+    }
+  ],
+  "schema_version": "question-space-limited-qualification-v4.1",
+  "scope": "Portable skill/controller repairs and supplied exact-subject structural/public-CLI receipt.",
+  "source_inventory_path": "tests/evidence/source-inventory.yaml",
+  "source_inventory_sha256": "4ec29984f3a7d293509ea275dc08ec19c98540e712b9e7af6488b35f34e9a6bd",
+  "source_provenance": {
+    "input_package_inventory_sha256": "c1689924f0a7aa79378da70fa465ea2705ae66b48267eadfa9525e66a619b4e9",
+    "source_archive_filename": "question-space-v4.2.1.zip",
+    "source_archive_sha256": "082061a753600f00686b488d2f286ba79be9157b8b879f4ebe8f9c2e7ac8e6f0",
+    "source_archive_status": "EXACT_LOCAL_BYTES_HASHED"
+  },
+  "status": "STRUCTURAL_ONLY",
+  "version": "4.2.2"
+}

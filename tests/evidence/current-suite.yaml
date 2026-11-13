@@ -1,0 +1,151 @@
+{
+  "candidate_manifest_sha256": "40298bf66935b957411bb9009f777503dc3a8cb09518645a2f695ad42bc6e473",
+  "checks": [
+    {
+      "id": "giq003-pure",
+      "observation": "53/53 PREP validation tests on frozen GIQ003 delta against 5b8456e, with independent exact-source review. The checks cover genuine initial questions, explicit material unknowns, empty framing and typed expansion provenance.",
+      "receipt_sha256": "0ed70821d7d2a5713e14646ca03add8a792ebe17af93b7c3d3fecc6072062dc0",
+      "status": "PASS",
+      "subject_sha256": "0bc03bb66a40f029a7004cf9c9bf949053c7818054cef44f5abdbe0d9630c670"
+    },
+    {
+      "id": "giq003-ordinary-cli",
+      "observation": "4/4 public ordinary GOAL CLI integration tests on frozen GIQ003. The run covered policy immutability, question comparison, exact GOAL result routing and replayable PREP admission.",
+      "receipt_sha256": "6744c95149ed7333dce35cf763537c4494854a1296b35b7c0b8f745b2b7105c9",
+      "status": "PASS",
+      "subject_sha256": "0bc03bb66a40f029a7004cf9c9bf949053c7818054cef44f5abdbe0d9630c670"
+    },
+    {
+      "id": "c04-portable002-local",
+      "observation": "12/12 local portable tests passed on C04 portable002, including safe ZIP preflight, archive closure and a bounded fixture consumer. The reviewer also independently observed truncated central-record refusal and UTF-8/space-path acceptance.",
+      "receipt_sha256": "295f2bfb33c134c4d22ad3124c2612de012e65a5152e20198d4b3c48665c90a8",
+      "status": "PASS",
+      "subject_sha256": "d69a667ac589637be0ff8cc8c4732324bf9df53d8866ba443fd13e8028a1fff9"
+    },
+    {
+      "id": "sealed-r3-reviewed-source",
+      "observation": "Scoped independent source review of frozen r3. Two narrow pure tests passed. Synthetic replay exercised exact predecessor release alias binding, wrong alias and changed-archive refusals, and same-graph versus successor-map acceptance.",
+      "receipt_sha256": "f8900572fff8ef94867d8faa644f7366ae7772a3e0df026053f6d0c849628120",
+      "status": "PASS",
+      "subject_sha256": "7fcfbf3725e8a8d3a2f408db9f6ed1f0cc4e1a89bf3e7aeb5dcbffdc03abca97"
+    },
+    {
+      "id": "sealed-r3-integration-passing-subset",
+      "observation": "Three targeted tests passed on the earlier combined integration cut: superseded seal retirement, current descendant and selected plan projection, and reviewed replacement of a withdrawn selected option. The overall command exited 1 with the separate retained lifecycle failure.",
+      "receipt_sha256": "af5d2f5dede84233585eb0c816a91fd15314d0db892c57b472f40f3503932177",
+      "status": "PASS",
+      "subject_sha256": "75110fdd49cecd641488b80fe5956f6ec9f4bfbce6aa29a967eb33d6f8692350"
+    },
+    {
+      "id": "sealed-r3-fixture-core",
+      "observation": "Independently reviewed fixture-only delta. Direct full core-model validation reproduced two unaddressed execution-graph objects before the patch and found zero graph errors after adding the typed evidence/review/task links. The ordinary lifecycle retry remained pending.",
+      "receipt_sha256": "3161999d4affbad99a4ef66a395a4eaf907bfddcd79f34842c33c37f16a62cea",
+      "status": "PASS",
+      "subject_sha256": "b8b9187bcf848c80d4934011b01f53dcd618039e92ff01ebb3d34cf3f383f1e2"
+    },
+    {
+      "id": "c06-source003",
+      "observation": "Independent exact delta review admitted the five-path C06 source cut and observed scoped gen1-restore refusal, exact gen1 activation, gen2 restore lineage and source scope selection under disposable authority.",
+      "receipt_sha256": "b63a50d7bee80ac2bbf227e8dca157778d9c6bf211e1bc364ee911edf480b76b",
+      "status": "PASS",
+      "subject_sha256": "17e9e30f71d2b44e9633d0490e89dfd07ebead9e0cd69a88ace7027182c2e470"
+    },
+    {
+      "id": "c06-source003-passing-subset",
+      "observation": "Three of four focused disposable tests passed, and both separate existing guards passed. The focused suite exited 1 because its direct fence test fixture omitted initialized effects. This entry covers the observed passing subset.",
+      "receipt_sha256": "2efbf8cb6e5571870cad42d83d9465a366970972f564453bd767dbb6801db191",
+      "status": "PASS",
+      "subject_sha256": "17e9e30f71d2b44e9633d0490e89dfd07ebead9e0cd69a88ace7027182c2e470"
+    },
+    {
+      "id": "c06-fixture004-targeted-retry",
+      "observation": "The exact test-only 004 retry passed its single previous failure. The disposable test checked gen1 restore refusal without writes, persisted-intent refusal, gen2 activation and gen3 restoration. The independent reviewer admitted the exact test-only delta.",
+      "receipt_sha256": "06df2607c5d2def44ff6216c891b414705146860de1190007e31f29ff4898a05",
+      "status": "PASS",
+      "subject_sha256": "18edde89a529ebe1c5d5fb65b487237bcfa5639ef377dca92f2b2eb91c9c76d2"
+    },
+    {
+      "id": "historical-linux-suite411",
+      "observation": "Historical isolated public Linux run: 411/411 tests passed with zero skips on its own 128-file projection. Its counts describe that projection only.",
+      "receipt_sha256": "b764493dbd5fb335f1800c9d17814f473ba6db6d37ffcdb155a28c90af346a19",
+      "status": "PASS",
+      "subject_sha256": "69c258410d42d2752fe195fa2765fe1b70cdb07bd1c2979b0b776475a31c32cd"
+    },
+    {
+      "id": "historical-windows-component67",
+      "observation": "Historical disposable Matrix008 component run: 67/67 cases with real Windows process supervision and provider operations and synthetic authority/discovery. Reviewed wrapper exit 0, outer runner exit 1, independently checked complete case receipts and cleanup.",
+      "receipt_sha256": "f37fc9e9b92fa3528639bf0c3d68e9f87cf6aa42a7c53c28d5587b8d658b6f4f",
+      "status": "PASS",
+      "subject_sha256": "c7587259b9bbb9f9639a0ad37784dde97a85b8d77f6057d1522c90b90746919e"
+    },
+    {
+      "id": "final-source-identity",
+      "observation": "130 tracked paths checked against the actual full successor lifecycle test subject. Only README version and bounded check-status prose changed afterward. All seven historical members equal HEAD. Identity only; no native quality or install claim.",
+      "receipt_sha256": "ee69646e496dff803e96e0137d07d6e7f61f8b24b724baa83a1d9b6f5cbf48f6",
+      "status": "PASS",
+      "subject_sha256": "baf13316dae95864f23ed2566323b0a508a2c6358efdff6e3209549bd601c054"
+    },
+    {
+      "id": "successor-full-lifecycle-retry",
+      "observation": "The previously failing full successor selection, resealing and crash-recovery CLI test passed in 410.580470 seconds, 83872 KiB, all130 source files unchanged. Exact test-to-inventory identity is checked separately. Prior3PASS1fixtureFAIL log563a88ed4081f2be4a167c14e2fed3761a1c7942b87f5d70bc4be6cc76e70975 is retained; no full broad-suite rerun is claimed.",
+      "receipt_sha256": "0596bf43d862b8fbc2f6aa5ea12e4f5690991a87d1044c011dc5fa12b2746d12",
+      "status": "PASS",
+      "subject_sha256": "86c6265d7040955b89704e7b305abf8f8cb159d208cdceaa34da5bcfc9f8accc"
+    },
+    {
+      "id": "independent-final-source-composition",
+      "observation": "Independent exact reconstruction of thirteen changed files from reviewed r3, fixture, C06 and three documentation anchor fixes matches125 core paths; five lightweight checks pass. GIQ and C04 applicability is exact donor plus verified later changes, not whole-file equality of all current sources. Subsequent change is README-only, separately recorded.",
+      "receipt_sha256": "eba6e8bea526d7048ec7aae0d4247d6351171a5b55ed63d36a1a24a8a7dc5aee",
+      "status": "PASS",
+      "subject_sha256": "c4b87d0541cde647923ca67c8f9c5f36ab0c8df63f8fa72e0334635a3817904b"
+    },
+    {
+      "id": "bank-object-requirements-reviewed",
+      "observation": "Independent scoped review of the exact BANK object-requirement delta. Ordinary CLI regression verified addressability, string parity, blind-context guards and unclosed coverage with preserved raw bank bytes.",
+      "receipt_sha256": "5363a2521ea8d71a357ee03e549af68b1310037e0bb725a766629ca5bd817297",
+      "status": "PASS",
+      "subject_sha256": "c57136f2a3c43e6c9ba4ca0c63eebbed6064d2eff19e083a9e559aa7dd04ffdd"
+    },
+    {
+      "id": "observed-author-terminal-reviewed",
+      "observation": "Independent scoped review of terminal002: actual claimed resource remains occupied through UNKNOWN, ACK and accepted-result states until confirmed terminal release; disjoint work remains available, completed unaccepted result waits for admission, original claim replay does not resend.",
+      "receipt_sha256": "452509095755e4f9faf72246a1f562827df263513f1359bf9564c24311bf9b46",
+      "status": "PASS",
+      "subject_sha256": "223b0337a43460c83681d03f32ac87b9f4a1bb6c2f7e1fd42be0b02d91d33a65"
+    },
+    {
+      "id": "combined-delta-targeted-passing-subset",
+      "observation": "Two direct changed-path tests passed on the combined six-file source. Overall command exited 1 because the separate lifecycle test could not import tests from that working directory. The original failure remains recorded; this entry covers only the passing subset.",
+      "receipt_sha256": "6fed59838fd9dc7de031511ae19460e8117790846781765830a7806973d9f14d",
+      "status": "PASS",
+      "subject_sha256": "58e046e1d31a17df7118678fa385a6e0bd718b554f6ae5948f8eeecb91d08ee6"
+    },
+    {
+      "id": "combined-bank-lifecycle-targeted-retry",
+      "observation": "The previously failing test was rerun alone with correct import paths and passed in 336.047 seconds. Ordinary BANK import, CORE, audit and release lifecycle completed; captured implementation files remained unchanged. Other previously passed tests were not repeated.",
+      "receipt_sha256": "521d28727314a48859d781e65b973da5634c2cd56d9f8538d6c872b731fa9b89",
+      "status": "PASS",
+      "subject_sha256": "58e046e1d31a17df7118678fa385a6e0bd718b554f6ae5948f8eeecb91d08ee6"
+    },
+    {
+      "id": "rc3-core-source-identity",
+      "observation": "All six changed implementation members match the independently reviewed composed patches. README changes only candidate version and bounded verification status. All other core members equal base bcaab2c. This check establishes current source identity, not full runtime qualification.",
+      "receipt_sha256": "5d0462bcc4aff112eb8f8b42ee264a725d6216efff21108b1ad7ab38d2ea6ba9",
+      "status": "PASS",
+      "subject_sha256": "07c8f5a2831f8fd31fb8bcf7607183e77898e2321e817184cb53d7668702ce80"
+    },
+    {
+      "id": "rc3-readme-corrected-source-identity",
+      "observation": "README now distinguishes COMPLETED/WAITING from FAILED or CANCELLED/REJECTED, and binds ongoing partial native work to the predecessor source with applicability outstanding. Remaining 124 core files equal the prior exact inventory; no runtime claim added.",
+      "receipt_sha256": "40a37b058d0859b198b92a266f7073ec626df2c37ecdfd7951991e062fba1ed4",
+      "status": "PASS",
+      "subject_sha256": "40298bf66935b957411bb9009f777503dc3a8cb09518645a2f695ad42bc6e473"
+    }
+  ],
+  "qualification": "LOCAL_STRUCTURAL_ONLY",
+  "readme_sha256": "6818cea9a4504a749301b310a745ff5bfdff1d8843f6d3a301d76640e9efe2c2",
+  "receipt_scope": "Supplied public local check observations, each bound to its own exact subject. Receipt digests identify external records.",
+  "schema_version": "question-space-public-check-receipts-v1",
+  "verification_metadata_sha256": "42a5ef2959d19e7ad9184b0256584b222bbc8e0a8fe902552054913be3ebc4bf",
+  "version": "4.3.0-rc3"
+}

@@ -1,0 +1,8 @@
+schema_version: "question-space-v4"
+id: "SCHEMA-BANK"
+required_fields: ["requirements", "questions"]
+question_required_fields: ["id", "text", "source_offset"]
+requirement_items: "Modern preparation modes use nonempty string IDs or mappings with a nonempty string id. The immutable bank retains the full input. Assignments and references use the string ID."
+immutable: "input/bank.yaml is the parsed source only; outcomes, answers and derived questions belong to versioned accepted answers/source-outcomes/<result_id>.yaml selected by current_source_outcomes"
+normalization_records: ["SOURCE_OUTCOME", "DERIVED_Q"]
+source_disposition: ["KEPT", "REFINED", "MERGED", "CLOSED_BY_EVIDENCE", "NOT_APPLICABLE", "SPLIT"]

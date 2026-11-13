@@ -1,0 +1,84 @@
+# Shape example only. Create canonical release.yaml with qs.py seal --phase finalize.
+# Replace every illustrative ID/hash via the accepted run; these values are not evidence.
+# Verdict/readiness are copied from the exact selected audit, never inferred from seal PASS.
+schema_version: "question-space-v4"
+release_id: "RELEASE-001"
+run_id: "RUN-1"
+input_snapshot: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+core_manifest:
+  release_id: "RELEASE-001"
+  run_id: "RUN-1"
+  input_snapshot: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  # Required for ARCHITECTURE_GRAPH_V1; exact current S-000 reference.
+  architecture_ref:
+    synthesis_id: "SYNTHESIS-001"
+    synthesis_sha256: "89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567"
+    graph_sha256: "9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678"
+  files:
+    input/bank.yaml: "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+  # Both iceberg fields are required for a DOUBLE_ICEBERG_V1 snapshot.
+  current_iceberg_views:
+    CURRENT_REALITY:
+      view_id: "ICE-CURRENT-001"
+      view_kind: "CURRENT_REALITY"
+      result_id: "RESULT-OP-PROJECTION-001"
+      result_sha256: "23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01"
+      revision: "1"
+    DESIRED_REALITY:
+      view_id: "ICE-DESIRED-001"
+      view_kind: "DESIRED_REALITY"
+      result_id: "RESULT-OP-REVERSE-001"
+      result_sha256: "3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012"
+      revision: "1"
+  current_iceberg_views_sha256: "456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123"
+core_manifest_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+audit_result_id: "AUDIT-001"
+audit_path: "audit/final/AUDIT-001.yaml"
+audit_sha256: "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+gate6_path: "gates/GATE-6/AUDIT-001.yaml"
+gate6_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+administrative_review:
+  result_id: "REVIEW-GATE-6-001"
+  path: "reviews/REVIEW-GATE-6-001.yaml"
+  sha256: "56789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234"
+  audit_result_id: "AUDIT-001"
+  audit_sha256: "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+  gate6_path: "gates/GATE-6/AUDIT-001.yaml"
+  gate6_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+current_plan_projection:
+  plan_version: "1"
+  stages:
+    - logical_stage_id: "S-000"
+      result_id: "S-000"
+      sha256: "6789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345"
+      assignment_id: "ASG-PLAN-S-000"
+      attempt_id: "ATT-001"
+current_plan_projection_sha256: "789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456"
+# Omit only for a legacy snapshot without ARCHITECTURE_GRAPH_V1.
+architecture_ref:
+  synthesis_id: "SYNTHESIS-001"
+  synthesis_sha256: "89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567"
+  graph_sha256: "9abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678"
+# Omit these two top-level iceberg fields only for an unmarked legacy snapshot.
+current_iceberg_views:
+  CURRENT_REALITY:
+    view_id: "ICE-CURRENT-001"
+    view_kind: "CURRENT_REALITY"
+    result_id: "RESULT-OP-PROJECTION-001"
+    result_sha256: "23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01"
+    revision: "1"
+  DESIRED_REALITY:
+    view_id: "ICE-DESIRED-001"
+    view_kind: "DESIRED_REALITY"
+    result_id: "RESULT-OP-REVERSE-001"
+    result_sha256: "3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012"
+    revision: "1"
+current_iceberg_views_sha256: "456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123"
+verdict: "RESEARCH_REQUIRED"
+readiness:
+  package: "UNVERIFIED"
+  runtime: "UNVERIFIED"
+  quality: "UNVERIFIED"
+  plan: "NOT_READY"
+  implementation: "UNVERIFIED"
+  effect: "UNVERIFIED"

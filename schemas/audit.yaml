@@ -1,0 +1,24 @@
+schema_version: "question-space-v4"
+id: "SCHEMA-AUDIT"
+required_fields: ["areas", "verdict", "independence_mode", "last_fix_status", "core_manifest_sha256", "readiness"]
+readiness_axes: ["package", "runtime", "quality", "plan", "implementation", "effect"]
+readiness_values: ["READY", "NOT_READY", "UNVERIFIED", "BLOCKED"]
+areas: ["1", "2", "3", "4", "5", "6", "7", "8"]
+verdicts: ["READY", "REPAIR_REQUIRED", "RESEARCH_REQUIRED", "BLOCKED"]
+double_iceberg_audit_rule: "when snapshot marks DOUBLE_ICEBERG_V1, exact current bindings for both view kinds and five substantive independent probes are required inside the existing eight audit areas"
+iceberg_probe_required_kinds: ["missing_or_shared_assumption", "false_necessity_or_causality", "impossible_capability", "missed_failure_combination", "stronger_bypass"]
+iceberg_probe_required_fields: ["procedure", "result", "evidence_refs", "affected_ids"]
+open_condition_required_fields: ["id", "area_ids", "criticality", "condition", "next_path", "goal_requirement_impact", "admissibility_basis", "early_check_id", "gated_dependency_ids", "condition_kind", "affected_requirement_ids", "affected_decision_ids"]
+condition_kinds: ["CENTRAL_UNCERTAINTY", "REPAIRABLE_DEFECT", "REQUIRED_EXTERNAL_INPUT", "RESIDUAL_CONDITION", "FUTURE_CHECK"]
+condition_rules:
+  CENTRAL_UNCERTAINTY: "RESEARCH_REQUIRED unless a stronger verdict applies"
+  REPAIRABLE_DEFECT: "REPAIR_REQUIRED unless a stronger verdict applies"
+  REQUIRED_EXTERNAL_INPUT: "BLOCKED while the required input is unavailable"
+  NONCRITICAL: "allowed only for RESIDUAL_CONDITION or FUTURE_CHECK, cannot affect a goal requirement or CRITICAL decision, may gate only task IDs, and requires an early-check owner task that strictly precedes every gated task"
+  READY: "may coexist only with legitimate residual/future conditions; labels alone never downgrade a blocker"
+architecture_rule: "ARCHITECTURE_GRAPH_V1 requires exact selected architecture_ref and independent architecture_review; connectivity alone never grants READY"
+architecture_ref_fields: ["synthesis_id", "synthesis_sha256", "graph_sha256"]
+architecture_review_fields: ["structural_report_sha256", "semantic_outcome", "procedure", "observation", "evidence_ids", "findings", "limits"]
+architecture_semantic_outcomes: ["PASS", "FAIL", "NOT_VERIFIED"]
+architecture_finding_fields: ["id", "target_id", "evidence_ids", "required_action"]
+architecture_ready_rule: "READY also requires current structural/model integrity PASS, reachability_status COMPLETE and empty blockers; coherent conditional intake never implies READY"

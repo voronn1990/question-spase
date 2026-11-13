@@ -1,0 +1,73 @@
+schema_version: "question-space-v4"
+id: "SCHEMA-ARCHITECTURE-GRAPH-V1"
+methodology_feature: "ARCHITECTURE_GRAPH_V1"
+storage_contract: "architecture_graph is embedded in one accepted current OP-SYNTHESIS SYNTHESIS; views and Mermaid are derived projections, never independent truth stores"
+feature_rule: "new runs pin ARCHITECTURE_GRAPH_V1; a missing feature marker is legacy-qualified and cannot claim architecture qualification"
+graph_schema_version: "question-space-architecture-v1"
+graph_required_fields: ["schema_version", "id", "revision", "project_kind", "selected_mechanism_id", "mechanisms", "nodes", "edges", "contracts", "implementation_map"]
+project_kinds: ["NEW", "EXISTING"]
+mechanism_required_fields: ["id", "status"]
+mechanism_statuses: ["SELECTED", "ALTERNATIVE"]
+selection_rule: "exactly selected_mechanism_id is SELECTED; SYNTHESIS.chosen_mechanism_id equals it; alternative execution cannot feed selected proof"
+node_required_fields: ["id", "kind", "label", "subsystem_id", "mechanism_id", "required"]
+node_kinds: ["G", "R", "CAPABILITY", "COMPONENT", "ALGORITHM", "DATA", "S", "T", "C"]
+required_values: ["true", "false"]
+identity_rule: "G.existing_id binds the exact vector id; R ids are original requirement ids; S/T/C ids reuse canonical ids without mirror ids; T/C stage_id and C task_id bind canonical ownership"
+edge_required_fields: ["id", "kind", "from_id", "to_id", "meaning", "scope", "conditions", "check_ids"]
+edge_scopes: ["EXECUTION", "RESEARCH", "EVIDENCE"]
+edge_list_fields: ["conditions", "check_ids"]
+execution_orientations:
+  REQUIRES: "prerequisite -> dependent"
+  DEPENDS_ON: "prerequisite -> dependent; canonical task dependencies must be represented"
+  REALIZES: "COMPONENT|ALGORITHM -> CAPABILITY"
+  IMPLEMENTS: "T -> COMPONENT|ALGORITHM"
+  PRODUCES: "T|COMPONENT|ALGORITHM -> DATA"
+  CONSUMES: "DATA -> COMPONENT|ALGORITHM|T|C"
+  CONTRIBUTES_TO: "CAPABILITY|DATA|C -> G|R"
+nonexecution_orientations:
+  VERIFIES: "C -> checked subject; EVIDENCE scope, excluded from execution DAG; canonical check inputs establish actual availability"
+  EVIDENCE_SUPPORT: "support -> dependent evidence claim; EVIDENCE scope, separate acyclic graph"
+  RESEARCH_FEEDBACK: "research feedback only; RESEARCH scope; excluded from constructive proof and selective execution impact"
+conditions_rule: "conditions are descriptive string lists and never interpreted as booleans; all selected execution prerequisites are mandatory AND inputs"
+stage_rule: "S nodes group exact existing stages; canonical stage DAG machinery owns stage ordering; execution edges must not invent a parallel S graph"
+contract_required_fields: ["id", "version", "format", "semantics", "availability", "external_conditions", "error_behavior", "acceptance_check_ids", "plan_refs"]
+contract_plan_ref_fields: ["stage_id", "kind", "contract_id"]
+contract_plan_ref_kinds: ["INPUT", "OUTPUT"]
+contract_plan_ref_rule: "OUTPUT refs also bind exact path; selected refs resolve the exact canonical stage input/output id; semantics equals canonical contract, format/version equal canonical fields when supplied, and canonical acceptance check is retained"
+consumer_contract_rule: "CONSUMES.contract_id is exact consumer contract id; T input_id and C inputs use shared canonical INPUT-ID/OUTPUT-ID/exact-output-path resolution with unambiguous ownership; same producer contract id is required unless compatibility_check_id binds canonical C.compatibility_contract_ids plus finite procedure and expected_observation"
+data_availability: ["EXISTING", "PLANNED", "EXTERNAL"]
+existing_data_fields: ["contract_id", "source_id", "accepted_hash", "version"]
+existing_data_rule: "source and accepted_hash equal exact accepted result or immutable input; stale sources cannot seed proof"
+planned_data_fields: ["contract_id", "plan_ref"]
+planned_data_plan_ref_fields: ["stage_id", "output_id"]
+planned_data_rule: "exactly one producer and matching canonical output contract plan_ref; no source_id or accepted_hash for future outputs"
+external_data_fields: ["contract_id", "source", "owner", "availability_condition", "availability_status"]
+external_availability_statuses: ["AVAILABLE", "UNAVAILABLE"]
+external_data_rule: "AVAILABLE requires current accepted availability_evidence_id E; UNAVAILABLE cannot seed constructive proof; conditions must match canonical external contracts"
+implementation_map_fields: ["target_id", "status", "files", "evidence_ids", "evidence_scope", "required_action", "verification_basis"]
+implementation_statuses: ["IMPLEMENTED_VERIFIED", "IMPLEMENTED_UNQUALIFIED", "PLANNED_ABSENT", "CONTRACT_DIVERGENCE", "EXTRA_UNJUSTIFIED"]
+implementation_bases: ["INTEGRATION_CHECK", "STATIC_ONLY", "NONE"]
+implementation_file_fields: ["path", "sha256"]
+implementation_coverage_rule: "EXISTING covers every selected COMPONENT/ALGORITHM and selected EXECUTION edge plus explicit extra targets; NEW allows empty map but no implementation readiness claim"
+implementation_verified_rule: "INTEGRATION_CHECK basis and accepted E.integration_check with check_id, status PASS, target_ids, and exact file_hashes plus procedure/observation; imports, calls, or presence alone cannot verify integration"
+implementation_observation_rule: "pure comparison checks current file hashes when context implementation_files path->sha observations are supplied; absent live observations remain an explicit limit"
+architecture_ref_fields: ["synthesis_id", "synthesis_sha256", "graph_sha256"]
+architecture_ref_rule: "selected current PLANs and final audit bind the exact current accepted nonstale SYNTHESIS bytes and canonical_yaml_bytes(graph) hash; graph id/revision are hash-bound; no latest-result fallback"
+constructive_rule: "seed only exact existing resources or evidenced available external resources; add dependent only after ALL incoming selected execution predecessors; exclude canonical NOT_APPLICABLE producers and UNSELECTED_BRANCH outputs; known unavailable external inputs or blocked tasks yield explicit propagated blockers, unexplained required unreachability remains an integrity error; reject cycles, missing producers, premature consumers and unused selected planned outputs"
+plan_binding_rule: "synthesis may defer future canonical S/T/C and contract resolution with plan_required false; final selected plan requires complete canonical stages/tasks/checks, exact contracts, dependencies and outputs"
+view_names: ["functional", "data_contracts", "implementation"]
+view_rule: "functional compact overview uses explicitly derived VIEW_FLOW with canonical source_edge_ids and paths; full nodes/edges/contracts remain in detail; alternatives stay separate; subsystem filters preserve boundary_edges and one-hop external canonical endpoints; Mermaid contract ID/version legend is compact and full cards remain separately accessible; views never edit canonical graph"
+impact_rule: "selected execution closure plus owning task and verifier recheck bindings; report affected and preserved nodes/tasks/checks; feedback alone never makes unrelated results stale"
+proof_limit: "structural PASS does not prove scientific, functional, economic, central-mechanism or runtime validity; independent architecture_review and accepted evidence remain required for READY"
+
+functional_producer_rule: "required CAPABILITY has a constructive COMPONENT/ALGORITHM REALIZES producer bound to implementing T; G has an actual typed capability CONTRIBUTES_TO contribution from such a mechanism; original R has a constructive CONTRIBUTES_TO satisfier; generic prerequisites do not replace typed satisfaction"
+implementation_observed_rule: "IMPLEMENTED_UNQUALIFIED, CONTRACT_DIVERGENCE and EXTRA_UNJUSTIFIED require nonempty exact file hashes and current accepted E; PLANNED_ABSENT may describe future work without fabricating observed file presence"
+
+revision_scope_rule: "one computed active/historical scope uses exact current S-000 selection or existing research assignments and valid supersedes lineage; retained history binds its own historical grounds and immutable bytes; no free current-graph pointer"
+plan_order_rule: "shared normalizer combines canonical stage DAG, task dependencies and local_execution_graph task-to-task edges; entry/exit are not tasks"
+branch_rule: "NOT_APPLICABLE task and UNSELECTED_BRANCH output cannot feed active consumers or G/R; SELECTED_BRANCH requires exact current accepted nonstale selection E and producer/output binding"
+report_fields: ["errors", "model_integrity_status", "structural_status", "reachability_status", "blockers", "blocked_nodes", "unselected_nodes", "readiness_status", "constructive_reachable", "required_nodes", "unused_outputs", "semantic_validity", "implementation_readiness"]
+model_integrity_statuses: ["PASS", "FAIL"]
+reachability_statuses: ["COMPLETE", "BLOCKED"]
+readiness_statuses: ["BLOCKED", "NOT_ASSESSED"]
+conditional_rule: "valid conditional SYNTHESIS may be accepted with explicit external blockers and independent work; it is not READY; unsupported AVAILABLE is an integrity error"

@@ -1,0 +1,72 @@
+schema_version: question-space-v4
+id: SCHEMA-QUESTION-LEDGER
+status: CONTROLLER_CONTRACT
+storage: "Projection from committed T01 command journal rows on a qualified cut. Receipt embeds typed event and exact references. Retain earlier events and replay in authoritative sequence."
+exact_ref_fields: [id, sha256]
+procedure:
+  required_fields: [input_mode, original, routing_inventory, cutoff, tools, routing_rules, methodology, roles_and_phases, review_and_audit]
+  input_modes: [GOAL_TO_PLAN, BANK_TO_PLAN]
+  arm_fields: [procedure, effort_mode, half_budget]
+  effort_modes: [FAST, DETAILED]
+  capacity: "Positive integer m, FAST m, DETAILED 2m. Same procedure refs in both arms."
+operation:
+  fields: [id, fence, assignment]
+  assignment_fields: [assignment, attempt, actor, role]
+question_events:
+  Question:
+    fields: [id, decision, scope, evidence_route, source, priority, mandatory, parent]
+    priority: [material_goal_risk, changeable_decision, distinguishing_feasibility]
+  Alias:
+    fields: [id, canonical_id, source, equivalence_review]
+  Admission:
+    fields: [question_id, operation]
+    status: ADMITTED
+  Transition:
+    fields: [operation, status, proof, close_outcome, remaining_gap]
+    statuses: [RESERVED, CONFIRMED_SUBSTANTIVE, UNKNOWN_START, CANCELLED_BEFORE_START, ABORTED_AFTER_START, CLOSED_AFTER_WORK]
+    close_outcomes: [RESOLVED, OPEN]
+  Gap:
+    fields: [question_id, reason, proof]
+  HiddenWork:
+    fields: [scope, proof]
+advice_events:
+  AdviceAssignment:
+    fields: [assignment, context, disposition_role]
+    context_fields: [lifecycle, input_mode, effort_mode, original, framing, graph, exposure, scope, question, evidence, decisions, packet]
+  Contribution:
+    fields: [assignment, context_packet, result, kind, material, work_kind, operation]
+    kinds: [GAP, ALTERNATIVE, OBJECTION, QUESTION]
+    work_kinds: [SUBSTANTIVE, ROUTING_ONLY]
+  Disposition:
+    fields: [result, authority, status, rationale, proof]
+    statuses: [ACCEPTED, REJECTED, QUALIFIED, PENDING]
+wire:
+  receipt_field: question_events
+  event_fields: [kind, row, authorized_context]
+  booleans: ["YES", "NO"]
+  integers: "Quoted canonical decimal strings"
+  optional_absent: "Quoted empty scalar"
+  publication: "The active input snapshot and shared lock-held command journal bind the event, observed authority and revision."
+initialization:
+  options: [effort, half-budget, question-procedure]
+  procedure_fields: [inventory_rule, evidence_cutoff, tools, routing_rules, methodology, review_and_audit]
+  binding: "Snapshot pins exact procedure bytes, source goal or BANK original, and ordinary role roster. With MATERIAL_UNKNOWNS_V1 the routing_inventory reference hash covers the canonical mapping of inventory_rule and initial_questions_policy. Earlier GOAL and BANK keep the original hash of inventory_rule. Procedure mismatch returns UNPAIRED_PROCEDURE."
+request:
+  common_fields: [key, actor, authority_sha256, run_id, input_snapshot, expected_revision]
+  assignment_authority_fields: [assignment_id, attempt_id, logical_occurrence_id]
+  result_authority_field: authority_result_id
+  commands:
+    question-register: "REVIEW of current EVIDENCE question_inventory or derived_question."
+    question-observe: "Current OBSERVED EVIDENCE about the original fenced assignment attempt."
+    question-close: "Current independent REVIEW of the exact lead PRIMARY or ANSWER, with per-Q depth and context checks."
+    question-gaps: "Current independent REVIEW of EVIDENCE question_gaps."
+    adviser-assign: "Exact current ROOT ADVISER EVIDENCE assignment with a distinct actor and scoped selected context."
+    adviser-contribute: "Current accepted adviser EVIDENCE, matching context digest and confirmed recipient effect receipt."
+    adviser-dispose: "Current independent recipient REVIEW of the exact contribution. REJECTED may retire a historical context by its exact retired_context_sha256 without target expansion."
+    claim-effect: "Current assignment, ordinary occurrence fence and Q reservation in the same journal receipt."
+    reconcile-effect: "Existing observed evidence contract plus recipient handle and substantive Q observations."
+routing:
+  assignment_work: [lead, support]
+  open_gap_fields: [proof_id, proof_sha256, reason]
+  open_gap_status: "OPEN with UNKNOWN knowledge and no answer or answer-author claim."
+  primary_owner: "Exact lead assignment matches the approved route. Other perspectives can support the same admitted canonical Q."

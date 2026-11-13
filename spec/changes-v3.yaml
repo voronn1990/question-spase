@@ -1,0 +1,63 @@
+schema_version: question-space-skill-changes-v4
+id: CHANGES-V3-TO-V4
+version: 4.0.0-rc.1
+source_requirements:
+- D01-D10
+- H01-H16
+- OWNER-SCOPE-02
+- OWNER-SCOPE-03
+- OWNER-SCOPE-04
+- OWNER-SCOPE-05
+- OWNER-SCOPE-06
+preserved:
+- 10 professional perspectives and 6 independent operators
+- Separate PLAN-AUTHOR and FINAL-AUDITOR, Root sole dispatcher
+- 6 substantive phases and all 8 final-audit areas
+- 14 original methods, applied by trigger rather than mandatory passes
+- Universal domain scope. GOAL_TO_PLAN generates questions under OWNER-SCOPE-05; BANK_TO_PLAN
+  preserves the supplied exact bank.
+changes:
+- id: CH-01
+  change: Canonical YAML runtime artifacts; Markdown results are generated views only.
+- id: CH-02
+  change: Separate input, knowledge, operational state and frozen result under runs/<run_id>.
+- id: CH-03
+  change: Strict YAML parser/schema checks; immutable result provenance and idempotent
+    serialized acceptance.
+- id: CH-04
+  change: Addressable blind framing, answers, review, experiment and operator artifacts
+    with transitive invalidation.
+- id: CH-05
+  change: Explicit S-000 YAML plan, complete stages/tasks/checks and exact-byte independent
+    audit/release binding.
+- id: CH-06
+  change: Native Context7 protocol with parent/child capability evidence, actual version
+    checks and bounded errors.
+- id: CH-07
+  change: Progressive role/phase instructions and self-contained test inputs/results
+    with qualification limits.
+- id: CH-08
+  change: Deterministic context/resume/commit, semantic competence map, dependency
+    scheduling within three groups, immutable retry history and selected-plan projection.
+  qualification: INDEPENDENT_SCOPE03_PASS; latest integration needs its own gate
+- id: CH-09
+  change: Seven actual bounded behavioral cases, frozen inputs and outputs, independent
+    grading; explicit distinction from full research qualification.
+  qualification: INDEPENDENT_SCOPE04_PASS_7_OF_7; no universal guarantee
+- id: CH-10
+  change: GOAL_TO_PLAN preparation with explicit exact Vector approval, ten necessary
+    blind P sets, traceable expansion and atomic admission; BANK_TO_PLAN reuses applicable
+    prior approval.
+  qualification: DESIGN_AND_NORMS_INDEPENDENT_PASS; PUBLIC_INTEGRATION_AND_ACTUAL_FULL_FLOW_IN_PROGRESS
+- id: CH-11
+  change: GitHub plugin/MCP research for implementations, alternatives and negative
+    history, exact source authority and target-transfer evidence.
+  qualification: QUEUED_AFTER_SCOPE05; PARENT_READ_OBSERVED_ONLY; NOT_IMPLEMENTED_OR_AGENT_TESTED
+migration: Create a new run snapshot; preserve old accepted bytes and map IDs/paths/hashes.
+  Reuse only after applicability review. Do not rewrite old v3 evidence into apparent
+  v4 results.
+qualification: See tests/evidence/qualification.yaml. This draft is not a released
+  or installed version; completed scoped checks do not establish full v4 READY.
+efficiency_claim: No percentage of token/time saving is asserted without comparable
+  measurements.
+release_state: WORK_IN_PROGRESS_NOT_INSTALLED

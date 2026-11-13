@@ -1,0 +1,91 @@
+# Typed PREP-2 FRAMING result scaffold for GOAL_TO_PLAN.
+# All IDs, hashes, timestamps, and prose below are examples to replace with exact
+# runtime values. Placeholder hashes are never evidence, approval, or acceptance.
+schema_version: "question-space-v4"
+id: "RESULT-P-01-FRAMING-EXAMPLE"
+run_id: "RUN-EXAMPLE"
+input_snapshot: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+author_role: "P-01"
+agent_id: "actual-agent-id"
+knowledge_status: "HYPOTHESIS"
+workflow_status: "ACCEPTED"
+source_refs:
+  - "VECTOR-RESULT-EXAMPLE"
+related_ids:
+  - "G-EXAMPLE"
+  - "R-EXAMPLE"
+revision: "1"
+created_at: "2026-10-21T00:00:00Z"
+updated_at: "2026-10-21T00:00:00Z"
+artifact_type: "FRAMING"
+assignment_id: "ASG-P-01-PREP-2-EXAMPLE"
+attempt_id: "ATTEMPT-1"
+lifecycle_scope: "PREP"
+prep_stage: "PREP-2_PERSPECTIVES"
+vector_result_id: "VECTOR-RESULT-EXAMPLE"
+vector_sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+approval_sha256: "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+context_packet_sha256: "123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0"
+perspective_profile:
+  role_id: "P-01"
+  agent_id: "actual-agent-id"
+  title: "bounded professional perspective"
+  competence: "specific competence used for this goal"
+  analysis_scope: "exact part of G and R examined by this perspective"
+  unique_contribution: "distinct contribution unavailable from the other profiles"
+  boundary: "explicit limit of this perspective"
+  plausible_blindspots: "specific likely blind spot"
+perspective_profile_hash: "23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01"
+blind_input:
+  contains_bank: "NO"
+  contains_foreign_p_results: "NO"
+  contains_preferred_solution: "NO"
+  allowed:
+    - "exact PREP_FRAMING_CONTEXT packet"
+    - "own exact assignment"
+    - "own perspective profile"
+    - "declared role instructions"
+  protocol: "fresh-context protocol identifier"
+  context_source: "state/contexts/ASG-P-01-PREP-2-EXAMPLE--ATTEMPT-1.yaml"
+iceberg_position:
+  position_id: "ICEPOS-P-01-EXAMPLE"
+  origin_role: "P-01"
+  origin_assignment_id: "ASG-P-01-PREP-2-EXAMPLE"
+  input_snapshot: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  elements:
+    - seed_id: "IP-P-01-001"
+      candidate_view: "DESIRED_REALITY"
+      element_kind: "CAPABILITY"
+      statement: "one exact blind capability claim or unknown; replace with substantive content"
+      scope: "declared applicability scope"
+      g_refs: ["VECTOR-RESULT-EXAMPLE"]
+      r_refs: ["R-EXAMPLE"]
+      materiality: "exact mechanism decision or check that can change"
+      knowledge_status: "HYPOTHESIS"
+      source_refs: ["VECTOR-RESULT-EXAMPLE"]
+      finite_check:
+        check_kind: "SOURCE"
+        procedure: "finite check of the capability contract"
+        discriminating_outcomes: ["available", "unavailable", "insufficiently established"]
+  relations: []
+# MATERIAL_UNKNOWNS_V1 in the blind packet: use one row per material unknown
+# in your perspective. If none remain, use initial_questions: [] and supply
+# this mapping with your exact scope, delivered references, and explanation.
+# empty_initial_questions_rationale:
+#   analysis_scope: "exact analysis_scope from the delivered profile"
+#   basis_refs: ["VECTOR-RESULT-EXAMPLE"]
+#   explanation: "which inputs are settled and why no material decision remains open in this scope"
+# A GOAL packet without initial_questions_policy requires ten distinct rows.
+initial_questions:
+  - id: "IQ-P-01-01"
+    unknown: "one resolvable unknown"
+    why_material: "how resolving it can change G, R, or a material decision"
+    changeable_decision: "the exact decision affected by the answer"
+    applicability: "conditions and scope where the question applies"
+    evidence_needed: "a distinguishable observation, source, or check"
+    g_refs:
+      - "G-EXAMPLE"
+    r_refs:
+      - "R-EXAMPLE"
+    not_g_refs: []
+    origin_role: "P-01"

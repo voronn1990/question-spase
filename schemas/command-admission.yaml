@@ -1,0 +1,49 @@
+schema_version: "question-space-v4"
+contract: "Local admitted command"
+revision:
+  source: "command-cut"
+  binds: ["state/current.yaml", "state/assignments.yaml", "command journal cursor"]
+request:
+  required: ["key", "actor", "authority_sha256", "run_id", "input_snapshot", "expected_revision"]
+  commit: ["result_sha256"]
+  evidence-intake: ["authority_result_id", "evidence_result_id"]
+  evidence-disposition: ["authority_result_id", "evidence_result_id"]
+  terminal-author-failure: ["authority_result_id", "assignment_id", "attempt_id", "logical_occurrence_id"]
+  claim-effect: ["assignment_id", "attempt_id", "logical_occurrence_id"]
+  reconcile-effect: ["authority_result_id", "assignment_id", "attempt_id", "logical_occurrence_id"]
+authority:
+  commit: "Exact registered immutable assignment, matching assigned agent and exact result bytes."
+  evidence-intake: "Accepted evidence with exact affected result IDs in command_intake_scope."
+  evidence-disposition: "Independent accepted PASS review with exact target hash and reviewed_affected_result_ids."
+  terminal-author-failure: "Independent accepted OBSERVED evidence with an exact terminal_author_failure binding, finished author, NOT_SENT and reason."
+  claim-effect: "Exact current registered assignment and stable logical_occurrence_id."
+  reconcile-effect: "Independent accepted OBSERVED evidence with exact effect_reconciliation or effect_terminal binding and an authoritative receipt."
+dispositions: ["SAME", "NEW", "DISJOINT", "UNKNOWN"]
+context:
+  revision: "An immutable assignment-attempt successor binds predecessor packet and proof paths and SHA-256, exact packet bytes, and cumulative expanded source IDs and hashes."
+  expansion: "Current authorized linked sources only. Changed bytes require an explicit expansion, a pending pre-dispatch assignment, and a fresh output path."
+  historical: "Copies the latest verified packet or exact --packet-sha256 under --historical. All revision pairs must be intact."
+  result_binding: "Fresh commits of revised assignments require the current packet hash. Accepted result consumers resolve the exact recorded hash."
+  recovery: "An exact authorized expansion retry can restore a missing tail packet from its durable proof."
+effects:
+  scope: "Local structural claims and reconciliation."
+  claim: "The durable claim records UNKNOWN and must precede any consumer effect."
+  resources: "The claim records canonical resource_keys and sole_writer_paths from the registered assignment. The run lock excludes overlapping keys and writer paths held by other UNKNOWN or RECIPIENT_CONFIRMED claims."
+  resource_release: "NOT_SENT frees the declared resources. A delivery ACK alone retains them. Independent accepted OBSERVED effect_terminal evidence can accompany the first delivery ACK or release resources in a later reconciliation without replaying the ACK."
+  effect_terminal:
+    required: ["assignment_id", "attempt_id", "logical_occurrence_id", "assignment_sha256", "claim_key", "recipient_agent_id", "execution_state", "authoritative_receipt"]
+    execution_states: ["COMPLETED", "FAILED", "CANCELLED"]
+    context_packet_sha256: "Required when the context packet exists or its issuance is bound by an exact committed result or effect receipt. A verified digest supplied with a delivery ACK is retained for later terminal verification."
+  replay: "An exact historical claim receipt authorizes no repeated effect."
+  revised_context: "A fresh claim records the current revised packet SHA-256. Before SEND_ONCE the coordinator must match the exact outgoing bytes to that hash. Reconciliation evidence binds it to the observed receipt."
+  public_cli: "Records the durable claim for the coordinator. The CLI does not call an external sender."
+  fixture: "A local TEST_ONLY subprocess can inject a spy at the same post-admission send boundary."
+portable:
+  commands: ["export-portable", "portable-verify"]
+  check: "OFFLINE_BOUND_ARTIFACT_INTEGRITY"
+  archive:
+    export: "export-portable --archive --output FILE"
+    verify: "Trusted portable-verify --archive FILE --archive-sha256 RAW_SHA256 --output ABSENT_DIRECTORY"
+    profile: "Classic single-disk ZIP with stored regular files and optional empty directory records. No compression, encryption, data descriptors, ZIP64, member extras, comments, links, absolute or traversal paths, Windows aliases, duplicate names or ambiguous file/directory prefixes."
+    limits: "128 MiB raw ZIP, 4096 members, 4 MiB central directory, 256 MiB expanded, 48 MiB per file and 66 MiB per context revision proof. Member paths at most 64 components, 4095 UTF-8 bytes overall and 255 UTF-8 bytes per component."
+    binding: "Check raw archive SHA-256, member paths, types, sizes and CRC before staging. Verify derived closure and exact file set in a private sibling directory using the trusted controller. Return exact raw archive and manifest SHA-256. Linux filesystems with RENAME_NOREPLACE publish to an absent name only."

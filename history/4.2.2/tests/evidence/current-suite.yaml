@@ -1,0 +1,2306 @@
+{
+  "completed_at_utc": "2026-10-23T19:54:08.700345+00:00",
+  "discovered_count": 312,
+  "enumeration_limit": "Enumeration is declared by the supplied runner; packager does not independently discover or execute tests.",
+  "log_scope_limit": "Raw logs remain in the accompanying execution evidence; log digests alone do not reproduce a test run.",
+  "logs_in_skill": false,
+  "passed_count": 312,
+  "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+  "receipt_kind": "SUPPLIED_REPORT_AND_AVAILABLE_LOG_HASHES_VERIFIED",
+  "report_filename": "FULL_SUITE.json",
+  "report_sha256": "b933e5c14155b31d25a1293fe81cfdb98e7ee21e67a8f7dc4d7ef9e466f0f470",
+  "reported_scope": "STRUCTURAL_AND_PUBLIC_CLI_TESTS_ONLY",
+  "results": [
+    {
+      "id": "test_approval_atomicity.ApprovalAtomicityTest.test_preexisting_invalid_approval_cannot_be_silently_rewritten_or_accepted",
+      "log": "test_approval_atomicity.ApprovalAtomicityTest.test_preexisting_invalid_approval_cannot_be_silently_rewritten_or_accepted.log",
+      "log_sha256": "59b9236c1f2fc1bd1065ae7bf6825ace3112db34c13e8416be69773f6c73106c",
+      "returncode": 0,
+      "seconds": 2.06
+    },
+    {
+      "id": "test_approval_atomicity.ApprovalAtomicityTest.test_rejected_candidate_does_not_poison_run_and_valid_retry_is_idempotent",
+      "log": "test_approval_atomicity.ApprovalAtomicityTest.test_rejected_candidate_does_not_poison_run_and_valid_retry_is_idempotent.log",
+      "log_sha256": "9f24e50bb9143e21d5001c4d0a601c497fe1e1136e5d5a7592dda2d8e01c67af",
+      "returncode": 0,
+      "seconds": 2.834
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_alternative_is_not_selected_resource",
+      "log": "test_architecture.ArchitectureGraphTests.test_alternative_is_not_selected_resource.log",
+      "log_sha256": "adee5b1ce94f68118881b735112e2acba7fce8af327e0a66b5bb5b2758ec6c70",
+      "returncode": 0,
+      "seconds": 0.283
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_and_fixedpoint_does_not_treat_one_path_or_condition_as_available",
+      "log": "test_architecture.ArchitectureGraphTests.test_and_fixedpoint_does_not_treat_one_path_or_condition_as_available.log",
+      "log_sha256": "60e9c9c11f1f08da247d09ee4f179730dd38f67bff2cac4f9d159e4cadf574ce",
+      "returncode": 0,
+      "seconds": 0.294
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_consuming_before_producer_is_rejected",
+      "log": "test_architecture.ArchitectureGraphTests.test_consuming_before_producer_is_rejected.log",
+      "log_sha256": "88342ac27398899489b85883219f3307c93d7cbe134aea011e2a309c1685fecb",
+      "returncode": 0,
+      "seconds": 0.303
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_contract_drift_version_compatibility_and_plan_copy_rejected",
+      "log": "test_architecture.ArchitectureGraphTests.test_contract_drift_version_compatibility_and_plan_copy_rejected.log",
+      "log_sha256": "1be1ea781c082c98c7f30ad15815273795797a2a679fc2f8c88e2c5d228f352b",
+      "returncode": 0,
+      "seconds": 0.28
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_existing_mapping_five_statuses_and_actual_integration_evidence",
+      "log": "test_architecture.ArchitectureGraphTests.test_existing_mapping_five_statuses_and_actual_integration_evidence.log",
+      "log_sha256": "e48c4e6de540ef579a16bba50e45247c825f57e54c84ab0f0d71ec654e3fa475",
+      "returncode": 0,
+      "seconds": 0.288
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_future_output_has_no_hash_and_seed_identity_is_exact",
+      "log": "test_architecture.ArchitectureGraphTests.test_future_output_has_no_hash_and_seed_identity_is_exact.log",
+      "log_sha256": "c8a07834ab448f116eac5507a36e95470fd2da2567f89eb5dfbd4d2f0d696d51",
+      "returncode": 0,
+      "seconds": 0.268
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_generic_dependencies_cannot_fabricate_capability_or_functional_goal_path",
+      "log": "test_architecture.ArchitectureGraphTests.test_generic_dependencies_cannot_fabricate_capability_or_functional_goal_path.log",
+      "log_sha256": "1688e3a136742b7b0c45f0f5426fa03c5477227a2662d4d293563f37f6c48b23",
+      "returncode": 0,
+      "seconds": 0.258
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_generic_requirement_dependency_is_not_a_typed_satisfaction",
+      "log": "test_architecture.ArchitectureGraphTests.test_generic_requirement_dependency_is_not_a_typed_satisfaction.log",
+      "log_sha256": "c38a15946044f8c013410bc7e1bfcd63e686a6b668ba72347aff60bb3596df58",
+      "returncode": 0,
+      "seconds": 0.274
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_malformed_nested_metadata_is_addressed_failure",
+      "log": "test_architecture.ArchitectureGraphTests.test_malformed_nested_metadata_is_addressed_failure.log",
+      "log_sha256": "7e88c05d6c310a962dd9457f09fb23d9a3d0a51da217cc720073fc4ccd20c8ff",
+      "returncode": 0,
+      "seconds": 0.275
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_observed_code_discrepancy_requires_file_and_accepted_evidence",
+      "log": "test_architecture.ArchitectureGraphTests.test_observed_code_discrepancy_requires_file_and_accepted_evidence.log",
+      "log_sha256": "bbf6c393c7c34871ac6b544ef34c392810e79bd7c79256895c3f2443e0aa7515",
+      "returncode": 0,
+      "seconds": 0.284
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_orphan_required_component_and_missing_producer",
+      "log": "test_architecture.ArchitectureGraphTests.test_orphan_required_component_and_missing_producer.log",
+      "log_sha256": "5e4528cf7d29264650baa32654723b151c4a09c9f8dfa61cb58e5648b301b386",
+      "returncode": 0,
+      "seconds": 0.274
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_positive_complete_new_project_is_structural_only",
+      "log": "test_architecture.ArchitectureGraphTests.test_positive_complete_new_project_is_structural_only.log",
+      "log_sha256": "f78b1604413d76aeb031f31bcf0525870f4fac339e39a21959e9a71e5b7a03ea",
+      "returncode": 0,
+      "seconds": 0.272
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_requirement_loss_unused_output_and_no_goal_path",
+      "log": "test_architecture.ArchitectureGraphTests.test_requirement_loss_unused_output_and_no_goal_path.log",
+      "log_sha256": "cd674e8070577a8dc9d4ea047424b4a90cabbfa57f821287ddd80db052f123b9",
+      "returncode": 0,
+      "seconds": 0.272
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_research_feedback_allowed_but_provenance_and_execution_cycles_rejected",
+      "log": "test_architecture.ArchitectureGraphTests.test_research_feedback_allowed_but_provenance_and_execution_cycles_rejected.log",
+      "log_sha256": "8db7782ee69db9e8358911e6076302b7240581bc6a6321c034e77f0443f2ff7c",
+      "returncode": 0,
+      "seconds": 0.276
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_selective_impact_rechecks_own_task_and_verifier_preserves_other_branch",
+      "log": "test_architecture.ArchitectureGraphTests.test_selective_impact_rechecks_own_task_and_verifier_preserves_other_branch.log",
+      "log_sha256": "3fec36ef5b35b9262305d887f09f9d3c9723e3bfc3280d76f38070eee59ebb78",
+      "returncode": 0,
+      "seconds": 0.278
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_synthesis_defers_only_canonical_plan_binding",
+      "log": "test_architecture.ArchitectureGraphTests.test_synthesis_defers_only_canonical_plan_binding.log",
+      "log_sha256": "d15c2d5aa75d3da1b57fa55c60fcafaced7de7330cd2e853e0ed996facb3ddd0",
+      "returncode": 0,
+      "seconds": 0.272
+    },
+    {
+      "id": "test_architecture.ArchitectureGraphTests.test_views_share_canonical_graph_and_filter_deterministically",
+      "log": "test_architecture.ArchitectureGraphTests.test_views_share_canonical_graph_and_filter_deterministically.log",
+      "log_sha256": "279aedebac450c66a3e6c1ab6b9a9098003bf401b599b269c4fd6a39d5833365",
+      "returncode": 0,
+      "seconds": 0.282
+    },
+    {
+      "id": "test_architecture_integration.ArchitectureIntegrationTest.test_all_current_stages_bind_same_graph",
+      "log": "test_architecture_integration.ArchitectureIntegrationTest.test_all_current_stages_bind_same_graph.log",
+      "log_sha256": "1e17af380227466f08987ac9052e61b3db99cfa9be6b8f016091fd4512ef7652",
+      "returncode": 0,
+      "seconds": 0.547
+    },
+    {
+      "id": "test_architecture_integration.ArchitectureIntegrationTest.test_audit_intake_rejects_malformed_review_before_immutable_commit",
+      "log": "test_architecture_integration.ArchitectureIntegrationTest.test_audit_intake_rejects_malformed_review_before_immutable_commit.log",
+      "log_sha256": "446d2e5c74edcfde9f591170ca9466ba878450ede8977476a0e08916dd52a480",
+      "returncode": 0,
+      "seconds": 4.28
+    },
+    {
+      "id": "test_architecture_integration.ArchitectureIntegrationTest.test_complete_selected_graph_plan_and_audit_pass",
+      "log": "test_architecture_integration.ArchitectureIntegrationTest.test_complete_selected_graph_plan_and_audit_pass.log",
+      "log_sha256": "edc3ce0eafaeaabc4c808b2df202697bdd3c544a75b891dc7b51cc9dcd8c5fb3",
+      "returncode": 0,
+      "seconds": 0.63
+    },
+    {
+      "id": "test_architecture_integration.ArchitectureIntegrationTest.test_connected_graph_does_not_supply_semantic_ready",
+      "log": "test_architecture_integration.ArchitectureIntegrationTest.test_connected_graph_does_not_supply_semantic_ready.log",
+      "log_sha256": "2d3b824e98cfc560f480aaa07d74cc9bf040abd6f9698377474e0df36655990c",
+      "returncode": 0,
+      "seconds": 0.648
+    },
+    {
+      "id": "test_architecture_integration.ArchitectureIntegrationTest.test_graph_hash_and_exact_synthesis_bytes_are_bound",
+      "log": "test_architecture_integration.ArchitectureIntegrationTest.test_graph_hash_and_exact_synthesis_bytes_are_bound.log",
+      "log_sha256": "2c04d67e44d9cc21412bd795d9549a990354aa9b98d08abf695e6484e07eca4e",
+      "returncode": 0,
+      "seconds": 0.576
+    },
+    {
+      "id": "test_architecture_integration.ArchitectureIntegrationTest.test_initial_synthesis_does_not_require_future_plan_artifacts",
+      "log": "test_architecture_integration.ArchitectureIntegrationTest.test_initial_synthesis_does_not_require_future_plan_artifacts.log",
+      "log_sha256": "8a60b2046d4e0240d64234c8c75875b020263b0eb1c47d3406bf53a33a87adcf",
+      "returncode": 0,
+      "seconds": 0.622
+    },
+    {
+      "id": "test_architecture_integration.ArchitectureIntegrationTest.test_lost_requirement_is_rejected_after_hashes_rebound",
+      "log": "test_architecture_integration.ArchitectureIntegrationTest.test_lost_requirement_is_rejected_after_hashes_rebound.log",
+      "log_sha256": "f065f19562cae8df8fce0b933c644e91a753b54e2bb40a92269a8291d4296c83",
+      "returncode": 0,
+      "seconds": 0.553
+    },
+    {
+      "id": "test_architecture_integration.ArchitectureIntegrationTest.test_malformed_audit_semantic_outcome_is_addressed_failure",
+      "log": "test_architecture_integration.ArchitectureIntegrationTest.test_malformed_audit_semantic_outcome_is_addressed_failure.log",
+      "log_sha256": "b7774c6a92334a1c82d227a712cc9b76bead5940be901567466613edd5d06569",
+      "returncode": 0,
+      "seconds": 0.523
+    },
+    {
+      "id": "test_architecture_integration.ArchitectureIntegrationTest.test_reserved_canonical_graph_cannot_be_owned_by_other_role",
+      "log": "test_architecture_integration.ArchitectureIntegrationTest.test_reserved_canonical_graph_cannot_be_owned_by_other_role.log",
+      "log_sha256": "497e1eef1254a8c6cc2ba227042a592248f5fd4c2c2e2247509a339b7632d857",
+      "returncode": 0,
+      "seconds": 0.504
+    },
+    {
+      "id": "test_architecture_integration.ArchitectureIntegrationTest.test_root_plan_must_explicitly_select_synthesis",
+      "log": "test_architecture_integration.ArchitectureIntegrationTest.test_root_plan_must_explicitly_select_synthesis.log",
+      "log_sha256": "a52f86ae2f998bb9bede5685b3cd7e02ecab2616185ced658dd80f5f7f9f5341",
+      "returncode": 0,
+      "seconds": 0.542
+    },
+    {
+      "id": "test_architecture_integration.ArchitectureIntegrationTest.test_semantic_pass_without_accepted_evidence_fails",
+      "log": "test_architecture_integration.ArchitectureIntegrationTest.test_semantic_pass_without_accepted_evidence_fails.log",
+      "log_sha256": "e50f289c705111c13c8546dc424dbfa38c0bfeb962517a812acfba45f771c404",
+      "returncode": 0,
+      "seconds": 0.553
+    },
+    {
+      "id": "test_architecture_integration.ArchitectureIntegrationTest.test_stale_existing_graph_resource_is_not_available",
+      "log": "test_architecture_integration.ArchitectureIntegrationTest.test_stale_existing_graph_resource_is_not_available.log",
+      "log_sha256": "71ecf1b45e022e04034c54e6b96be5657ff9cdbfc6c612774028aaa4b19b508d",
+      "returncode": 0,
+      "seconds": 0.536
+    },
+    {
+      "id": "test_architecture_integration.ArchitectureIntegrationTest.test_stale_selected_graph_never_falls_back_to_other_synthesis",
+      "log": "test_architecture_integration.ArchitectureIntegrationTest.test_stale_selected_graph_never_falls_back_to_other_synthesis.log",
+      "log_sha256": "1fdcf60d3f74c64a745925d80bdf290726801b6e0b6674f72897dd9de431a9f7",
+      "returncode": 0,
+      "seconds": 0.541
+    },
+    {
+      "id": "test_architecture_integration.ArchitectureIntegrationTest.test_stale_semantic_evidence_outside_graph_cannot_support_audit",
+      "log": "test_architecture_integration.ArchitectureIntegrationTest.test_stale_semantic_evidence_outside_graph_cannot_support_audit.log",
+      "log_sha256": "09a3cf0c4539d0e3d32a420b69eb8c44be67c3e1b0036965a74ee56d3ac6c14c",
+      "returncode": 0,
+      "seconds": 0.711
+    },
+    {
+      "id": "test_architecture_revision_context.ArchitectureRevisionContextTest.test_pending_retry_context_precedes_first_replacement_result",
+      "log": "test_architecture_revision_context.ArchitectureRevisionContextTest.test_pending_retry_context_precedes_first_replacement_result.log",
+      "log_sha256": "834998670b02ac221fac42e663da9844ae03a4cf2d6d18b5f17821dab4e02cb6",
+      "returncode": 0,
+      "seconds": 0.723
+    },
+    {
+      "id": "test_architecture_revision_context.ArchitectureRevisionContextTest.test_public_planner_context_reads_exact_latest_replacement_without_selecting_graph",
+      "log": "test_architecture_revision_context.ArchitectureRevisionContextTest.test_public_planner_context_reads_exact_latest_replacement_without_selecting_graph.log",
+      "log_sha256": "3421f6e2973576bcad4b2adf9d007c65e7eee45054e96da02beb2f80273ead02",
+      "returncode": 0,
+      "seconds": 2.354
+    },
+    {
+      "id": "test_architecture_revision_context.ArchitectureRevisionContextTest.test_public_revision_dependency_exception_rejects_history_workers_and_forgery",
+      "log": "test_architecture_revision_context.ArchitectureRevisionContextTest.test_public_revision_dependency_exception_rejects_history_workers_and_forgery.log",
+      "log_sha256": "68aedc2ba0b9a1c3387f0c63dc0938025223dc60049b1b1991f5e5d680f28611",
+      "returncode": 0,
+      "seconds": 7.938
+    },
+    {
+      "id": "test_architecture_revision_context.ArchitectureRevisionContextTest.test_registration_binding_and_result_fork_remain_fatal",
+      "log": "test_architecture_revision_context.ArchitectureRevisionContextTest.test_registration_binding_and_result_fork_remain_fatal.log",
+      "log_sha256": "b1a1bf7cfac159fbe419446997c818f737e87637c917ba92a65e8295b30c8a8b",
+      "returncode": 0,
+      "seconds": 0.913
+    },
+    {
+      "id": "test_architecture_revision_context.ArchitectureRevisionContextTest.test_selected_map_and_result_hash_corruption_remain_fatal",
+      "log": "test_architecture_revision_context.ArchitectureRevisionContextTest.test_selected_map_and_result_hash_corruption_remain_fatal.log",
+      "log_sha256": "749495011000c84f08a046728cb8b97a8eef4600dd77efa00e7016f091dfb2fd",
+      "returncode": 0,
+      "seconds": 0.922
+    },
+    {
+      "id": "test_architecture_revision_context.ArchitectureRevisionContextTest.test_selected_v1_partial_v2_and_pending_retry_have_no_selected_graph",
+      "log": "test_architecture_revision_context.ArchitectureRevisionContextTest.test_selected_v1_partial_v2_and_pending_retry_have_no_selected_graph.log",
+      "log_sha256": "f86db5f7b1b466a34753354ab45d5488bbdec893df989dae2240a282c4a6e4b0",
+      "returncode": 0,
+      "seconds": 0.734
+    },
+    {
+      "id": "test_architecture_revision_context.ArchitectureRevisionContextTest.test_separate_assignment_descendant_is_incomplete_until_exact_map_selected",
+      "log": "test_architecture_revision_context.ArchitectureRevisionContextTest.test_separate_assignment_descendant_is_incomplete_until_exact_map_selected.log",
+      "log_sha256": "5c4e2971d4a9ec5d48e2ab0304b201ca3dc65a59c2b39c127aa44edef7e5aeff",
+      "returncode": 0,
+      "seconds": 1.132
+    },
+    {
+      "id": "test_architecture_revision_context.ArchitectureRevisionContextTest.test_unregistered_or_unrelated_current_attempt_remains_fatal",
+      "log": "test_architecture_revision_context.ArchitectureRevisionContextTest.test_unregistered_or_unrelated_current_attempt_remains_fatal.log",
+      "log_sha256": "f237037d228e583ed37b1b430edf942b85dd88d38c35026bae37698c6db13c18",
+      "returncode": 0,
+      "seconds": 0.893
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_abbreviated_sha_and_branch_permalink_are_rejected",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_abbreviated_sha_and_branch_permalink_are_rejected.log",
+      "log_sha256": "d8ac678d530e9246c3a61e8fa342cc72d9411a5d7973c66b1afc7e953888bc02",
+      "returncode": 0,
+      "seconds": 0.289
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_blob_context_is_not_a_commit_permalink",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_blob_context_is_not_a_commit_permalink.log",
+      "log_sha256": "069785b9179d143d77f8dbaf2f1da1a28d8a649bcdd1a6255e22867d618509b8",
+      "returncode": 0,
+      "seconds": 0.301
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_common_knowledge_status_unknown_remains_compatible",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_common_knowledge_status_unknown_remains_compatible.log",
+      "log_sha256": "b79db3db06901b91aec78d5e6b23b5e7fa1b0c6f839d1c11ef72871f9e3483af",
+      "returncode": 0,
+      "seconds": 0.302
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_corrected_canonical_template_binds_to_complete_model",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_corrected_canonical_template_binds_to_complete_model.log",
+      "log_sha256": "34fad939887badcbc524843e6ca62d8de0a6b22738a9b2f94531f45956f20ef7",
+      "returncode": 0,
+      "seconds": 0.287
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_empty_marked_collection_is_unknown_and_unmarked_empty_is_known_none",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_empty_marked_collection_is_unknown_and_unmarked_empty_is_known_none.log",
+      "log_sha256": "f0ed43baea40364cf3c3b2d615d299437bb14bdccca804750d8c022f2cedd820",
+      "returncode": 0,
+      "seconds": 0.316
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_explicit_transfer_cycle_is_rejected",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_explicit_transfer_cycle_is_rejected.log",
+      "log_sha256": "d695e12184eb6150be7d69711d035bf143c5ec0e8d277948102a8a1db2a19aab",
+      "returncode": 0,
+      "seconds": 0.296
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_generic_legacy_evidence_remains_compatible",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_generic_legacy_evidence_remains_compatible.log",
+      "log_sha256": "1c498c6a9e4600143d4c251271590bd0bbe1fc5a805b5740064f44b251f02700",
+      "returncode": 0,
+      "seconds": 0.28
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_missing_unknown_marker_and_unsupported_independence_assertion_fail",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_missing_unknown_marker_and_unsupported_independence_assertion_fail.log",
+      "log_sha256": "ea3a3772a20c1e58d6c4f51259979d0e588ad1f4cdeaa4b328597504618e0fb1",
+      "returncode": 0,
+      "seconds": 0.288
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_q_d_union_and_inspected_status_preconditions_are_enforced",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_q_d_union_and_inspected_status_preconditions_are_enforced.log",
+      "log_sha256": "948cee1e4f7a41ee91e5fc46125999757e0419bc792bea9f0d62f010bc7dd3ae",
+      "returncode": 0,
+      "seconds": 0.304
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_rejected_status_requires_reject_disposition",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_rejected_status_requires_reject_disposition.log",
+      "log_sha256": "35244d331ff9bea77110f702428d00fa1ce18956094ba3dc60a7331071e6f60e",
+      "returncode": 0,
+      "seconds": 0.319
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_tested_external_evidence_with_truthful_unknowns_is_structurally_valid",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_tested_external_evidence_with_truthful_unknowns_is_structurally_valid.log",
+      "log_sha256": "516a3d95f80786c9099628c47f3db44651c98229935c22b3a4d351258327be2c",
+      "returncode": 0,
+      "seconds": 0.34
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_tested_status_requires_named_receipt",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_tested_status_requires_named_receipt.log",
+      "log_sha256": "57d88db0f852e2f1a912858321873cf8f993e45e57e70df183a1c77d0a07a7dd",
+      "returncode": 0,
+      "seconds": 0.362
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_transfer_accepts_distinct_addressable_evidence_target",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_transfer_accepts_distinct_addressable_evidence_target.log",
+      "log_sha256": "8523bd25a08a4028f7755500f0498f7a3abb877d479bbf26300e1509e0f03999",
+      "returncode": 0,
+      "seconds": 0.341
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_transfer_requires_distinct_accepted_applicability_evidence",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_transfer_requires_distinct_accepted_applicability_evidence.log",
+      "log_sha256": "8a5d91091ee27ba3fd8bd784f1325d9488f1b74c9abd40e969c3dfc09339fd02",
+      "returncode": 0,
+      "seconds": 0.358
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_unknown_collection_members_remain_invalid_when_marked",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_unknown_collection_members_remain_invalid_when_marked.log",
+      "log_sha256": "76f0a77a0e8447c032b5f1d452955850a648598dada005174c2e05c0250b26c2",
+      "returncode": 0,
+      "seconds": 0.346
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_unknown_marker_rejects_broad_typo_and_known_value",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_unknown_marker_rejects_broad_typo_and_known_value.log",
+      "log_sha256": "18fe7c3d9a052e12d418a02f9800d91434924f2d56951a63f9dfe1a1b5bed318",
+      "returncode": 0,
+      "seconds": 0.334
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_unknown_scalar_and_collection_closure",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_unknown_scalar_and_collection_closure.log",
+      "log_sha256": "d4a5266d488d9a9be8b065d986ecd2f8197c7b033117e345476b9bc7d71a1c1a",
+      "returncode": 0,
+      "seconds": 0.319
+    },
+    {
+      "id": "test_github_evidence.GithubEvidenceModelTests.test_wrong_code_and_test_pins_are_rejected",
+      "log": "test_github_evidence.GithubEvidenceModelTests.test_wrong_code_and_test_pins_are_rejected.log",
+      "log_sha256": "63b67f4b0b9e6cddea0c42a76ffce04b94dd9572a46b1713a391867d1d8fa145",
+      "returncode": 0,
+      "seconds": 0.331
+    },
+    {
+      "id": "test_iceberg_contracts.DoubleIcebergContractTest.test_combinations_and_causal_categories_fail_closed",
+      "log": "test_iceberg_contracts.DoubleIcebergContractTest.test_combinations_and_causal_categories_fail_closed.log",
+      "log_sha256": "cecb15312097d812d641ac4cad31953e5f836a9f47ff3cf5b3a72a758779d23f",
+      "returncode": 0,
+      "seconds": 0.357
+    },
+    {
+      "id": "test_iceberg_contracts.DoubleIcebergContractTest.test_common_origin_and_unavailable_check_block_false_ready",
+      "log": "test_iceberg_contracts.DoubleIcebergContractTest.test_common_origin_and_unavailable_check_block_false_ready.log",
+      "log_sha256": "0be8a215c92027972be14e49e3c06a415672abc27615261f6e0c710ab0af46eb",
+      "returncode": 0,
+      "seconds": 0.339
+    },
+    {
+      "id": "test_iceberg_contracts.DoubleIcebergContractTest.test_exact_source_hash_change_invalidates_only_bound_view",
+      "log": "test_iceberg_contracts.DoubleIcebergContractTest.test_exact_source_hash_change_invalidates_only_bound_view.log",
+      "log_sha256": "e45c986671a3f18512e3e86a4756b1aeb4ea88d87a82d079e820e01aadd71649",
+      "returncode": 0,
+      "seconds": 0.321
+    },
+    {
+      "id": "test_iceberg_contracts.DoubleIcebergContractTest.test_gate_four_requires_both_exact_view_results",
+      "log": "test_iceberg_contracts.DoubleIcebergContractTest.test_gate_four_requires_both_exact_view_results.log",
+      "log_sha256": "f7bcb0baf84da1b8c726c75dd955c6c23cd4b98cbbb7efd475edc2fca74755f4",
+      "returncode": 0,
+      "seconds": 0.306
+    },
+    {
+      "id": "test_iceberg_contracts.DoubleIcebergContractTest.test_knowledge_status_does_not_replace_workflow_acceptance",
+      "log": "test_iceberg_contracts.DoubleIcebergContractTest.test_knowledge_status_does_not_replace_workflow_acceptance.log",
+      "log_sha256": "0d1308e10a7cbd9173254727bb3c27841196e9f34c258e50bd688049f7b95e3c",
+      "returncode": 0,
+      "seconds": 0.325
+    },
+    {
+      "id": "test_iceberg_contracts.DoubleIcebergContractTest.test_marked_complete_model_and_public_projection_pass",
+      "log": "test_iceberg_contracts.DoubleIcebergContractTest.test_marked_complete_model_and_public_projection_pass.log",
+      "log_sha256": "976754176e6be48a1800b1fbf19468ec3c2ec82694c7f703bc81d2c84950af5f",
+      "returncode": 0,
+      "seconds": 0.291
+    },
+    {
+      "id": "test_iceberg_contracts.DoubleIcebergContractTest.test_marked_missing_position_and_views_cannot_be_ready",
+      "log": "test_iceberg_contracts.DoubleIcebergContractTest.test_marked_missing_position_and_views_cannot_be_ready.log",
+      "log_sha256": "568d4575b5c6080d2b013a389d603509bddb1c70f80d014d3560ea7665a29dd4",
+      "returncode": 0,
+      "seconds": 0.325
+    },
+    {
+      "id": "test_iceberg_contracts.DoubleIcebergContractTest.test_observed_seed_requires_source_and_consumers_bind_exact_heads",
+      "log": "test_iceberg_contracts.DoubleIcebergContractTest.test_observed_seed_requires_source_and_consumers_bind_exact_heads.log",
+      "log_sha256": "fc391449b4b9d949a35f135894974169a79b475807b3704ab7e4a65191334197",
+      "returncode": 0,
+      "seconds": 0.331
+    },
+    {
+      "id": "test_iceberg_contracts.DoubleIcebergContractTest.test_present_q_h_and_h_review_obligations_remain_strict",
+      "log": "test_iceberg_contracts.DoubleIcebergContractTest.test_present_q_h_and_h_review_obligations_remain_strict.log",
+      "log_sha256": "85a0d38303af4df4b007204ebb072a72dedc00718b9c3b5270783d4d3ed2a3fc",
+      "returncode": 0,
+      "seconds": 0.438
+    },
+    {
+      "id": "test_iceberg_contracts.DoubleIcebergContractTest.test_semantic_cycle_allowed_but_execution_cycle_rejected",
+      "log": "test_iceberg_contracts.DoubleIcebergContractTest.test_semantic_cycle_allowed_but_execution_cycle_rejected.log",
+      "log_sha256": "2ee2cc24b4484c91ef1d721abe899189ee05fa4d81a60f2adb67f5c7cf5ab2cb",
+      "returncode": 0,
+      "seconds": 0.367
+    },
+    {
+      "id": "test_iceberg_contracts.DoubleIcebergContractTest.test_unmarked_legacy_model_remains_compatible",
+      "log": "test_iceberg_contracts.DoubleIcebergContractTest.test_unmarked_legacy_model_remains_compatible.log",
+      "log_sha256": "a7051621bf8cd24c924be13d4a10fd5eeb4aca2adb196d7a7dfef020ae078ccb",
+      "returncode": 0,
+      "seconds": 0.328
+    },
+    {
+      "id": "test_iceberg_contracts.DoubleIcebergContractTest.test_view_hash_version_gap_and_branch_fail_closed",
+      "log": "test_iceberg_contracts.DoubleIcebergContractTest.test_view_hash_version_gap_and_branch_fail_closed.log",
+      "log_sha256": "64f1e17d76189e8b3eff6be966a48b3629c827511e598fd38e19cd885919edfa",
+      "returncode": 0,
+      "seconds": 0.335
+    },
+    {
+      "id": "test_iceberg_contracts.DoubleIcebergContractTest.test_zero_new_q_or_h_obligations_pass_core_and_final",
+      "log": "test_iceberg_contracts.DoubleIcebergContractTest.test_zero_new_q_or_h_obligations_pass_core_and_final.log",
+      "log_sha256": "004db3284ceb518162212726d962532ed04e9403b675a8509fc3e4903d33c8f9",
+      "returncode": 0,
+      "seconds": 0.545
+    },
+    {
+      "id": "test_iceberg_contracts.ImportedVectorAnchorTest.test_imported_vector_uses_immutable_anchor_and_applicability_gate_object",
+      "log": "test_iceberg_contracts.ImportedVectorAnchorTest.test_imported_vector_uses_immutable_anchor_and_applicability_gate_object.log",
+      "log_sha256": "e3420d4770f5f8d537f2b75ee9289080fa7fd8eb684f33e46c65ea78d55cce8f",
+      "returncode": 0,
+      "seconds": 0.343
+    },
+    {
+      "id": "test_iceberg_lifecycle.IcebergLifecycleTest.test_blind_materials_require_explicit_brief_and_reject_hidden_bank_bytes",
+      "log": "test_iceberg_lifecycle.IcebergLifecycleTest.test_blind_materials_require_explicit_brief_and_reject_hidden_bank_bytes.log",
+      "log_sha256": "9549b1f087130a943742da6e05582d951f1fc62d81f3f7cc33e2192c2cb9932a",
+      "returncode": 0,
+      "seconds": 0.478
+    },
+    {
+      "id": "test_iceberg_lifecycle.IcebergLifecycleTest.test_blind_position_is_rejected_before_commit_and_valid_position_passes",
+      "log": "test_iceberg_lifecycle.IcebergLifecycleTest.test_blind_position_is_rejected_before_commit_and_valid_position_passes.log",
+      "log_sha256": "9fb79cb99023b1346b18c8a2977ac111292dbf9ab2d1bd07ae1e565887837824",
+      "returncode": 0,
+      "seconds": 0.468
+    },
+    {
+      "id": "test_iceberg_lifecycle.IcebergLifecycleTest.test_changed_evidence_invalidates_only_exact_consumers",
+      "log": "test_iceberg_lifecycle.IcebergLifecycleTest.test_changed_evidence_invalidates_only_exact_consumers.log",
+      "log_sha256": "1989b1f8c5956f737cf1890382a2253385c6b82ca5166e50776a4d58689d9b26",
+      "returncode": 0,
+      "seconds": 0.456
+    },
+    {
+      "id": "test_iceberg_lifecycle.IcebergLifecycleTest.test_core_blind_public_context_projects_only_approved_vector_and_own_profile",
+      "log": "test_iceberg_lifecycle.IcebergLifecycleTest.test_core_blind_public_context_projects_only_approved_vector_and_own_profile.log",
+      "log_sha256": "f7f7db8c15129ceadb708ad85e289a2e3c0aba9b3e2a28d809c3a34ca863b489",
+      "returncode": 0,
+      "seconds": 3.349
+    },
+    {
+      "id": "test_iceberg_lifecycle.IcebergLifecycleTest.test_historical_view_is_nonblocking_only_without_current_consumer",
+      "log": "test_iceberg_lifecycle.IcebergLifecycleTest.test_historical_view_is_nonblocking_only_without_current_consumer.log",
+      "log_sha256": "20feb466ea4eeb1e6aa8487ef3fc1a01417325a1565e4c2b271ddc56d87c57f4",
+      "returncode": 0,
+      "seconds": 0.43
+    },
+    {
+      "id": "test_iceberg_lifecycle.IcebergLifecycleTest.test_malformed_historical_edge_is_ignored_after_valid_successor",
+      "log": "test_iceberg_lifecycle.IcebergLifecycleTest.test_malformed_historical_edge_is_ignored_after_valid_successor.log",
+      "log_sha256": "74259922f3182bbe9483315e137181c10f7984099ef3cd257a99eb082f84b1ba",
+      "returncode": 0,
+      "seconds": 0.479
+    },
+    {
+      "id": "test_iceberg_lifecycle.IcebergLifecycleTest.test_new_goal_and_bank_snapshots_pin_feature_while_legacy_is_unmarked",
+      "log": "test_iceberg_lifecycle.IcebergLifecycleTest.test_new_goal_and_bank_snapshots_pin_feature_while_legacy_is_unmarked.log",
+      "log_sha256": "44322772c0ef5a170a1b1523a4ce0a82c2c63c9a2d34948cfb12bf2b27723f4e",
+      "returncode": 0,
+      "seconds": 1.877
+    },
+    {
+      "id": "test_iceberg_lifecycle.IcebergLifecycleTest.test_nonview_synthesis_semantic_edge_is_never_filtered",
+      "log": "test_iceberg_lifecycle.IcebergLifecycleTest.test_nonview_synthesis_semantic_edge_is_never_filtered.log",
+      "log_sha256": "93a473097f8caa97a723f8303a4000554681c0eb38cc2e655aac54af5c6761a9",
+      "returncode": 0,
+      "seconds": 0.545
+    },
+    {
+      "id": "test_iceberg_lifecycle.IcebergLifecycleTest.test_revision_heads_branch_rejection_core_filter_and_historical_tamper",
+      "log": "test_iceberg_lifecycle.IcebergLifecycleTest.test_revision_heads_branch_rejection_core_filter_and_historical_tamper.log",
+      "log_sha256": "6a61eb4faae7abf56681b8c46ed40ad00428e28beaac2d0d9158dff89dc26668",
+      "returncode": 0,
+      "seconds": 0.571
+    },
+    {
+      "id": "test_iceberg_lifecycle.IcebergLifecycleTest.test_same_malformed_edge_on_current_head_still_fails",
+      "log": "test_iceberg_lifecycle.IcebergLifecycleTest.test_same_malformed_edge_on_current_head_still_fails.log",
+      "log_sha256": "1dc208b1500fc05fba3d25a8101f2a51bcd276b1d8884a82e4aebbcd64801e2e",
+      "returncode": 0,
+      "seconds": 0.637
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_additional_plan_metadata_does_not_invalidate_complete_contracts",
+      "log": "test_model_contracts.ModelContractTest.test_additional_plan_metadata_does_not_invalidate_complete_contracts.log",
+      "log_sha256": "e1701efda5dd5464278e5fce923c44ca57ccd2960e9f02038269f14f5aecb365",
+      "returncode": 0,
+      "seconds": 0.338
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_audit_alternative_rejects_bare_na_but_accepts_scoped_rationale",
+      "log": "test_model_contracts.ModelContractTest.test_audit_alternative_rejects_bare_na_but_accepts_scoped_rationale.log",
+      "log_sha256": "40b43eade0155c7368545de04687904dfc81721d1a2e68b2b6faab57efd72ef3",
+      "returncode": 0,
+      "seconds": 0.353
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_audit_condition_and_defect_ids_are_typed_unique_lists",
+      "log": "test_model_contracts.ModelContractTest.test_audit_condition_and_defect_ids_are_typed_unique_lists.log",
+      "log_sha256": "5a431d0b757d735913ddee45e97ec231130e8d30e41e2df1fbf891498157495a",
+      "returncode": 0,
+      "seconds": 0.397
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_audit_template_has_no_bare_alternative_placeholder",
+      "log": "test_model_contracts.ModelContractTest.test_audit_template_has_no_bare_alternative_placeholder.log",
+      "log_sha256": "622f060004a197f914f818ba6a9338ea0801c6789795095062fdf498d82540b0",
+      "returncode": 0,
+      "seconds": 0.309
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_complete_addressable_model_passes_structurally",
+      "log": "test_model_contracts.ModelContractTest.test_complete_addressable_model_passes_structurally.log",
+      "log_sha256": "d96480701cf3e0f82769f8ec605e913b87c3f8454bab27d921539aa9192690f3",
+      "returncode": 0,
+      "seconds": 0.33
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_core_allows_future_administrative_gate6_review_outside_graph",
+      "log": "test_model_contracts.ModelContractTest.test_core_allows_future_administrative_gate6_review_outside_graph.log",
+      "log_sha256": "bc067ced8e5bc1718f046c1042aae3eea52764db15920e55d880b9734b32305b",
+      "returncode": 0,
+      "seconds": 0.323
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_core_excludes_final_audit_and_gate6",
+      "log": "test_model_contracts.ModelContractTest.test_core_excludes_final_audit_and_gate6.log",
+      "log_sha256": "66aac55d5dbee5015910676e9dc4ddb17d41942e78072de463052696c4ff232b",
+      "returncode": 0,
+      "seconds": 0.325
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_core_rejects_arbitrary_ghost_review_endpoint",
+      "log": "test_model_contracts.ModelContractTest.test_core_rejects_arbitrary_ghost_review_endpoint.log",
+      "log_sha256": "abd150de20d0edc6ed37b41c1e2c8dddac1751267f18492f45c805d3ad2ea549",
+      "returncode": 0,
+      "seconds": 0.313
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_cross_stage_task_dependency_cannot_reverse_stage_order",
+      "log": "test_model_contracts.ModelContractTest.test_cross_stage_task_dependency_cannot_reverse_stage_order.log",
+      "log_sha256": "b91e7316782f1b6c6a2d1560add40f48f1d253240e0f2aafadce89a4a188a0da",
+      "returncode": 0,
+      "seconds": 0.319
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_each_local_task_must_reach_its_stage_exit",
+      "log": "test_model_contracts.ModelContractTest.test_each_local_task_must_reach_its_stage_exit.log",
+      "log_sha256": "8d285dcb94bad77015ee8b1ff39a09a1bc5bfa9cfa8e7663dc9d64917b97c90b",
+      "returncode": 0,
+      "seconds": 0.326
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_every_stage_uses_one_plan_version",
+      "log": "test_model_contracts.ModelContractTest.test_every_stage_uses_one_plan_version.log",
+      "log_sha256": "46b01a3cad4a4185f9cf61fdb06a6d80dc7e32cecf5718f32e55dcaa3e251f12",
+      "returncode": 0,
+      "seconds": 0.316
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_explicit_projection_accepts_immutable_plan_revision_history",
+      "log": "test_model_contracts.ModelContractTest.test_explicit_projection_accepts_immutable_plan_revision_history.log",
+      "log_sha256": "98fa897b9e4d43a70d5e1e93e0d113d5db64c0266a0980044498942ee97940c8",
+      "returncode": 0,
+      "seconds": 0.383
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_extension_cannot_bypass_required_audit_area_fields",
+      "log": "test_model_contracts.ModelContractTest.test_extension_cannot_bypass_required_audit_area_fields.log",
+      "log_sha256": "6f4761bed4e6640511f7e89a837518e9704314934cf3b7dc5f16d945cd75af21",
+      "returncode": 0,
+      "seconds": 0.338
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_false_R_D_E_C_references_are_rejected",
+      "log": "test_model_contracts.ModelContractTest.test_false_R_D_E_C_references_are_rejected.log",
+      "log_sha256": "31310fe9d11389cca21f952bf28b66881d710a359fdacf3e2aa880c3fd3ac277",
+      "returncode": 0,
+      "seconds": 0.309
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_final_requires_accepted_administrative_gate6_review",
+      "log": "test_model_contracts.ModelContractTest.test_final_requires_accepted_administrative_gate6_review.log",
+      "log_sha256": "ce7c5e2a9b037abc0b334a4eaf0c7e9e07ef48cfa62b748b0ee8336d025e0a3b",
+      "returncode": 0,
+      "seconds": 0.306
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_gate2_can_pass_with_addressed_open_outcome_without_final_ready",
+      "log": "test_model_contracts.ModelContractTest.test_gate2_can_pass_with_addressed_open_outcome_without_final_ready.log",
+      "log_sha256": "184cd734997c6208b2288bf0af238c4b580fed747e478ed4aea1942235811ed1",
+      "returncode": 0,
+      "seconds": 0.318
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_gate_can_bind_frozen_requirement_and_exact_input_evidence",
+      "log": "test_model_contracts.ModelContractTest.test_gate_can_bind_frozen_requirement_and_exact_input_evidence.log",
+      "log_sha256": "0c94d4dcd562478746c2f5b97ec1a2188c3fce5c1e0dc6ac46092fc44127c4ae",
+      "returncode": 0,
+      "seconds": 0.316
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_gate_check_and_evidence_ref_reject_primary_as_evidence",
+      "log": "test_model_contracts.ModelContractTest.test_gate_check_and_evidence_ref_reject_primary_as_evidence.log",
+      "log_sha256": "49e30de9083eca259d54ab2a775b690a087d0464579cc7d8890212d5288ca795",
+      "returncode": 0,
+      "seconds": 0.31
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_gate_content_review_targets_exact_required_object",
+      "log": "test_model_contracts.ModelContractTest.test_gate_content_review_targets_exact_required_object.log",
+      "log_sha256": "f89a8d61240a2fb8496ca213eea3984df8b5ed26c228c379b00f66b64eac3311",
+      "returncode": 0,
+      "seconds": 0.307
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_gate_evidence_refs_cover_each_completed_check",
+      "log": "test_model_contracts.ModelContractTest.test_gate_evidence_refs_cover_each_completed_check.log",
+      "log_sha256": "dfba9fa6e6376e4bf4539e01970cd07b912c6e8c1d5c148477821f9b75b4189f",
+      "returncode": 0,
+      "seconds": 0.327
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_gate_rejects_stale_content_review_target_hash",
+      "log": "test_model_contracts.ModelContractTest.test_gate_rejects_stale_content_review_target_hash.log",
+      "log_sha256": "2b2ff520013dd974352378d9a5e6c409ce77cc6a4db7eaae1aef41a66067fc8b",
+      "returncode": 0,
+      "seconds": 0.321
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_gate_required_objects_resolve_to_accepted_results",
+      "log": "test_model_contracts.ModelContractTest.test_gate_required_objects_resolve_to_accepted_results.log",
+      "log_sha256": "dae6ceda40f2e051f9854f86a4edee4ee584168c5ad1a20a5d0f59737b849a96",
+      "returncode": 0,
+      "seconds": 0.326
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_global_stage_cycle_is_rejected",
+      "log": "test_model_contracts.ModelContractTest.test_global_stage_cycle_is_rejected.log",
+      "log_sha256": "d6736457ce2cf0dcc7caa146d10fd083f7222915ac6a3815ce744bd398f1720c",
+      "returncode": 0,
+      "seconds": 0.374
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_incomplete_audit_area_details_are_rejected",
+      "log": "test_model_contracts.ModelContractTest.test_incomplete_audit_area_details_are_rejected.log",
+      "log_sha256": "8a7695f6cd55e07abaedef3b47e1153242be211c0cd93e6f3061100e52c65cc4",
+      "returncode": 0,
+      "seconds": 0.458
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_missing_named_stage_section_is_addressed",
+      "log": "test_model_contracts.ModelContractTest.test_missing_named_stage_section_is_addressed.log",
+      "log_sha256": "80b9a8bbc7fbabea45611c33c5c99c6f131280c7d4e0bf9a62201aa9454f82ac",
+      "returncode": 0,
+      "seconds": 0.464
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_missing_status_cannot_evade_ready_guard",
+      "log": "test_model_contracts.ModelContractTest.test_missing_status_cannot_evade_ready_guard.log",
+      "log_sha256": "ef6cbe9045c477ad0d35bd823463268a48e7e744a4f39f740a6e71df3121d26e",
+      "returncode": 0,
+      "seconds": 0.383
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_missing_task_id_with_extension_returns_error_instead_of_crashing",
+      "log": "test_model_contracts.ModelContractTest.test_missing_task_id_with_extension_returns_error_instead_of_crashing.log",
+      "log_sha256": "26628d703906b4aa8bbe6ae13dba4a48dceec90a0bbd9d421c83bcc0c15df8ac",
+      "returncode": 0,
+      "seconds": 0.319
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_only_peer_reviews_satisfy_perspective_quotas",
+      "log": "test_model_contracts.ModelContractTest.test_only_peer_reviews_satisfy_perspective_quotas.log",
+      "log_sha256": "da22f396f2f5a12d099c3f7d723665f2398585f6d0d0072e8d9e75b4d9293478",
+      "returncode": 0,
+      "seconds": 0.316
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_plan_extension_cannot_bypass_missing_required_lists",
+      "log": "test_model_contracts.ModelContractTest.test_plan_extension_cannot_bypass_missing_required_lists.log",
+      "log_sha256": "f65018c1ce1d526de2f6960c390aeda719857e86dff01b77da003a5510eda025",
+      "returncode": 0,
+      "seconds": 0.33
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_reused_critical_review_proof_is_rejected",
+      "log": "test_model_contracts.ModelContractTest.test_reused_critical_review_proof_is_rejected.log",
+      "log_sha256": "71163a319f4efb4b006e157a60b73c9f6248f7ec24520aeb94cbd387634b358a",
+      "returncode": 0,
+      "seconds": 0.334
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_selected_versioned_gate6_wins_and_legacy_requires_singleton",
+      "log": "test_model_contracts.ModelContractTest.test_selected_versioned_gate6_wins_and_legacy_requires_singleton.log",
+      "log_sha256": "3276d8b6a426adc3b203d0a977815388097e866e02a549ce3f21b8f2e9df75e4",
+      "returncode": 0,
+      "seconds": 0.341
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_serialized_reachable_shared_write_is_allowed_but_undeclared_conflict_fails",
+      "log": "test_model_contracts.ModelContractTest.test_serialized_reachable_shared_write_is_allowed_but_undeclared_conflict_fails.log",
+      "log_sha256": "ba9507c793bc6def8eeb1d15f0ba3bd38e2c82669ebc3f8cc28f69306ec5ea92",
+      "returncode": 0,
+      "seconds": 0.352
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_source_outcome_status_and_knowledge_fail_before_commit",
+      "log": "test_model_contracts.ModelContractTest.test_source_outcome_status_and_knowledge_fail_before_commit.log",
+      "log_sha256": "e033e8383483b694c055b127295cda5a539c15129dff937daf7f08bd9d3b70d0",
+      "returncode": 0,
+      "seconds": 0.328
+    },
+    {
+      "id": "test_model_contracts.ModelContractTest.test_status_only_gate_placeholder_is_rejected",
+      "log": "test_model_contracts.ModelContractTest.test_status_only_gate_placeholder_is_rejected.log",
+      "log_sha256": "16474e48e526dba4b52fa1f3d79238dcaf9375f93be0c892ce5c18a767d97587",
+      "returncode": 0,
+      "seconds": 0.355
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_changed_evidence_propagates_transitively_and_retains_other_branch",
+      "log": "test_orchestration.OrchestrationTest.test_changed_evidence_propagates_transitively_and_retains_other_branch.log",
+      "log_sha256": "176feaa34087f317a15e784ead90c4e83a6737659d0c5321bd256ab4a3587d7b",
+      "returncode": 0,
+      "seconds": 0.237
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_critical_author_cannot_be_reviewer",
+      "log": "test_orchestration.OrchestrationTest.test_critical_author_cannot_be_reviewer.log",
+      "log_sha256": "97005df4d0dddcfe050f4d41d4da48ec6b0c235d6b92a6cd0ad7e075da03c04b",
+      "returncode": 0,
+      "seconds": 0.232
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_critical_reviews_require_distinct_check_ids",
+      "log": "test_orchestration.OrchestrationTest.test_critical_reviews_require_distinct_check_ids.log",
+      "log_sha256": "a5671ceb52dbad9b6672901ac359467f09f2f08cf8d006603639c3583a34d5a0",
+      "returncode": 0,
+      "seconds": 0.188
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_cycle_is_rejected",
+      "log": "test_orchestration.OrchestrationTest.test_cycle_is_rejected.log",
+      "log_sha256": "ba940312552189810cee0950f663ca7f95a9e72c4dc6e2221711f2d881aeb8c5",
+      "returncode": 0,
+      "seconds": 0.192
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_dispatch_unknown_is_never_ready_or_replayed",
+      "log": "test_orchestration.OrchestrationTest.test_dispatch_unknown_is_never_ready_or_replayed.log",
+      "log_sha256": "7dce6bd1fbcdfabf0522beac94df53edba82664abac40084860fc339b36938b0",
+      "returncode": 0,
+      "seconds": 0.199
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_duplicate_primary_is_rejected",
+      "log": "test_orchestration.OrchestrationTest.test_duplicate_primary_is_rejected.log",
+      "log_sha256": "ff67ea51da135c0ae163864efbdaf568f7d15db8e2403e8b946e9cc05fba6fb4",
+      "returncode": 0,
+      "seconds": 0.206
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_exact_cache_drift_invalidates_only_assignment_using_drifted_key",
+      "log": "test_orchestration.OrchestrationTest.test_exact_cache_drift_invalidates_only_assignment_using_drifted_key.log",
+      "log_sha256": "a15602e5281022e0411130c6d162e0180d2f06b19efc8a86b074f5f32ab3846b",
+      "returncode": 0,
+      "seconds": 0.207
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_exact_resource_conflict_and_fourth_group_are_addressable",
+      "log": "test_orchestration.OrchestrationTest.test_exact_resource_conflict_and_fourth_group_are_addressable.log",
+      "log_sha256": "9146d5cb9ba2cc82165d3034deb152615e7f8408e4195d0ca881bc247f8b42f8",
+      "returncode": 0,
+      "seconds": 0.196
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_exact_selected_current_answer_owns_question_without_erasing_history",
+      "log": "test_orchestration.OrchestrationTest.test_exact_selected_current_answer_owns_question_without_erasing_history.log",
+      "log_sha256": "c213cfd045f3400ade3006d5efafb5d3ea42c102504fac0b2ac5eca666062680",
+      "returncode": 0,
+      "seconds": 0.193
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_global_map_revision_does_not_invalidate_independent_exact_inputs",
+      "log": "test_orchestration.OrchestrationTest.test_global_map_revision_does_not_invalidate_independent_exact_inputs.log",
+      "log_sha256": "12a919ec9b604a0f7e1081b23916016b30466f59f90827d71535c3781d4958fa",
+      "returncode": 0,
+      "seconds": 0.193
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_launch_lifecycle_states_remain_distinct",
+      "log": "test_orchestration.OrchestrationTest.test_launch_lifecycle_states_remain_distinct.log",
+      "log_sha256": "88f5aed38e80ad19c71280f089b81771bbbadc4fc3ee881d6655196a0f42fa3a",
+      "returncode": 0,
+      "seconds": 0.198
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_missing_approved_map_is_deterministic_empty_compatibility",
+      "log": "test_orchestration.OrchestrationTest.test_missing_approved_map_is_deterministic_empty_compatibility.log",
+      "log_sha256": "cde8e1505c2e69c9f0087a9a887a56f30739c5a9f1429cc4bc60efdd5579a56d",
+      "returncode": 0,
+      "seconds": 0.209
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_missing_competence_blocks_exact_routes",
+      "log": "test_orchestration.OrchestrationTest.test_missing_competence_blocks_exact_routes.log",
+      "log_sha256": "0b368d836b9506db983edae26cad18d3c05a1f70555bce5afed249a4e9f4fbc2",
+      "returncode": 0,
+      "seconds": 0.215
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_multiple_attempts_require_explicit_current_selection",
+      "log": "test_orchestration.OrchestrationTest.test_multiple_attempts_require_explicit_current_selection.log",
+      "log_sha256": "dd91b9e878eb080fe0165234c8043ca3f1bb87e3ed5429f465cc2425567435ce",
+      "returncode": 0,
+      "seconds": 0.216
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_nonterminal_historical_attempt_blocks_retry",
+      "log": "test_orchestration.OrchestrationTest.test_nonterminal_historical_attempt_blocks_retry.log",
+      "log_sha256": "452bc7e49c5f1c1aee988f3fc00d6113876367ae2057690e8051fb346a58f017",
+      "returncode": 0,
+      "seconds": 0.212
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_positive_exact_routes_dag_groups_and_reuse",
+      "log": "test_orchestration.OrchestrationTest.test_positive_exact_routes_dag_groups_and_reuse.log",
+      "log_sha256": "588c9780961e968f21290cdf340062ebf8a82d473005e62fb91413b86c1e34d5",
+      "returncode": 0,
+      "seconds": 0.203
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_prefix_write_conflict_is_serialized_across_groups",
+      "log": "test_orchestration.OrchestrationTest.test_prefix_write_conflict_is_serialized_across_groups.log",
+      "log_sha256": "9bde802572dfe37347dc52e347c12718dec05b8a50bf58c5cff26df1e4635dff",
+      "returncode": 0,
+      "seconds": 0.197
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_terminal_retry_history_selects_explicit_current_without_id_guessing",
+      "log": "test_orchestration.OrchestrationTest.test_terminal_retry_history_selects_explicit_current_without_id_guessing.log",
+      "log_sha256": "1733f53425cb7e1f574684d5a3ef8a9adbc55c50ecfd74760a76983dd62e570e",
+      "returncode": 0,
+      "seconds": 0.201
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_unknown_freshness_invalidates_accepted_path_not_unrelated_branch",
+      "log": "test_orchestration.OrchestrationTest.test_unknown_freshness_invalidates_accepted_path_not_unrelated_branch.log",
+      "log_sha256": "d417c1c943406b05928e48293d70e65b5d86998637678bb65bf40e4ae451da9f",
+      "returncode": 0,
+      "seconds": 0.207
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_unresolved_dependency_is_addressed_and_blocks_only_consumer",
+      "log": "test_orchestration.OrchestrationTest.test_unresolved_dependency_is_addressed_and_blocks_only_consumer.log",
+      "log_sha256": "834af210b4ca99355fc94d7811df9621da3ef06488f075fb1156dcf4e821aaaf",
+      "returncode": 0,
+      "seconds": 0.212
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_unresolved_dispatch_unknown_history_cannot_be_reset_or_replayed",
+      "log": "test_orchestration.OrchestrationTest.test_unresolved_dispatch_unknown_history_cannot_be_reset_or_replayed.log",
+      "log_sha256": "bba0cf0be3e0d7d6125591e60981f4190bfa2f2c230b5ded522b23689ec211e8",
+      "returncode": 0,
+      "seconds": 0.21
+    },
+    {
+      "id": "test_orchestration.OrchestrationTest.test_verified_completed_unknown_history_keeps_marker_and_allows_current_attempt",
+      "log": "test_orchestration.OrchestrationTest.test_verified_completed_unknown_history_keeps_marker_and_allows_current_attempt.log",
+      "log_sha256": "e07f3c9639e1a66e15d60a591abb09551afa24637042a21638014e5045682df7",
+      "returncode": 0,
+      "seconds": 0.208
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_above_300_bank_with_resource_plan_is_valid",
+      "log": "test_prep_validation.PrepValidationTest.test_above_300_bank_with_resource_plan_is_valid.log",
+      "log_sha256": "88f63bdf4ae800da3fa18487c73495e051c13931ec2866c86d6ef763955b5de3",
+      "returncode": 0,
+      "seconds": 0.911
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_above_300_bank_without_resource_plan_is_rejected",
+      "log": "test_prep_validation.PrepValidationTest.test_above_300_bank_without_resource_plan_is_rejected.log",
+      "log_sha256": "1039853ad5d747d36b1de8aff84b34dfc1c55dc7c0197ad4410a3dcfc7e9c08b",
+      "returncode": 0,
+      "seconds": 0.89
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_all_ten_source_check_omissions_are_addressed",
+      "log": "test_prep_validation.PrepValidationTest.test_all_ten_source_check_omissions_are_addressed.log",
+      "log_sha256": "c3a3363574008142b790508342915ac38602998b6ceacdf8ac2e54e3c4ada793",
+      "returncode": 0,
+      "seconds": 2.281
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_bank_positive",
+      "log": "test_prep_validation.PrepValidationTest.test_bank_positive.log",
+      "log_sha256": "25b8459196abb58a884edd8aca0beb1c6ece6145f7692ffb3030f4b7a34cd1c6",
+      "returncode": 0,
+      "seconds": 0.43
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_bank_question_required_field_is_enforced",
+      "log": "test_prep_validation.PrepValidationTest.test_bank_question_required_field_is_enforced.log",
+      "log_sha256": "0ee885c4cb1081eca932d4389cb60c5532e8987dcc18964877afae1521440b8a",
+      "returncode": 0,
+      "seconds": 0.414
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_bank_snapshot_without_transaction_requires_verify_existing",
+      "log": "test_prep_validation.PrepValidationTest.test_bank_snapshot_without_transaction_requires_verify_existing.log",
+      "log_sha256": "f8aa63e6a67b381609957d2169f309e9402c173ef9baf7e274bef74b4040dae0",
+      "returncode": 0,
+      "seconds": 0.432
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_canonical_question_count_roundtrips_through_strict_loader",
+      "log": "test_prep_validation.PrepValidationTest.test_canonical_question_count_roundtrips_through_strict_loader.log",
+      "log_sha256": "ab08968b93cb9db20ae6b10ce133da8269b4fd9aa0dd2d38ae69400491d98137",
+      "returncode": 0,
+      "seconds": 0.597
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_canonical_yaml_bytes_match_controller",
+      "log": "test_prep_validation.PrepValidationTest.test_canonical_yaml_bytes_match_controller.log",
+      "log_sha256": "98289c95c233f6334ff5572d5ac41be35386f829e46a42f6b4e3fa0a990c07d1",
+      "returncode": 0,
+      "seconds": 0.422
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_committed_transaction_with_missing_outputs_is_replayable",
+      "log": "test_prep_validation.PrepValidationTest.test_committed_transaction_with_missing_outputs_is_replayable.log",
+      "log_sha256": "a2b8658a5130a036b2423b294ff81d7fc326dcb5af7e9765f49696a0065aa2b4",
+      "returncode": 0,
+      "seconds": 0.577
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_common_assumption_none_requires_accepted_basis",
+      "log": "test_prep_validation.PrepValidationTest.test_common_assumption_none_requires_accepted_basis.log",
+      "log_sha256": "a8321184a5b4f14ea4a98b5cfb73f434877f3b28c0f3ca8787713c9004eaa8d6",
+      "returncode": 0,
+      "seconds": 0.579
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_core_phase_blocks_prep_open",
+      "log": "test_prep_validation.PrepValidationTest.test_core_phase_blocks_prep_open.log",
+      "log_sha256": "c4bab0ee51a36cb32b51478064d187740b259c5085b0e813909c5fc3bb0c7656",
+      "returncode": 0,
+      "seconds": 0.542
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_current_descendant_requires_parsed_exact_images",
+      "log": "test_prep_validation.PrepValidationTest.test_current_descendant_requires_parsed_exact_images.log",
+      "log_sha256": "906ef885ae52b5e7430e4190dc32435c6a00694f6b197e2eea3cb19bffd8d826",
+      "returncode": 0,
+      "seconds": 0.548
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_current_stable_binding_drift_is_invalid",
+      "log": "test_prep_validation.PrepValidationTest.test_current_stable_binding_drift_is_invalid.log",
+      "log_sha256": "0a9f8feefbb2b436bc67e5b487a4320baeb7508ea623cd941455962adcd87d6c",
+      "returncode": 0,
+      "seconds": 0.579
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_each_perspective_must_supply_ten_initial_questions",
+      "log": "test_prep_validation.PrepValidationTest.test_each_perspective_must_supply_ten_initial_questions.log",
+      "log_sha256": "1c0ec967c9b1a0447de7a7d42aea099fe164a0f9f1314907c9b230a4d211ef09",
+      "returncode": 0,
+      "seconds": 0.639
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_every_requirement_must_be_covered",
+      "log": "test_prep_validation.PrepValidationTest.test_every_requirement_must_be_covered.log",
+      "log_sha256": "0dcd70da5c38f52d23188b1a456d76bbc95c994a2428c9e1978a1122d8944875",
+      "returncode": 0,
+      "seconds": 0.489
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_foreign_approval_crosslink_tamper_is_addressed",
+      "log": "test_prep_validation.PrepValidationTest.test_foreign_approval_crosslink_tamper_is_addressed.log",
+      "log_sha256": "b92dbfee1ec71174f3ff618d1c86bea01316246faa19c8a60aa7a298e49d6389",
+      "returncode": 0,
+      "seconds": 0.487
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_foreign_approval_must_approve",
+      "log": "test_prep_validation.PrepValidationTest.test_foreign_approval_must_approve.log",
+      "log_sha256": "39a04c5eae5ebcf6bc1159c8c85361fb58acfe97c5c1f72b78e0874f65f815f4",
+      "returncode": 0,
+      "seconds": 0.442
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_foreign_approval_requires_observation_provenance",
+      "log": "test_prep_validation.PrepValidationTest.test_foreign_approval_requires_observation_provenance.log",
+      "log_sha256": "ccdebe08e771ef04b7d3fc8ec4fcaf19fbc60c7447904d7619e06bb34870f47c",
+      "returncode": 0,
+      "seconds": 0.452
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_goal_positive",
+      "log": "test_prep_validation.PrepValidationTest.test_goal_positive.log",
+      "log_sha256": "bd1eb8450fce26373f22687b586ee595c19a4a2412665d9a4d8e75d42caed2af",
+      "returncode": 0,
+      "seconds": 0.616
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_initial_framing_accepts_canonical_author_role_without_role_id_alias",
+      "log": "test_prep_validation.PrepValidationTest.test_initial_framing_accepts_canonical_author_role_without_role_id_alias.log",
+      "log_sha256": "809970227124d9197d2847efac346d600ccb80fa8d5dfe76508fd94c2c8e0394",
+      "returncode": 0,
+      "seconds": 0.593
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_initial_framing_rejects_missing_canonical_author_role",
+      "log": "test_prep_validation.PrepValidationTest.test_initial_framing_rejects_missing_canonical_author_role.log",
+      "log_sha256": "6b48320e9d831db58731b001ad9a56c071de1e392cfcc64e192b6c8b89cf043b",
+      "returncode": 0,
+      "seconds": 0.567
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_initial_framing_rejects_role_id_alias_contradiction",
+      "log": "test_prep_validation.PrepValidationTest.test_initial_framing_rejects_role_id_alias_contradiction.log",
+      "log_sha256": "59603ae0542ff2b4584a4a4952ccaf8af5f723ef91af4f30bfd7c69c7a8f6ede",
+      "returncode": 0,
+      "seconds": 0.576
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_initial_framing_rejects_wrong_canonical_author_role",
+      "log": "test_prep_validation.PrepValidationTest.test_initial_framing_rejects_wrong_canonical_author_role.log",
+      "log_sha256": "bfa3aef170724da68000419a1e01c12c6065a897210afcb4eb3d75f7490630f5",
+      "returncode": 0,
+      "seconds": 0.551
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_initial_question_lineage_must_be_complete",
+      "log": "test_prep_validation.PrepValidationTest.test_initial_question_lineage_must_be_complete.log",
+      "log_sha256": "c95839e28559a6d28fe5e4dcf113865992a919cc411d466cfa2329e9c8b12206",
+      "returncode": 0,
+      "seconds": 0.555
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_keep_distinct_is_not_silently_added_to_lineage_contract",
+      "log": "test_prep_validation.PrepValidationTest.test_keep_distinct_is_not_silently_added_to_lineage_contract.log",
+      "log_sha256": "2e1dc9297503b2f090490ae8b02aa4ca7dabb96b36919b7f288221361155011c",
+      "returncode": 0,
+      "seconds": 0.65
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_missing_new_mode_is_not_silently_legacy",
+      "log": "test_prep_validation.PrepValidationTest.test_missing_new_mode_is_not_silently_legacy.log",
+      "log_sha256": "88e23178a80dad53219204e89d54bacd2ce6620e92d30d1766d59507c573c738",
+      "returncode": 0,
+      "seconds": 0.613
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_new_snapshot_without_transaction_is_prep_open",
+      "log": "test_prep_validation.PrepValidationTest.test_new_snapshot_without_transaction_is_prep_open.log",
+      "log_sha256": "bd9a9f87af43c0a6c1fe36c1899fce68c29df787a8b787d5969de181ead42f23",
+      "returncode": 0,
+      "seconds": 0.593
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_perspective_agents_must_be_distinct",
+      "log": "test_prep_validation.PrepValidationTest.test_perspective_agents_must_be_distinct.log",
+      "log_sha256": "074de82d7a4b730ec4c077d9710e108a1c4ede1b1a8346676396588ca2c481ac",
+      "returncode": 0,
+      "seconds": 0.673
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_perspective_semantic_outcome_must_be_explicit_and_coherent",
+      "log": "test_prep_validation.PrepValidationTest.test_perspective_semantic_outcome_must_be_explicit_and_coherent.log",
+      "log_sha256": "a053325373b7bc098589469670a34c08a2c0bd47efdbcffc09b75195e280906a",
+      "returncode": 0,
+      "seconds": 0.683
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_plan_projection_hash_uses_canonical_yaml",
+      "log": "test_prep_validation.PrepValidationTest.test_plan_projection_hash_uses_canonical_yaml.log",
+      "log_sha256": "33091b8f3f7c94e9c09303722ae5932d2dbeed5dd11dc4286f65deaac2e2d204",
+      "returncode": 0,
+      "seconds": 0.688
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_positive_exact_legacy_shape_is_legacy_core",
+      "log": "test_prep_validation.PrepValidationTest.test_positive_exact_legacy_shape_is_legacy_core.log",
+      "log_sha256": "f2c6d01c5804f04deb6ebcfb0dd1f55bac9ec00742eca07f1835586a88c729e9",
+      "returncode": 0,
+      "seconds": 0.477
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_preserved_method_and_lifecycle_counts_are_explicit",
+      "log": "test_prep_validation.PrepValidationTest.test_preserved_method_and_lifecycle_counts_are_explicit.log",
+      "log_sha256": "f86aa705585cd79ef008724b9bbcaca5c4e915d9d0a9884263f63c7fbad5c093",
+      "returncode": 0,
+      "seconds": 0.467
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_question_count_must_match_bank_length",
+      "log": "test_prep_validation.PrepValidationTest.test_question_count_must_match_bank_length.log",
+      "log_sha256": "fb502558b8534e3d2ec3eea764ceed6a0e8b6755d4085981c612a9f835b12713",
+      "returncode": 0,
+      "seconds": 0.715
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_question_count_rejects_noncanonical_or_nonstring_values",
+      "log": "test_prep_validation.PrepValidationTest.test_question_count_rejects_noncanonical_or_nonstring_values.log",
+      "log_sha256": "17f5a5af6434b9094878f14bde48cca1aca61aeb5fcf5b38e08baa7d4fb9c090",
+      "returncode": 0,
+      "seconds": 2.917
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_question_count_target_boundaries_are_consistent",
+      "log": "test_prep_validation.PrepValidationTest.test_question_count_target_boundaries_are_consistent.log",
+      "log_sha256": "723357c9e7a116e3fa391d0b43c6b0145d2835d087d1f92431774aea2e75649a",
+      "returncode": 0,
+      "seconds": 2.166
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_same_identity_must_reach_framing",
+      "log": "test_prep_validation.PrepValidationTest.test_same_identity_must_reach_framing.log",
+      "log_sha256": "59ccaa85f96094be76c952b9a1f69ada3ef24b24501c09db9b36612d4197918b",
+      "returncode": 0,
+      "seconds": 0.558
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_same_identity_must_reach_present_core_primary",
+      "log": "test_prep_validation.PrepValidationTest.test_same_identity_must_reach_present_core_primary.log",
+      "log_sha256": "280aed92db0c052423ddb9ead7edbb42cd53aba3cdee71204a3b8d91428b2ad7",
+      "returncode": 0,
+      "seconds": 0.559
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_small_complete_bank_requires_concrete_no_padding_rationale",
+      "log": "test_prep_validation.PrepValidationTest.test_small_complete_bank_requires_concrete_no_padding_rationale.log",
+      "log_sha256": "9808c00d02bff0d9f00993d447f46a68cc66bb6a31584840fe2f3c71b33e1689",
+      "returncode": 0,
+      "seconds": 0.619
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_source_check_critical_gap_cannot_be_admitted",
+      "log": "test_prep_validation.PrepValidationTest.test_source_check_critical_gap_cannot_be_admitted.log",
+      "log_sha256": "2918a0ced5b4a7c33665dc723bb743d3e480048c7d7a2d180cbea9406186a8ca",
+      "returncode": 0,
+      "seconds": 0.58
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_state_vocabulary_is_exactly_five",
+      "log": "test_prep_validation.PrepValidationTest.test_state_vocabulary_is_exactly_five.log",
+      "log_sha256": "02b25aec7e7e6ab36d86e7dee66449c35d3710e9e9d915566e510363b0a48df9",
+      "returncode": 0,
+      "seconds": 0.391
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_valid_current_descendant_and_selected_plan_projection",
+      "log": "test_prep_validation.PrepValidationTest.test_valid_current_descendant_and_selected_plan_projection.log",
+      "log_sha256": "af895e0c4a6d37387aede6856990e44f9fe5ab0ebe7a84bd409618fa2abb45f7",
+      "returncode": 0,
+      "seconds": 0.529
+    },
+    {
+      "id": "test_prep_validation.PrepValidationTest.test_validator_does_not_guess_semantic_truth_from_labels",
+      "log": "test_prep_validation.PrepValidationTest.test_validator_does_not_guess_semantic_truth_from_labels.log",
+      "log_sha256": "3a3275fe02615c975f456cbcea256e00acaade8fb0a429503b5f1c9f8ad4e9f3",
+      "returncode": 0,
+      "seconds": 0.541
+    },
+    {
+      "id": "test_qs.QsTest.test_assign_accept_recover_and_native_agent_id",
+      "log": "test_qs.QsTest.test_assign_accept_recover_and_native_agent_id.log",
+      "log_sha256": "8ecf6e6a507fbc70aeda8ff549e06ad0cbd45df5c2c5d446462b759e9be0f1be",
+      "returncode": 0,
+      "seconds": 2.299
+    },
+    {
+      "id": "test_qs.QsTest.test_assignment_with_mixed_run_snapshot_is_rejected",
+      "log": "test_qs.QsTest.test_assignment_with_mixed_run_snapshot_is_rejected.log",
+      "log_sha256": "3e43f38e448fa5932f5ebad6da4a5c3966b71b4992cb7710f44a7bf0dcf34251",
+      "returncode": 0,
+      "seconds": 1.094
+    },
+    {
+      "id": "test_qs.QsTest.test_bank_import_is_one_way_and_tamper_checked",
+      "log": "test_qs.QsTest.test_bank_import_is_one_way_and_tamper_checked.log",
+      "log_sha256": "1366d255c1e98fda5bb7cf7348ea00fe54cbca8f5ba273e14ef9da1e464e6634",
+      "returncode": 0,
+      "seconds": 413.723
+    },
+    {
+      "id": "test_qs.QsTest.test_blind_context_rejects_bank_foreign_dependencies_and_expand",
+      "log": "test_qs.QsTest.test_blind_context_rejects_bank_foreign_dependencies_and_expand.log",
+      "log_sha256": "522343b37b6dd0eee178a35be68ca04348fc8f7de034f8686e10a8be5176a6de",
+      "returncode": 0,
+      "seconds": 4.725
+    },
+    {
+      "id": "test_qs.QsTest.test_commit_context_and_resume_are_bounded_and_addressable",
+      "log": "test_qs.QsTest.test_commit_context_and_resume_are_bounded_and_addressable.log",
+      "log_sha256": "2d605a8064d391b8d94e6c8b7fc9f645a05ae1d85f72bcf6087860b14a684781",
+      "returncode": 0,
+      "seconds": 7.211
+    },
+    {
+      "id": "test_qs.QsTest.test_core_durable_candidate_rejects_mutable_provenance_removal_across_consumers",
+      "log": "test_qs.QsTest.test_core_durable_candidate_rejects_mutable_provenance_removal_across_consumers.log",
+      "log_sha256": "6f184f345b66919e200f86da4a4ba5cc3c9c4e3150b88d12686b60d72113633a",
+      "returncode": 0,
+      "seconds": 546.86
+    },
+    {
+      "id": "test_qs.QsTest.test_critical_string_enums_and_typed_closure_fail_closed",
+      "log": "test_qs.QsTest.test_critical_string_enums_and_typed_closure_fail_closed.log",
+      "log_sha256": "5d130a8660803c1f422ef8c5025b628cf639a79aa0a9b81538cdbfd3cfc2872d",
+      "returncode": 0,
+      "seconds": 36.333
+    },
+    {
+      "id": "test_qs.QsTest.test_current_plan_projection_selects_one_revision_chain",
+      "log": "test_qs.QsTest.test_current_plan_projection_selects_one_revision_chain.log",
+      "log_sha256": "133754936f29c4e47e2172ad57d111c9cc9188a8ec503f04bd4c9f8de819e44c",
+      "returncode": 0,
+      "seconds": 0.804
+    },
+    {
+      "id": "test_qs.QsTest.test_finalize_does_not_exclude_unrelated_review_path",
+      "log": "test_qs.QsTest.test_finalize_does_not_exclude_unrelated_review_path.log",
+      "log_sha256": "0d61ad2a63096ec161f24082cf9638c07225b8ba6575201a5135317476cfb9f3",
+      "returncode": 0,
+      "seconds": 0.84
+    },
+    {
+      "id": "test_qs.QsTest.test_goal_admission_is_atomic_replayable_and_tamper_checked",
+      "log": "test_qs.QsTest.test_goal_admission_is_atomic_replayable_and_tamper_checked.log",
+      "log_sha256": "5a1389173888b921c20922b188c0ad0acb494986b47aefd8c0b8060fb14b77f0",
+      "returncode": 0,
+      "seconds": 411.204
+    },
+    {
+      "id": "test_qs.QsTest.test_goal_prep2_map_context_and_result_binds_goal_result_id",
+      "log": "test_qs.QsTest.test_goal_prep2_map_context_and_result_binds_goal_result_id.log",
+      "log_sha256": "0186e9329c1111b5ff1632d8d71b941cb49db9391b375f87a77121fc2fa8665e",
+      "returncode": 0,
+      "seconds": 6.223
+    },
+    {
+      "id": "test_qs.QsTest.test_launch_intent_journal_survives_index_replay",
+      "log": "test_qs.QsTest.test_launch_intent_journal_survives_index_replay.log",
+      "log_sha256": "e00412551fd13f6c2b44b0ab383558d5c5058c45fabb3e8a0cc0be013d6c37ac",
+      "returncode": 0,
+      "seconds": 2.801
+    },
+    {
+      "id": "test_qs.QsTest.test_obligation_coverage_returns_exact_unclosed_ids",
+      "log": "test_qs.QsTest.test_obligation_coverage_returns_exact_unclosed_ids.log",
+      "log_sha256": "195b2ceb87a4d22064d44e1558d061b910ba2fa04d66b5ae6d25c6cb3c3611d8",
+      "returncode": 0,
+      "seconds": 2.502
+    },
+    {
+      "id": "test_qs.QsTest.test_public_lifecycle_allows_renamed_administrative_gate6_review_path",
+      "log": "test_qs.QsTest.test_public_lifecycle_allows_renamed_administrative_gate6_review_path.log",
+      "log_sha256": "b1fa28ca85be267816eff4f5e25ffcc044b240d0aeb7b538696cd7fdb0e2f43e",
+      "returncode": 0,
+      "seconds": 118.086
+    },
+    {
+      "id": "test_qs.QsTest.test_recover_preserves_pending_rejects_intent_tamper_and_redelivers_commit",
+      "log": "test_qs.QsTest.test_recover_preserves_pending_rejects_intent_tamper_and_redelivers_commit.log",
+      "log_sha256": "5accc1f10dff2a6635158dc2c13c984da0f3988747de691b560925d5880d4c65",
+      "returncode": 0,
+      "seconds": 2.909
+    },
+    {
+      "id": "test_qs.QsTest.test_recover_rejects_tampered_commit_bytes",
+      "log": "test_qs.QsTest.test_recover_rejects_tampered_commit_bytes.log",
+      "log_sha256": "e66d583463451237e2d1d81c3e0147e024ecffe025a712bdac13801043f8dd46",
+      "returncode": 0,
+      "seconds": 1.696
+    },
+    {
+      "id": "test_qs.QsTest.test_recover_replays_index_and_events_from_commit",
+      "log": "test_qs.QsTest.test_recover_replays_index_and_events_from_commit.log",
+      "log_sha256": "6b678b1a2787a4afe21db47f3104c096d2e8dbb5d25ccc8aa17c46ab050e873e",
+      "returncode": 0,
+      "seconds": 1.774
+    },
+    {
+      "id": "test_qs.QsTest.test_recover_reports_event_loss_and_orphan",
+      "log": "test_qs.QsTest.test_recover_reports_event_loss_and_orphan.log",
+      "log_sha256": "7134370d7b92dffe2b1c2d2a5c6da5e9c68e1fd66ca0e1c6d0c28b0137e5c280",
+      "returncode": 0,
+      "seconds": 1.721
+    },
+    {
+      "id": "test_qs.QsTest.test_resume_binds_root_approved_orchestration_map",
+      "log": "test_qs.QsTest.test_resume_binds_root_approved_orchestration_map.log",
+      "log_sha256": "808298ea5467bcc8572b6c2514863910c2d8744de321d669364c0605119fff85",
+      "returncode": 0,
+      "seconds": 6.48
+    },
+    {
+      "id": "test_qs.QsTest.test_resume_persists_hash_bound_current_plan_projection_with_history",
+      "log": "test_qs.QsTest.test_resume_persists_hash_bound_current_plan_projection_with_history.log",
+      "log_sha256": "dc613c6f4d3b62413a66ccda7f18e447e4af27d252f17a3ac844437d04da8179",
+      "returncode": 0,
+      "seconds": 7.51
+    },
+    {
+      "id": "test_qs.QsTest.test_snapshot_binds_raw_parsed_and_requirements",
+      "log": "test_qs.QsTest.test_snapshot_binds_raw_parsed_and_requirements.log",
+      "log_sha256": "8115093114652b2d43bf30b23b64f58805a748fd8c1976b686be4329625dcd21",
+      "returncode": 0,
+      "seconds": 1.361
+    },
+    {
+      "id": "test_qs.QsTest.test_source_outcomes_are_accepted_knowledge_not_bank_mutation",
+      "log": "test_qs.QsTest.test_source_outcomes_are_accepted_knowledge_not_bank_mutation.log",
+      "log_sha256": "fd00e9b4de5afb3a058aa3f42b0369935d4a1f41a810f42727b9d15a3ecdf669",
+      "returncode": 0,
+      "seconds": 2.124
+    },
+    {
+      "id": "test_qs.QsTest.test_strict_parser_and_large_banks_are_structural_only",
+      "log": "test_qs.QsTest.test_strict_parser_and_large_banks_are_structural_only.log",
+      "log_sha256": "327d46ac96178bc228a5edf1f6f54d7d7b7e88e7e5d7060c593bc3e0daf1aedf",
+      "returncode": 0,
+      "seconds": 1.456
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_available_input_cannot_retain_a_canonical_consumer_block",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_available_input_cannot_retain_a_canonical_consumer_block.log",
+      "log_sha256": "2b90674a0208173863b2595c6361c9bfe7d092bcb44db1417f9f02f265a1c640",
+      "returncode": 0,
+      "seconds": 0.267
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_blocked_failed_and_recheck_states_have_distinct_machine_reasons",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_blocked_failed_and_recheck_states_have_distinct_machine_reasons.log",
+      "log_sha256": "0d2e8872f0f2c1de88c03862c2bb35dcedb297206e4b863a831c48dbfd17bb8c",
+      "returncode": 0,
+      "seconds": 0.277
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_direct_output_id_and_path_share_the_canonical_contract",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_direct_output_id_and_path_share_the_canonical_contract.log",
+      "log_sha256": "c117d5769df21588c455949a850d0703cf954dca07c4052f3de1ea57aea3f96e",
+      "returncode": 0,
+      "seconds": 0.267
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_external_availability_requires_evidence_and_resolves_by_addressed_revision",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_external_availability_requires_evidence_and_resolves_by_addressed_revision.log",
+      "log_sha256": "530b92584afa14b89e071490ffb44e733617bbb2ccd0ed7dc2c2728a2d77fb8f",
+      "returncode": 0,
+      "seconds": 0.261
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_external_blocker_cannot_mask_malformed_typed_mechanism_or_cycle",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_external_blocker_cannot_mask_malformed_typed_mechanism_or_cycle.log",
+      "log_sha256": "e89360348493ea9607f6322997b9b50762261c6ed4f27f87842f82089391d94c",
+      "returncode": 0,
+      "seconds": 0.266
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_external_pending_cannot_claim_consumer_already_executed",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_external_pending_cannot_claim_consumer_already_executed.log",
+      "log_sha256": "70e4c230b6fffd90bcbb6a1e20e0f17b6ca112eb8c9ad73c592634f0a98985b6",
+      "returncode": 0,
+      "seconds": 0.267
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_external_pending_is_valid_model_with_explicit_blockers",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_external_pending_is_valid_model_with_explicit_blockers.log",
+      "log_sha256": "46ebd21f5d1de1beadbd403694bbe5c6fbb5f43f26c88e9096eff5b0e0f1d77d",
+      "returncode": 0,
+      "seconds": 0.272
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_external_pending_without_plan_is_accepted_as_conditional_synthesis",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_external_pending_without_plan_is_accepted_as_conditional_synthesis.log",
+      "log_sha256": "6b10218d9ab8b8e57fdc5698d501be2ae41e1755d76f1e926f0ecd8f6e46b70b",
+      "returncode": 0,
+      "seconds": 0.267
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_independent_completed_branch_survives_other_external_blocker",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_independent_completed_branch_survives_other_external_blocker.log",
+      "log_sha256": "6cc8eea9a2847d844bf8b732b16329ec2f4fe02f212f23b675d90888126bd4b3",
+      "returncode": 0,
+      "seconds": 0.279
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_local_graph_order_without_duplicate_dependency_is_accepted",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_local_graph_order_without_duplicate_dependency_is_accepted.log",
+      "log_sha256": "7449f721a857fbf5133b6b1fdf28e48efec4dc6095edf686e0ae79fe6429876c",
+      "returncode": 0,
+      "seconds": 0.26
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_malformed_canonical_status_and_order_return_addressed_errors",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_malformed_canonical_status_and_order_return_addressed_errors.log",
+      "log_sha256": "63f605e28072440a6a661b68fdd8691bc6e221e2bd17284d157c468dce7c145f",
+      "returncode": 0,
+      "seconds": 0.261
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_not_applicable_task_cannot_declare_unconditional_production",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_not_applicable_task_cannot_declare_unconditional_production.log",
+      "log_sha256": "52266a524600f39457575cc03a38006be202f77b2bb2a9a1544aaaaf3765037b",
+      "returncode": 0,
+      "seconds": 0.272
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_order_cycle_unknown_input_and_unexplained_unreachability_remain_errors",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_order_cycle_unknown_input_and_unexplained_unreachability_remain_errors.log",
+      "log_sha256": "d54ec0b3ddec213e7fefdf45242e6e83b86c38c3c4af94b11cacb1dafe9a6271",
+      "returncode": 0,
+      "seconds": 0.261
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_selected_branch_requires_current_evidence_and_then_produces",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_selected_branch_requires_current_evidence_and_then_produces.log",
+      "log_sha256": "f35322394ef999499cf4913e5f6054291face0f6e35bb783b413f4e849f7a250",
+      "returncode": 0,
+      "seconds": 0.271
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_unrequired_disconnected_external_condition_does_not_block_ready_path",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_unrequired_disconnected_external_condition_does_not_block_ready_path.log",
+      "log_sha256": "215e2450141c9a35cc73a2d59e3cb1e12fe9b4ef95a1226bf887911addee06ad",
+      "returncode": 0,
+      "seconds": 0.269
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_unselected_branch_is_recorded_without_producing_or_dead_output",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_unselected_branch_is_recorded_without_producing_or_dead_output.log",
+      "log_sha256": "e883ac8eaaf3cd0ab1569ce335dc1c2874dab4ecfd58f4d824c010e206b63e53",
+      "returncode": 0,
+      "seconds": 0.265
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_unselected_output_cannot_feed_consumer",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_unselected_output_cannot_feed_consumer.log",
+      "log_sha256": "6ca1315f3dae5ee1d80feff3fe1f67268875a902de4836719644db10e8c186e7",
+      "returncode": 0,
+      "seconds": 0.267
+    },
+    {
+      "id": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_unselected_output_cannot_support_goal",
+      "log": "test_r421_graph_semantics.CanonicalGraphSemanticsTests.test_unselected_output_cannot_support_goal.log",
+      "log_sha256": "58f09975e114a91c3ee15c73676c1104e16108f23120a33dddf4eeaab62609c4",
+      "returncode": 0,
+      "seconds": 0.275
+    },
+    {
+      "id": "test_r421_history.ProjectedCurrentHistoryTests.test_projected_current_keeps_historical_plan_disk_hash_check",
+      "log": "test_r421_history.ProjectedCurrentHistoryTests.test_projected_current_keeps_historical_plan_disk_hash_check.log",
+      "log_sha256": "216384a94153294c911d41c02a2a9059dcec2d8143aed2c2a15ff2467b3559e0",
+      "returncode": 0,
+      "seconds": 0.408
+    },
+    {
+      "id": "test_r421_history.ProjectedCurrentHistoryTests.test_projected_current_keeps_historical_plan_document_bytes_check",
+      "log": "test_r421_history.ProjectedCurrentHistoryTests.test_projected_current_keeps_historical_plan_document_bytes_check.log",
+      "log_sha256": "a93ab24fe8e808672cf3e165a5dc4181f1e2d73753e33c9b6013a2049b56ba67",
+      "returncode": 0,
+      "seconds": 0.421
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_before_s000_revision_requires_explicit_current_research_assignment",
+      "log": "test_r421_history.RevisionHistoryTests.test_before_s000_revision_requires_explicit_current_research_assignment.log",
+      "log_sha256": "653035eee9f1fb6c757667d354743e635d51ceac0246fd3ef9fbf27b26507fdc",
+      "returncode": 0,
+      "seconds": 0.563
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_broken_historical_execution_reference_is_not_hidden",
+      "log": "test_r421_history.RevisionHistoryTests.test_broken_historical_execution_reference_is_not_hidden.log",
+      "log_sha256": "95fe765ad3b5de0b531f2740ecd70322560f1048b530d3da072bf00767c8a17c",
+      "returncode": 0,
+      "seconds": 0.645
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_broken_historical_semantic_relation_is_not_hidden",
+      "log": "test_r421_history.RevisionHistoryTests.test_broken_historical_semantic_relation_is_not_hidden.log",
+      "log_sha256": "869fea35af24fc73ada7b835f820d5f3af65b012b1da9c16f9f5ae477a499efe",
+      "returncode": 0,
+      "seconds": 0.666
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_broken_historical_view_hash_is_rejected_after_rehashing_consumer",
+      "log": "test_r421_history.RevisionHistoryTests.test_broken_historical_view_hash_is_rejected_after_rehashing_consumer.log",
+      "log_sha256": "eb6f3438cb4f3afbeed57741685300f2c0205d675c985288e208f0169d04786b",
+      "returncode": 0,
+      "seconds": 0.642
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_current_execution_reuses_exact_old_target_review",
+      "log": "test_r421_history.RevisionHistoryTests.test_current_execution_reuses_exact_old_target_review.log",
+      "log_sha256": "d4f5c4d6fa76cb41071fb93181351fdf0c9fc78505de9c59914501fff34dbc84",
+      "returncode": 0,
+      "seconds": 0.721
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_current_review_use_closes_over_exact_review_target",
+      "log": "test_r421_history.RevisionHistoryTests.test_current_review_use_closes_over_exact_review_target.log",
+      "log_sha256": "76145deb6bc9a339170cb02bf91d028732c7c8b2e065c5f6800b028b81fae3bb",
+      "returncode": 0,
+      "seconds": 0.633
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_current_synthesis_marked_stale_does_not_fall_back_to_history",
+      "log": "test_r421_history.RevisionHistoryTests.test_current_synthesis_marked_stale_does_not_fall_back_to_history.log",
+      "log_sha256": "4c5100525158124401a338ffc847a79780e9a855f67a0d2d8368360249de540e",
+      "returncode": 0,
+      "seconds": 0.639
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_disconnected_and_cyclic_synthesis_revisions_fail_closed",
+      "log": "test_r421_history.RevisionHistoryTests.test_disconnected_and_cyclic_synthesis_revisions_fail_closed.log",
+      "log_sha256": "550c0bac429117efe30b7044fe900650e74edd2e7c065986a2ff43824c473498",
+      "returncode": 0,
+      "seconds": 0.725
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_forked_synthesis_history_is_rejected",
+      "log": "test_r421_history.RevisionHistoryTests.test_forked_synthesis_history_is_rejected.log",
+      "log_sha256": "cf43aabe730265b556735a5164aeba9670d4d34162cafcaa2207740eee4c2fa5",
+      "returncode": 0,
+      "seconds": 0.709
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_full_model_rejects_malformed_plan_identity_without_crashing",
+      "log": "test_r421_history.RevisionHistoryTests.test_full_model_rejects_malformed_plan_identity_without_crashing.log",
+      "log_sha256": "69ce73847aa2d4f967b2b61d67d1e7f69832cfbde29e4e70977a3479415b8b5b",
+      "returncode": 0,
+      "seconds": 0.845
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_full_model_rejects_malformed_selected_synthesis_id_without_crashing",
+      "log": "test_r421_history.RevisionHistoryTests.test_full_model_rejects_malformed_selected_synthesis_id_without_crashing.log",
+      "log_sha256": "6dc07651dd0ad861ca5244ef885028670965fffaea188e196925e21131881ed9",
+      "returncode": 0,
+      "seconds": 1.064
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_historical_bytes_are_still_checked",
+      "log": "test_r421_history.RevisionHistoryTests.test_historical_bytes_are_still_checked.log",
+      "log_sha256": "5766be2eedf4f3066176871d4ef95ff2c3f04889ac81c97169d579f2da3f3f8e",
+      "returncode": 0,
+      "seconds": 0.661
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_historical_consumer_cannot_claim_future_map_member",
+      "log": "test_r421_history.RevisionHistoryTests.test_historical_consumer_cannot_claim_future_map_member.log",
+      "log_sha256": "1f65c6c5ad8aac838f8b21302d085b7c350d4165a6908577fa8ddbbf0aabd396",
+      "returncode": 0,
+      "seconds": 0.649
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_historical_execution_cycle_is_not_hidden",
+      "log": "test_r421_history.RevisionHistoryTests.test_historical_execution_cycle_is_not_hidden.log",
+      "log_sha256": "3690b7f5b1152535ab740e26d5d9925627e6d635bbd6b6c779e2a8199311dd11",
+      "returncode": 0,
+      "seconds": 0.667
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_historical_execution_reference_does_not_promote_retained_review",
+      "log": "test_r421_history.RevisionHistoryTests.test_historical_execution_reference_does_not_promote_retained_review.log",
+      "log_sha256": "c4a23e5b02185356495a8c458801838b2a8f513e0fe84bb9343bb98f9ca43069",
+      "returncode": 0,
+      "seconds": 0.569
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_historical_plan_and_audit_reviews_do_not_become_current_execution_nodes",
+      "log": "test_r421_history.RevisionHistoryTests.test_historical_plan_and_audit_reviews_do_not_become_current_execution_nodes.log",
+      "log_sha256": "cc0a7b341cb9b8d0dcb5b15f62b05cfe690cc02772cc606e452e0620e5a0bb84",
+      "returncode": 0,
+      "seconds": 0.672
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_historical_plan_cannot_mix_own_synthesis_with_new_map",
+      "log": "test_r421_history.RevisionHistoryTests.test_historical_plan_cannot_mix_own_synthesis_with_new_map.log",
+      "log_sha256": "cf6d0101c677040545d0ccd954c629181749a90a3d45862bf02c96480c937d5f",
+      "returncode": 0,
+      "seconds": 0.649
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_historical_plan_keeps_exact_own_synthesis_binding",
+      "log": "test_r421_history.RevisionHistoryTests.test_historical_plan_keeps_exact_own_synthesis_binding.log",
+      "log_sha256": "86718b1f4fb1f5bd0784fc33a736109fe930a33db75ec29be8bebc746133e3fc",
+      "returncode": 0,
+      "seconds": 0.652
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_in_memory_history_cannot_diverge_from_exact_accepted_bytes",
+      "log": "test_r421_history.RevisionHistoryTests.test_in_memory_history_cannot_diverge_from_exact_accepted_bytes.log",
+      "log_sha256": "fb612e32969729344abe57874ee8a8bdf8bbca6d2f28780628f841d73fc5e589",
+      "returncode": 0,
+      "seconds": 0.645
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_old_synthesis_cannot_be_promoted_by_exact_current_plan_reference",
+      "log": "test_r421_history.RevisionHistoryTests.test_old_synthesis_cannot_be_promoted_by_exact_current_plan_reference.log",
+      "log_sha256": "90083853976850cd078d911b868630c29c64b3bb51247ee601849b43bc0f675b",
+      "returncode": 0,
+      "seconds": 0.661
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_old_synthesis_is_not_a_gate4_required_current_object",
+      "log": "test_r421_history.RevisionHistoryTests.test_old_synthesis_is_not_a_gate4_required_current_object.log",
+      "log_sha256": "54816cba10efba881c84ea9c2339f2f7ee48f29ef52c1cd894de38b6850eeeb6",
+      "returncode": 0,
+      "seconds": 0.66
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_pending_retry_prevents_accepting_old_assigned_synthesis_as_current",
+      "log": "test_r421_history.RevisionHistoryTests.test_pending_retry_prevents_accepting_old_assigned_synthesis_as_current.log",
+      "log_sha256": "8994272316bfccb5af4b0b3e685fe81eb6cc54c93c82c441b028e530f28131f3",
+      "returncode": 0,
+      "seconds": 0.69
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_retained_maps_synthesis_plans_and_audit_pass_without_deletion",
+      "log": "test_r421_history.RevisionHistoryTests.test_retained_maps_synthesis_plans_and_audit_pass_without_deletion.log",
+      "log_sha256": "4b0b4a73196b66e9b97dc5b358a4c6856416687a955c44059acd7e5ac8802260",
+      "returncode": 0,
+      "seconds": 0.688
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_reused_old_target_review_keeps_target_hash_validation",
+      "log": "test_r421_history.RevisionHistoryTests.test_reused_old_target_review_keeps_target_hash_validation.log",
+      "log_sha256": "e5653513e043ed00860f8296cd75ed9f943c908e6a83b57eb1c76d5c7cea6335",
+      "returncode": 0,
+      "seconds": 0.762
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_reused_relation_ids_in_history_form_one_active_relation",
+      "log": "test_r421_history.RevisionHistoryTests.test_reused_relation_ids_in_history_form_one_active_relation.log",
+      "log_sha256": "f548370c2acb0321560b99cfcf81fa058b3b30fa27c5fdc8a77bbe02ba4e9ba0",
+      "returncode": 0,
+      "seconds": 0.66
+    },
+    {
+      "id": "test_r421_history.RevisionHistoryTests.test_stale_review_cannot_be_promoted_by_current_execution",
+      "log": "test_r421_history.RevisionHistoryTests.test_stale_review_cannot_be_promoted_by_current_execution.log",
+      "log_sha256": "ff27b639e0ffdba2a83bc33fbad0e3d3baaf5f3a601f4da1614bd9b9d22e7659",
+      "returncode": 0,
+      "seconds": 0.728
+    },
+    {
+      "id": "test_r421_history.TransitionalAuditHistoryTests.test_corrupt_old_audit_context_is_not_downgraded",
+      "log": "test_r421_history.TransitionalAuditHistoryTests.test_corrupt_old_audit_context_is_not_downgraded.log",
+      "log_sha256": "4e8f3a573661949cddf89245d3e5ef97731b4e2bd7f03eeffdd9521ed0706d39",
+      "returncode": 0,
+      "seconds": 1.192
+    },
+    {
+      "id": "test_r421_history.TransitionalAuditHistoryTests.test_corrupt_old_map_hash_cannot_become_retained_context",
+      "log": "test_r421_history.TransitionalAuditHistoryTests.test_corrupt_old_map_hash_cannot_become_retained_context.log",
+      "log_sha256": "1b34bcf03e9c98f0892dfcfadba8f77c7843069506c74cd37525852d332af0e0",
+      "returncode": 0,
+      "seconds": 0.692
+    },
+    {
+      "id": "test_r421_history.TransitionalAuditHistoryTests.test_current_context_audit_retains_pre_audit_pure_api_compatibility",
+      "log": "test_r421_history.TransitionalAuditHistoryTests.test_current_context_audit_retains_pre_audit_pure_api_compatibility.log",
+      "log_sha256": "c992c525addf0d9b677e7c449bbd0f8de81bf3629b601a19b4d587036594c641",
+      "returncode": 0,
+      "seconds": 0.633
+    },
+    {
+      "id": "test_r421_history.TransitionalAuditHistoryTests.test_exact_old_selected_audit_is_retained_in_core_but_current_in_final",
+      "log": "test_r421_history.TransitionalAuditHistoryTests.test_exact_old_selected_audit_is_retained_in_core_but_current_in_final.log",
+      "log_sha256": "594e942e0879927b0d944b934b64a378e125dd9a85d9148535c2449f3e2f05ee",
+      "returncode": 0,
+      "seconds": 0.856
+    },
+    {
+      "id": "test_r421_history.TransitionalAuditHistoryTests.test_iceberg_only_legacy_audit_can_retain_exact_map_ancestors",
+      "log": "test_r421_history.TransitionalAuditHistoryTests.test_iceberg_only_legacy_audit_can_retain_exact_map_ancestors.log",
+      "log_sha256": "d577b8a6dbb66267094a5a7cefbded8e2d2fd54f828b6b4f8941f7e9c7845185",
+      "returncode": 0,
+      "seconds": 0.588
+    },
+    {
+      "id": "test_r421_history.TransitionalAuditHistoryTests.test_mixed_old_synthesis_and_current_map_bindings_are_rejected",
+      "log": "test_r421_history.TransitionalAuditHistoryTests.test_mixed_old_synthesis_and_current_map_bindings_are_rejected.log",
+      "log_sha256": "9ebb6c7233fa8f157a2ba03001c941f449668107f597360fff6a8613c0fdf845",
+      "returncode": 0,
+      "seconds": 0.698
+    },
+    {
+      "id": "test_r421_history.TransitionalAuditHistoryTests.test_retained_selected_audit_keeps_disk_hash_guard",
+      "log": "test_r421_history.TransitionalAuditHistoryTests.test_retained_selected_audit_keeps_disk_hash_guard.log",
+      "log_sha256": "4ef42831c49f7b384a86fe8dc796ffd67638aab17f6ba2c6c5ab4b768fbe8728",
+      "returncode": 0,
+      "seconds": 0.756
+    },
+    {
+      "id": "test_r421_history.TransitionalAuditHistoryTests.test_retained_selected_audit_keeps_in_memory_document_guard",
+      "log": "test_r421_history.TransitionalAuditHistoryTests.test_retained_selected_audit_keeps_in_memory_document_guard.log",
+      "log_sha256": "984da954501b51e8523b8ebc3f2cb431f282108f1ddbe97b38b96a64c073b33e",
+      "returncode": 0,
+      "seconds": 0.734
+    },
+    {
+      "id": "test_r421_history.TransitionalAuditHistoryTests.test_standalone_iceberg_uses_the_same_phase_boundary",
+      "log": "test_r421_history.TransitionalAuditHistoryTests.test_standalone_iceberg_uses_the_same_phase_boundary.log",
+      "log_sha256": "a12a80dbcd56e5e70db0a9a2a0592c8040b955d0f523a59392026b6ee50d837c",
+      "returncode": 0,
+      "seconds": 0.66
+    },
+    {
+      "id": "test_r421_views.ArchitectureViewsRegression.test_all_views_are_deterministic_and_leave_canonical_graph_intact",
+      "log": "test_r421_views.ArchitectureViewsRegression.test_all_views_are_deterministic_and_leave_canonical_graph_intact.log",
+      "log_sha256": "f1a8b58d9b77085a4baf73d6a55c1b5308b8fe0673fd705844412af0c9657e6b",
+      "returncode": 0,
+      "seconds": 0.505
+    },
+    {
+      "id": "test_r421_views.ArchitectureViewsRegression.test_compact_functional_overview_retains_all_details",
+      "log": "test_r421_views.ArchitectureViewsRegression.test_compact_functional_overview_retains_all_details.log",
+      "log_sha256": "f7f5d885bccb6f3306cc4c11eb02f1eea3d195fc71e9d4bae054bda066b19ef9",
+      "returncode": 0,
+      "seconds": 0.236
+    },
+    {
+      "id": "test_r421_views.ArchitectureViewsRegression.test_data_view_full_cards_are_exact_and_compact_legend_occurs_once",
+      "log": "test_r421_views.ArchitectureViewsRegression.test_data_view_full_cards_are_exact_and_compact_legend_occurs_once.log",
+      "log_sha256": "bdcfbc79c08145405ab6b2aac7f5c5da6874449f3e35e784624092aa1f1bb60a",
+      "returncode": 0,
+      "seconds": 0.21
+    },
+    {
+      "id": "test_r421_views.ArchitectureViewsRegression.test_derived_flow_ids_cannot_collide_with_canonical_edge_ids",
+      "log": "test_r421_views.ArchitectureViewsRegression.test_derived_flow_ids_cannot_collide_with_canonical_edge_ids.log",
+      "log_sha256": "122eaf0fb2ab2e720a405a0f54bdc633cfd9b58474fe207322bb48a9feba20ef",
+      "returncode": 0,
+      "seconds": 0.29
+    },
+    {
+      "id": "test_r421_views.ArchitectureViewsRegression.test_each_subsystem_crossing_has_explicit_original_endpoints",
+      "log": "test_r421_views.ArchitectureViewsRegression.test_each_subsystem_crossing_has_explicit_original_endpoints.log",
+      "log_sha256": "5c803807e2c18cb0f3745dbcdf6e33dfd6901bbb05350daf0a3338098df2a359",
+      "returncode": 0,
+      "seconds": 0.228
+    },
+    {
+      "id": "test_r421_views.ArchitectureViewsRegression.test_module_flow_projection_has_replayable_canonical_provenance",
+      "log": "test_r421_views.ArchitectureViewsRegression.test_module_flow_projection_has_replayable_canonical_provenance.log",
+      "log_sha256": "f661382a6e7621bdc207fc80b6957005eade5fa06c4b01077fbb86cf7c1545f3",
+      "returncode": 0,
+      "seconds": 0.233
+    },
+    {
+      "id": "test_r421_views.ArchitectureViewsRegression.test_one_hop_ports_do_not_expand_the_whole_external_subsystem",
+      "log": "test_r421_views.ArchitectureViewsRegression.test_one_hop_ports_do_not_expand_the_whole_external_subsystem.log",
+      "log_sha256": "e855aa60b18d51158c520be0e148c96931959acf65a7d9a43aea9473c31f2c4a",
+      "returncode": 0,
+      "seconds": 0.219
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_F421_01_external_check_input_cannot_be_relabelled_existing",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_F421_01_external_check_input_cannot_be_relabelled_existing.log",
+      "log_sha256": "be3757929967f4baea8ac88dfe439c1eb9447b02d8bfa7f30539ba780579f39a",
+      "returncode": 0,
+      "seconds": 0.643
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_F421_02_check_input_alias_forms_are_equivalent",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_F421_02_check_input_alias_forms_are_equivalent.log",
+      "log_sha256": "6e759f66abd566e40d16e6d4428db40d12d94e383e8ce475a80944c9557405a7",
+      "returncode": 0,
+      "seconds": 0.893
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_F421_03_covered_order_blocks_and_invalidates_successors",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_F421_03_covered_order_blocks_and_invalidates_successors.log",
+      "log_sha256": "17f3efa6d2ce9ad3ff8fbcf9011c3cddaf6612df53922a75435f62406ee290ab",
+      "returncode": 0,
+      "seconds": 0.641
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_F421_03_missing_local_order_is_rejected",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_F421_03_missing_local_order_is_rejected.log",
+      "log_sha256": "64183a3860b447eecc8d92b5c10192ee3bea273c4a30feb90b71c2d3631c706a",
+      "returncode": 0,
+      "seconds": 0.585
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_F421_04_required_false_cannot_cancel_mandatory_acceptance",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_F421_04_required_false_cannot_cancel_mandatory_acceptance.log",
+      "log_sha256": "aeefd1cd527da0223c8dc0deef813c0c92c7ba5b21576cafac70358ec4ff6f8b",
+      "returncode": 0,
+      "seconds": 0.551
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_blocked_acceptance_blocks_downstream_consumer_but_not_raw_producer",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_blocked_acceptance_blocks_downstream_consumer_but_not_raw_producer.log",
+      "log_sha256": "fc0472a6635907bd7bb3b442b594942dce1e217aa3e64e5626e662d0bc96d4bd",
+      "returncode": 0,
+      "seconds": 0.551
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_check_existing_identity_cannot_be_rebound_to_another_accepted_source",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_check_existing_identity_cannot_be_rebound_to_another_accepted_source.log",
+      "log_sha256": "5ef497381d9c77affca03dfc312bb68087fd330394748d90dbdf59350c625121",
+      "returncode": 0,
+      "seconds": 0.65
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_complete_positive_control",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_complete_positive_control.log",
+      "log_sha256": "8c7e66878a45f4504a95916de4d38a3142b22b4d4ece2be9e009c25ef8f915eb",
+      "returncode": 0,
+      "seconds": 0.647
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_each_independent_acceptance_obligation_survives_required_false",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_each_independent_acceptance_obligation_survives_required_false.log",
+      "log_sha256": "c1f08720b12d6a0eb820c05f03c4d48a57faed2e7b339b55efcb52c51dd36553",
+      "returncode": 0,
+      "seconds": 1.486
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_future_NOT_RUN_checks_are_constructible_without_observed_PASS",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_future_NOT_RUN_checks_are_constructible_without_observed_PASS.log",
+      "log_sha256": "39eb9b32be7ec2e374cdd1a0d6648b058e767a00afaba599a776fbce2180e38f",
+      "returncode": 0,
+      "seconds": 0.609
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_future_acceptance_NOT_RUN_with_available_inputs_admits_downstream_plan",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_future_acceptance_NOT_RUN_with_available_inputs_admits_downstream_plan.log",
+      "log_sha256": "84ea2f9b148b35ee9a8d98de1d9f590fbaced0d4f1c33a8ca6dcceb97bdf4102",
+      "returncode": 0,
+      "seconds": 0.605
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_input_matrix_legal_forms_keep_full_model_and_reachability_consistent",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_input_matrix_legal_forms_keep_full_model_and_reachability_consistent.log",
+      "log_sha256": "948f365f2076d2511def8fedd8e43257622bbc8724f54beb0d38a88af70d822a",
+      "returncode": 0,
+      "seconds": 3.397
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_local_edges_and_dependencies_have_identical_reachability_and_impact",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_local_edges_and_dependencies_have_identical_reachability_and_impact.log",
+      "log_sha256": "16e624a36b9cc449ae4de68759961631d5848d697b37ef1dc0b4a69a827b7d1b",
+      "returncode": 0,
+      "seconds": 1.065
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_planned_output_consumer_requires_canonical_acceptance_coverage",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_planned_output_consumer_requires_canonical_acceptance_coverage.log",
+      "log_sha256": "3b26f93f4d6543e09fd4eaffb1a868b29c2552e4551840f4be66b2f56aa38b41",
+      "returncode": 0,
+      "seconds": 0.611
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_same_named_check_input_cannot_change_external_source_or_version",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_same_named_check_input_cannot_change_external_source_or_version.log",
+      "log_sha256": "b5e1a550e47b3f4e0630eee8053f85e1aa3f8ed984dab320cec6128b1e19d65d",
+      "returncode": 0,
+      "seconds": 1.654
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_stage_acceptance_barrier_blocks_successor_even_without_shared_data",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_stage_acceptance_barrier_blocks_successor_even_without_shared_data.log",
+      "log_sha256": "48495ff338fe6076e2c533853a6db1dfaa3ec31cd1fbf62fae069d1a2eb89987",
+      "returncode": 0,
+      "seconds": 0.621
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_stage_barrier_and_explicit_task_order_are_semantically_equivalent",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_stage_barrier_and_explicit_task_order_are_semantically_equivalent.log",
+      "log_sha256": "752448c4062872e5badb28f07625dc8af02f6c7aa6e27dd14c3417e0cb5e6010",
+      "returncode": 0,
+      "seconds": 1.001
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_stage_barrier_without_duplicate_task_dependencies_requires_graph_coverage",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_stage_barrier_without_duplicate_task_dependencies_requires_graph_coverage.log",
+      "log_sha256": "8e1a987dc257dc1bcd9b45595f25af19fd436e76450c0f80d84eb10c9928c576",
+      "returncode": 0,
+      "seconds": 0.618
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_stage_task_order_cannot_substitute_for_stage_acceptance_coverage",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_stage_task_order_cannot_substitute_for_stage_acceptance_coverage.log",
+      "log_sha256": "f5c54167f785f83d9de586c3a84931ce262d4fcc3413241dc7bee71c10c080c6",
+      "returncode": 0,
+      "seconds": 0.581
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_task_checks_and_acceptance_criteria_are_a_co_required_pair",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_task_checks_and_acceptance_criteria_are_a_co_required_pair.log",
+      "log_sha256": "0ba8e5dd6e213ff3f7682f4bde01cd90a385afcea85f9d241f99435db6ed0e47",
+      "returncode": 0,
+      "seconds": 0.886
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_unknown_ambiguous_and_wrong_consumer_check_inputs_are_rejected",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_unknown_ambiguous_and_wrong_consumer_check_inputs_are_rejected.log",
+      "log_sha256": "35ba846c8095a2c372ea70c77f67df24cd98d2d55804429244d27b18b0c14b3f",
+      "returncode": 0,
+      "seconds": 1.365
+    },
+    {
+      "id": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_unselected_stage_task_does_not_fabricate_a_required_stage_order",
+      "log": "test_repeat_audit_contracts.RepeatAuditContractsTests.test_unselected_stage_task_does_not_fabricate_a_required_stage_order.log",
+      "log_sha256": "7bcf62705ba6f24bb4804b03adedb9f1ce0c340ea9f3e8aa368a089da5abfc13",
+      "returncode": 0,
+      "seconds": 0.623
+    },
+    {
+      "id": "test_resume_invalidation_regressions.ResumeInvalidationRegressionTest.test_plain_resume_preserves_persisted_stale_results",
+      "log": "test_resume_invalidation_regressions.ResumeInvalidationRegressionTest.test_plain_resume_preserves_persisted_stale_results.log",
+      "log_sha256": "aa1ab05648989e2037e22d687c4107534f62962469d6f572bb53671dbc087ba6",
+      "returncode": 0,
+      "seconds": 3.232
+    },
+    {
+      "id": "test_resume_invalidation_regressions.ResumeInvalidationRegressionTest.test_resume_hash_bound_accepted_dependency_invalidates_only_its_consumer",
+      "log": "test_resume_invalidation_regressions.ResumeInvalidationRegressionTest.test_resume_hash_bound_accepted_dependency_invalidates_only_its_consumer.log",
+      "log_sha256": "91418ebf9156002ee888e8d0f86f66c45f964faffd9663d239925a6fef1c1ac3",
+      "returncode": 0,
+      "seconds": 3.606
+    },
+    {
+      "id": "test_resume_invalidation_regressions.ResumeInvalidationRegressionTest.test_resume_provenance_then_execution_excludes_semantic_relationships",
+      "log": "test_resume_invalidation_regressions.ResumeInvalidationRegressionTest.test_resume_provenance_then_execution_excludes_semantic_relationships.log",
+      "log_sha256": "84bd3466e8ae01a1eb422908ea5c1ccc6d28f6bc18d9472b734f494e7c50f45c",
+      "returncode": 0,
+      "seconds": 6.396
+    },
+    {
+      "id": "test_resume_invalidation_regressions.RouterCurrentGraphRegressionTest.test_router_keeps_persisted_stale_result_and_waits_its_consumers",
+      "log": "test_resume_invalidation_regressions.RouterCurrentGraphRegressionTest.test_router_keeps_persisted_stale_result_and_waits_its_consumers.log",
+      "log_sha256": "2101b44594018a8ff0933de5fe682863bac208ab8179c99561f322dea30e88fa",
+      "returncode": 0,
+      "seconds": 0.408
+    },
+    {
+      "id": "test_resume_invalidation_regressions.RouterCurrentGraphRegressionTest.test_router_provenance_then_execution_excludes_semantic_relationships",
+      "log": "test_resume_invalidation_regressions.RouterCurrentGraphRegressionTest.test_router_provenance_then_execution_excludes_semantic_relationships.log",
+      "log_sha256": "1439f7bca69134262cab15d96982b5e36f07f5d2697df0513db4e5961a4f9de7",
+      "returncode": 0,
+      "seconds": 0.385
+    },
+    {
+      "id": "test_resume_pending_stale.PendingStaleConsumerTest.test_pending_hash_consumer_waits_after_changed_and_plain_resume",
+      "log": "test_resume_pending_stale.PendingStaleConsumerTest.test_pending_hash_consumer_waits_after_changed_and_plain_resume.log",
+      "log_sha256": "966aaf514444f12301d8a7b7bf72fb11d93f038af59bf9500d5b27d2d07ff50f",
+      "returncode": 0,
+      "seconds": 3.398
+    },
+    {
+      "id": "test_revision_contracts.RevisionContractCounterexampleTest.test_01_nonexistent_task_input_is_rejected",
+      "log": "test_revision_contracts.RevisionContractCounterexampleTest.test_01_nonexistent_task_input_is_rejected.log",
+      "log_sha256": "a3d64506548babe5543ad2ec82ddc57528dd2d61328911e084caf4edffa5b061",
+      "returncode": 0,
+      "seconds": 0.32
+    },
+    {
+      "id": "test_revision_contracts.RevisionContractCounterexampleTest.test_02_planned_input_has_real_producer_chain_and_no_future_hash",
+      "log": "test_revision_contracts.RevisionContractCounterexampleTest.test_02_planned_input_has_real_producer_chain_and_no_future_hash.log",
+      "log_sha256": "bb70b8eb16fe625bb70d787d1b19de201a345e498fcb5fddd964ddf01f0ad80f",
+      "returncode": 0,
+      "seconds": 0.283
+    },
+    {
+      "id": "test_revision_contracts.RevisionContractCounterexampleTest.test_03_missing_planned_producer_is_rejected",
+      "log": "test_revision_contracts.RevisionContractCounterexampleTest.test_03_missing_planned_producer_is_rejected.log",
+      "log_sha256": "c9de4545ce97655d7dd48eaaa1d3d593450ccdfa3c5e41b0f8f6b9fdc766cb0e",
+      "returncode": 0,
+      "seconds": 0.294
+    },
+    {
+      "id": "test_revision_contracts.RevisionContractCounterexampleTest.test_04_unselected_branch_cannot_create_consumable_output",
+      "log": "test_revision_contracts.RevisionContractCounterexampleTest.test_04_unselected_branch_cannot_create_consumable_output.log",
+      "log_sha256": "9fc3b924bcf36e6dbf336af79001bef8b3a27fc0c43855ba4cecd46b1d93eb90",
+      "returncode": 0,
+      "seconds": 0.286
+    },
+    {
+      "id": "test_revision_contracts.RevisionContractCounterexampleTest.test_05_agent_selected_gate_objects_cannot_replace_phase_minima",
+      "log": "test_revision_contracts.RevisionContractCounterexampleTest.test_05_agent_selected_gate_objects_cannot_replace_phase_minima.log",
+      "log_sha256": "e9a34197c7c1519c28d073533967a36e4088d31a36dee712c1c0e01878265af6",
+      "returncode": 0,
+      "seconds": 0.318
+    },
+    {
+      "id": "test_revision_contracts.RevisionContractCounterexampleTest.test_06_synthesis_requires_protocol_mechanism_and_alternatives",
+      "log": "test_revision_contracts.RevisionContractCounterexampleTest.test_06_synthesis_requires_protocol_mechanism_and_alternatives.log",
+      "log_sha256": "848f4c200b83804c6d733820c4cb489e60fb7a5667f467ee3ad88ce63033b61d",
+      "returncode": 0,
+      "seconds": 0.342
+    },
+    {
+      "id": "test_revision_contracts.RevisionContractCounterexampleTest.test_07_noncritical_residual_can_be_ready_but_central_unknown_cannot",
+      "log": "test_revision_contracts.RevisionContractCounterexampleTest.test_07_noncritical_residual_can_be_ready_but_central_unknown_cannot.log",
+      "log_sha256": "4277253d9776d7654ed62b08e1af712f888418ea599a0ba633367cf0035fe7ff",
+      "returncode": 0,
+      "seconds": 0.398
+    },
+    {
+      "id": "test_revision_contracts.RevisionContractCounterexampleTest.test_08_evidence_provenance_allows_e_to_e_but_rejects_circular_support",
+      "log": "test_revision_contracts.RevisionContractCounterexampleTest.test_08_evidence_provenance_allows_e_to_e_but_rejects_circular_support.log",
+      "log_sha256": "83266bc6374149f990c804eef203275b1afbeea7d0c3a76aca6bf210e8e9d0c5",
+      "returncode": 0,
+      "seconds": 0.35
+    },
+    {
+      "id": "test_revision_contracts.RevisionContractCounterexampleTest.test_active_critical_decision_projection_keeps_exact_current_review_guards",
+      "log": "test_revision_contracts.RevisionContractCounterexampleTest.test_active_critical_decision_projection_keeps_exact_current_review_guards.log",
+      "log_sha256": "5f4e06739957d1ab8b1e7e513cb0f05e1bb82dff3d52f7b115c23d4b3e5d6dfe",
+      "returncode": 0,
+      "seconds": 0.401
+    },
+    {
+      "id": "test_revision_contracts.RevisionContractCounterexampleTest.test_current_source_selector_accepts_history_and_rejects_ambiguity",
+      "log": "test_revision_contracts.RevisionContractCounterexampleTest.test_current_source_selector_accepts_history_and_rejects_ambiguity.log",
+      "log_sha256": "b39be8bedea83e8bb597347724c4bcd99f7996677ec36a29309b5a8767050326",
+      "returncode": 0,
+      "seconds": 0.349
+    },
+    {
+      "id": "test_revision_contracts.RevisionContractCounterexampleTest.test_external_availability_evidence_controls_every_consumer",
+      "log": "test_revision_contracts.RevisionContractCounterexampleTest.test_external_availability_evidence_controls_every_consumer.log",
+      "log_sha256": "a636560823879d1bf7817db1d9988e134db61b368f651ffecb0e3c924ed5fc5d",
+      "returncode": 0,
+      "seconds": 0.318
+    },
+    {
+      "id": "test_revision_contracts.RevisionContractCounterexampleTest.test_selected_branch_requires_selection_and_accepted_output_before_use",
+      "log": "test_revision_contracts.RevisionContractCounterexampleTest.test_selected_branch_requires_selection_and_accepted_output_before_use.log",
+      "log_sha256": "ef6847a7116be1fcfcf12500b4932346151908a4dc2eb152311b26aec09257f4",
+      "returncode": 0,
+      "seconds": 0.317
+    },
+    {
+      "id": "test_revision_lifecycle.RevisionLifecycleTest.test_accepted_unknown_launch_allows_explicit_repair_but_incomplete_unknown_blocks",
+      "log": "test_revision_lifecycle.RevisionLifecycleTest.test_accepted_unknown_launch_allows_explicit_repair_but_incomplete_unknown_blocks.log",
+      "log_sha256": "9d8a60e9f06f9902f702f0cddfec5075887df3b6d1a8e3e950515085f1c69ba8",
+      "returncode": 0,
+      "seconds": 3.309
+    },
+    {
+      "id": "test_revision_lifecycle.RevisionLifecycleTest.test_external_bank_entry_preserves_original_and_rejects_tamper",
+      "log": "test_revision_lifecycle.RevisionLifecycleTest.test_external_bank_entry_preserves_original_and_rejects_tamper.log",
+      "log_sha256": "abcc3a1bd30df1bd1136e75ecf369aee8682721f370c6572ea1eab46d036e0bc",
+      "returncode": 0,
+      "seconds": 3.743
+    },
+    {
+      "id": "test_revision_lifecycle.RevisionLifecycleTest.test_final_audit_revisions_have_exact_selected_identity",
+      "log": "test_revision_lifecycle.RevisionLifecycleTest.test_final_audit_revisions_have_exact_selected_identity.log",
+      "log_sha256": "2e53d170850dffc4e534392e57ed146caf5bec08536793d47f700e2da952618c",
+      "returncode": 0,
+      "seconds": 2.577
+    },
+    {
+      "id": "test_revision_lifecycle.RevisionLifecycleTest.test_legacy_singleton_is_read_without_fabricating_persisted_selection",
+      "log": "test_revision_lifecycle.RevisionLifecycleTest.test_legacy_singleton_is_read_without_fabricating_persisted_selection.log",
+      "log_sha256": "b592cf11179c8fff6c340065a567bc61d4da56622d79dfcd816f2e2cb9ee5d40",
+      "returncode": 0,
+      "seconds": 3.32
+    },
+    {
+      "id": "test_revision_lifecycle.RevisionLifecycleTest.test_source_outcomes_open_answered_recheck_replacement_and_replay",
+      "log": "test_revision_lifecycle.RevisionLifecycleTest.test_source_outcomes_open_answered_recheck_replacement_and_replay.log",
+      "log_sha256": "99b8da8aa7db936233b99fbac4b4c49d6ed545647e05ace6910197573171771e",
+      "returncode": 0,
+      "seconds": 9.393
+    },
+    {
+      "id": "test_seal_lock_regression.SealLockRegressionTest.test_busy_coordinator_lock_prevents_new_or_existing_release_writes",
+      "log": "test_seal_lock_regression.SealLockRegressionTest.test_busy_coordinator_lock_prevents_new_or_existing_release_writes.log",
+      "log_sha256": "7a679ed736ac3b3d607053c9270a41b00420ee2e6f0af209a3b31e156ff3644f",
+      "returncode": 0,
+      "seconds": 57.853
+    }
+  ],
+  "resumed_from": [],
+  "schema_version": "question-space-current-suite-v1",
+  "scope": "STRUCTURAL_ONLY",
+  "seconds": 649.356,
+  "source_before_equals_after": true,
+  "started_at_utc": "2026-10-23T19:43:19.344487+00:00",
+  "status": "PASS",
+  "subject_files": {
+    "SKILL.md": "92f83e7de24b5d7281f02765c0053b39ce282fe8a84972bb8d84676ba5556658",
+    "agents/openai.yaml": "a2d8c910be186a4f9f1845251920d7003172702f05fadcc870f64009ba8daac7",
+    "references/architecture-graph.md": "44333c52242305d69cc8049fe158b4ad6276ad02a9eb6bfbf6eae142a02494fd",
+    "references/context7.md": "139377fb92e498f30a617ef40824bb242ea88732e427906ae34b65a5092453e1",
+    "references/contracts-v4.1.md": "d39f0a558cc34bb56edd5f78f55c3516be6e247ac055c9e151d0c23e66ec9741",
+    "references/data-contract.md": "7d37207be7d26e23eb7ff081d4fc96a10957191a0ad0fdc422b2aa5a6f6a2a87",
+    "references/double-iceberg.md": "b1f5cba2661bf0f98dfd86edbd927decbc831739210333d3420d9129713daa16",
+    "references/github.md": "aaeb363015fd87d647549b7d522da845397a8299c5b6003d58c0b3c280b0db84",
+    "references/invariants.md": "93261a33151d5257690baad9e5a2a936591d862b0971b4b7976e65c4c909942d",
+    "references/methods/original-14.md": "0627936c9634f9fbc7b52e9794775ea84daac3c35c0212f64d8fb5200ba39371",
+    "references/phases/01-intake.md": "22e27b636162e4e8fec407d5f52a596b9b285e656b93bace40851b4b3e381fa2",
+    "references/phases/02-answers.md": "6ebee099de1bc7c7b4b35a8a83947ffa9bba9278e7b42c6bbd62ea3e59c76732",
+    "references/phases/03-critique.md": "e85ab720767e98bcc7a4854cc56c63e053a2d02ffca96b294796ec0045e97ad3",
+    "references/phases/04-synthesis.md": "be7d9b48a099c654d523f26e1073df9ec3bf5231b84a4dd05ef4da2402ab6524",
+    "references/phases/05-plan.md": "bd0a0dc525cfdfa67438b2b35cf1b44a0a087bff8dc63809664d31974c9bd9b7",
+    "references/phases/06-audit.md": "f7ab6c4925ad3be992440c4c1edd2ea1cbb423431c18d1385d55cf707b14bf43",
+    "references/preparation.md": "a3de27c59b12dd4ab4b17d0da2ce9a36ab240c8fcb30fc8d54e1ae086e411f9f",
+    "references/roles/auditor.md": "8915ce2bae9b38167a7a442e7c8e973eca516c6e2430b892c82ef28258b7aa9c",
+    "references/roles/operators.md": "7ec92c1896110a39ddc19f837ea565eee6d42134d0a54b54b85533c7c973c1ba",
+    "references/roles/operators/divergence.md": "33dc6aa8b0cdeab9c14bb83184dcbf4f30a02587d539f14cb4c1f1ae5faf1696",
+    "references/roles/operators/indulgence.md": "5b0c207af4300932c8838adb02dffd3657ebb5e78f3e02c36e4b2573dd2c2c5f",
+    "references/roles/operators/projection.md": "7b72895f25e86f740acfe1468e9bbd9ee679e535185dcff6a733983185af4b6c",
+    "references/roles/operators/reverse.md": "bdcb826ff2faf0407c1722e471c53180e8fd004624b84fd27ed1b1fa2aafe830",
+    "references/roles/operators/synthesis.md": "745cbe8d7f2674b19f3078f5842cc5678f91df070aaa5807615204d3af1a8aab",
+    "references/roles/operators/vector.md": "c174f2334fe3e7182a8be1d5b0a8ff41cf0afd7f8da2e1be401199cb50ceaeb3",
+    "references/roles/perspectives.md": "b6784b9801d94a9fb764a40881506b5549095abe71adfebf43acf2b1e2230229",
+    "references/roles/planner.md": "e01973a0f0941c4464ef44d058f0d9886567da131549ffa6215c91693092183d",
+    "references/routing.md": "522324e12cf840857950f9f7cc42fd5baef376f8f1de9d51de25f25c23f3a842",
+    "references/state-and-storage.md": "79a8edcebc6e0730d1732a144877a108f5f192b64134cb0fb91fb11866dfb713",
+    "references/validation-program.md": "fd903f158eea0251927c4691bdfa73c207d3e0f33ef6a3b1f6704916ff683b37",
+    "requirements.txt": "b4603b9468ade4d639d2c6f73b89d50e1fa5d227c73ab15be0382cca478513e6",
+    "schemas/architecture-graph.yaml": "8c9810c24f212c85ff124c8461b1172192e471b261aaca1fa081295d5c8d464e",
+    "schemas/assignment-result.yaml": "300f92807922bd4a124df7f52d647769a24349b7e0c9ae82a8dcd2dc7b7976f5",
+    "schemas/audit.yaml": "773de6ab6ecac1683940e452f025b9eb44bddfe4498f42c200c7b76cef3b6528",
+    "schemas/bank.yaml": "190a594100e6e9dfd3fcbaa0e1a09eb4865fc37e5db7c198f179535356d8864e",
+    "schemas/common.yaml": "7cbc46793aa5a0de38d37ab42058783b0b3a2ab6b709b1cbc11d127357f6af0b",
+    "schemas/gate.yaml": "37f2ccb07caf8daa61a0e148549f5b993b86611cd1e6e89d806cc4e17911b5f8",
+    "schemas/iceberg-view.yaml": "88084e3e7786a50916b8b7fd363861dbd00c97cab64006eeb65a1c3843e1e62a",
+    "schemas/plan-stage.yaml": "2f078cbeb4850914d0492458499592012fc2fa59c182b66b849b8066e7804c09",
+    "schemas/release.yaml": "eca5cc7dda75f50e18f1e81e27b31017a39122cdbec6b81c4d04c06c06d6ef29",
+    "scripts/architecture_validation.py": "88db549eaeb97c77f64a91d5a264d6d6960ea4c8cb236a201e3c3e097f26dd04",
+    "scripts/model_validation.py": "5a9a64472c09cbed1c76dc7b3c309b0cb2e31e2b58c8a63dd2f431de0317af1b",
+    "scripts/orchestration.py": "307b0753ade151330a7679c904f70c45306e9c3ba260998ec1e2c4e9f0ccf476",
+    "scripts/plan_semantics.py": "541ea438eb383552eb8c3b483a6ac3d2ddc8f28dd10741ff4288325f497e4721",
+    "scripts/prep_validation.py": "3a19ac506e2acfdfcf55039ad8880c160c4e7ce732c500c42665ff394407c511",
+    "scripts/qs.py": "152f470f9f9e159eb8a3cbe78fd3f19a710eedd4e8010ed1a73446bc2703813a",
+    "spec/changes-from-v3.md": "18bfb9de1fa2fedc97e072abf5740f5066f1793f8a92e90313ec630e6edcf5f9",
+    "spec/changes-v3.yaml": "2efcd6867bec80abe4c96de51195df8d0888cb4407f000ef24f645b0012c1166",
+    "spec/changes-v4.1.md": "b6e3d3c1b513999cdd76dc6bbffb219278fe4f01dfd3d82a0be5cd030620b3d8",
+    "spec/changes-v4.2.1.md": "92f97ac6469e15b8d40f47a61e69afd21276fcda222569075f796b0c7c20fe02",
+    "spec/changes-v4.2.2.md": "059b70237f3d36b5d827b052584a78c912fedb0fd34da0cd952d9ff2fd739f1a",
+    "spec/changes-v4.2.md": "c54d8f1b6c342333243bca13f655e79288e536e1a71f6ded00987319adabfc17",
+    "spec/coverage-map.md": "941cb81f8909e5595f4f7801af831b7028200569e098bd51846323dbe28cd750",
+    "spec/double-iceberg-traceability.md": "f064132eed2738484769a1c35d830191812e441ec146b5ed3aa6c0958cacc7a7",
+    "spec/owner-decisions.md": "0a32019e1e3cb1d7852142928f54e6d97a2ff2a6fe5f147d608f3c6a94b520e2",
+    "spec/practices-map.md": "e2f8a543c9e31bc304bddea5c9f785135350e84c6f83cbbbcbec93db2bce6e5b",
+    "templates/answer.yaml": "d465bbde938f9590260ffb98f314344ba45b5189b7aceee8abe501208288b3a6",
+    "templates/architecture-graph.yaml": "159caf05d5de6aeb2f7f79c9ed203c424767162ef48fab70baf23941b4c6884b",
+    "templates/assignment.yaml": "db91b002b3695b8320439e652d10799a524e4891520c8c3fbbe68fb3cbf05f13",
+    "templates/audit.yaml": "5c1061e3bb27fc7696f4211838ee1e592df8582599f4d1a03709e852d2569807",
+    "templates/decision.yaml": "ec80afec6f075bd3cedd94211823f57fd42ddb4ec1429ad6c59027521912b973",
+    "templates/evidence.yaml": "bcf42bbff161b9b35c727518429a89142957ff1fe12cd48adcd5439cdb19dd28",
+    "templates/external-implementation.yaml": "7bce042dbc2bf40b04c841345556aaefc54a7f1b479d087db81246cfd5e91809",
+    "templates/gate.yaml": "18d7187cada0b67614c1fe443f07f4729fd750996f611789cff72ac440a58ade",
+    "templates/handoff.yaml": "230f52c14c1073aa6790617fe86bfb01d6ecd7e985d3c7a4c181fe72f6160494",
+    "templates/hypothesis.yaml": "41ee3f58ff715a3319929f27c52680cfeaca60b00958e861c425a6c2b7d6c04d",
+    "templates/iceberg-view.yaml": "f4e1fb2d5bdcf7c35fe94f8d34408987eeca0cec1aa9e7a639a787faa1037d30",
+    "templates/operator.yaml": "1595b69ffb76f5a480a71dd639b33731aff6b59ca1b9c64adc3f041325f97707",
+    "templates/prep-framing.yaml": "434d98645634e2e4795d12e29ab3c7cfe506db1c2b27ab29eed857e5381c28d4",
+    "templates/primary-position.yaml": "c426e3ae695691277308a09cce1b5d5456e7f8d8019af7da2855d0bb95b7ddd0",
+    "templates/release.yaml": "73158941c9cdf1b167ceae55ae1b797c95b745ff810b7c3ab9164da026ec45a2",
+    "templates/review.yaml": "183dd22184930f541af8c5fb8bb4712527a66d4e4c070862b8429131314cba72",
+    "templates/source-outcomes.yaml": "5077b6697658bc8961189d11524afbfad854ecf77d25ba7394247a149dc891d6",
+    "templates/stage.yaml": "ff98fce45070c9b47718a483dc2b18df2087ce21918edfbaf13434244871748f",
+    "templates/synthesis.yaml": "2a446d21093e0150559d9e94be735688e36de33454198bdb4ef566decfa2d509",
+    "tests/evidence/source-inventory.yaml": "4ec29984f3a7d293509ea275dc08ec19c98540e712b9e7af6488b35f34e9a6bd",
+    "tests/fixtures/r421-original-trial-graph.json": "4094cd549ed6305e93e4de37f56d1fb508a1e50cc9c7638477c33888205d33ca",
+    "tests/test_approval_atomicity.py": "561366372d9474fee44680e90a8cc95c06eb2ff35565baeb0aeac87e09619c31",
+    "tests/test_architecture.py": "46181060c3a324fc39c9715d84a311bba67d79f7e209fd698cb068f6121ad9ea",
+    "tests/test_architecture_integration.py": "bb30b4e7d5ee78e6bef689a3f26a3afef0356af28ace190c4b9ac875ad2baffc",
+    "tests/test_architecture_revision_context.py": "71bcbb97eb7f35752934ceaad3bc55f518a20b5445f3fed3c350eb5a96102f20",
+    "tests/test_github_evidence.py": "e104a3ddb965fefdcd2cf9d60af90013c9f37b365b16198923bf2d90c1c51088",
+    "tests/test_iceberg_contracts.py": "8276c786c07493e1df41fdd34756c30be4291cafd4643d5738f2bac63ab0fb7a",
+    "tests/test_iceberg_lifecycle.py": "9deb45f31c0b3278cd56dcb7abd663c41ebd65d9b9bd40c0650fc9e0e7519218",
+    "tests/test_model_contracts.py": "e71bf0bf7382f5dbdbe4f680a2927418c67d27696100b583f2615bb40932b271",
+    "tests/test_orchestration.py": "10241ada465a619965beb8a8847c9594db803bfe942b8371b88f73c40fd84c77",
+    "tests/test_prep_validation.py": "519eb43949bc4c6ede63f3edc802e060e8d66fa39a6e68aba3e11885425dec25",
+    "tests/test_qs.py": "85b58175c12392b73eb371a088aaaa22f43da1f8f7beb3f4961b81904aa71b5d",
+    "tests/test_r421_graph_semantics.py": "9798eb316db2be89aff16b6b9cc3ee26468cbf0b0e3c37373bcc32dd45443636",
+    "tests/test_r421_history.py": "6fa33eed98585618ad950c1d276cdf1bbef5cce55ac57dbed0a3d05bf578a954",
+    "tests/test_r421_views.py": "29d354c0d25772699b546bc7b5a2201312e902a6fc3f1dfd2f27f91ead686cb4",
+    "tests/test_repeat_audit_contracts.py": "4bde71be9ec39107d7bcd1d067715f131c115ba557caf59657164c1b2ab0fc70",
+    "tests/test_resume_invalidation_regressions.py": "76a2474f5cd8dc9e25ed1cb65c85ffc7aeca24c34eb23c74429ec38385263254",
+    "tests/test_resume_pending_stale.py": "924df94a9532a6eeacae6c921c841ae77f79e11803425be8689604913f7bb325",
+    "tests/test_revision_contracts.py": "f16e3e9feaf11856e5ecabe184dac678987dda52444f4c9fcb6727fc77cfcd76",
+    "tests/test_revision_lifecycle.py": "6a8dfb1565c98dbad64969c9673c6eab17ef5cc966eea5c77ced09ef4ee2bd25",
+    "tests/test_seal_lock_regression.py": "9092713b6b58fd1185b066b6aae83a4890bafecdc6ba9fa354b8846edff915c9"
+  },
+  "subject_inventory_sha256": "a1cb93039e350c55871a117a19777f2131272884e2cc9c61a3848f850f0029a4"
+}

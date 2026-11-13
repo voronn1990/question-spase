@@ -1,0 +1,117 @@
+schema_version: question-space-v4
+id: SCHEMA-PLAN-STAGE
+stage_required_fields:
+- sections
+- plan_version
+- owner
+- result
+- identity_result
+- local_execution_graph
+- inputs_contracts
+- tasks
+- outputs_handoff
+- acceptance_exit
+- resources_stop
+- errors_recovery_evidence
+sections:
+- '1'
+- '2'
+- '3'
+- '4'
+- '5'
+- '6'
+- '7'
+- '8'
+task_required_fields:
+- acceptance_criteria
+- algorithms
+- branch_guard
+- checks
+- d_refs
+- dependencies
+- e_refs
+- errors_recovery
+- execution_status
+- id
+- inputs
+- outputs
+- owner
+- procedure
+- r_refs
+- resources
+- result
+- serialized_with
+- writes
+section_fields:
+  '1': identity_result
+  '2': local_execution_graph
+  '3': inputs_contracts
+  '4': tasks
+  '5': outputs_handoff
+  '6': acceptance_exit
+  '7': resources_stop
+  '8': errors_recovery_evidence
+check_required_fields:
+- boundary_check
+- checker
+- environment
+- expected_observation
+- id
+- inputs
+- negative_check
+- preconditions
+- procedure
+- property
+- sensitivity_check
+- task_id
+input_contract_common_fields:
+- id
+- input_kind
+- contract
+- consumer_ids
+input_kinds:
+  EXISTING:
+  - source_id
+  - version
+  - identity
+  - accepted_hash
+  PLANNED:
+  - producer_task_id
+  - output_id
+  - acceptance_check_id
+  EXTERNAL:
+  - source
+  - owner
+  - availability_condition
+  - availability_status
+  - blocked_consumer_ids
+external_availability_status: [AVAILABLE, UNAVAILABLE]
+external_availability_rule: "AVAILABLE requires accepted EVIDENCE in availability_evidence_id and empty blocked_consumer_ids; UNAVAILABLE omits availability_evidence_id and blocked_consumer_ids equals consumer_ids"
+output_contract_required_fields:
+- id
+- path
+- producer_task_id
+- acceptance_check_id
+- consumer_ids
+- contract
+- availability
+- branch_guard
+- acceptance_status
+output_availability: [UNCONDITIONAL, SELECTED_BRANCH, UNSELECTED_BRANCH]
+output_acceptance_status: [PLANNED, ACCEPTED]
+output_acceptance_rule: "ACCEPTED requires accepted EVIDENCE in acceptance_evidence_id; PLANNED omits acceptance_evidence_id"
+selected_branch_rule: "SELECTED_BRANCH requires branch_selection_status SELECTED and accepted EVIDENCE in branch_selection_evidence_id; other availability values omit both branch-selection fields"
+double_iceberg_stage_rule: "when input snapshot marks DOUBLE_ICEBERG_V1, every material stage requires iceberg_trace with exact two current view bindings and nonempty G/R -> capability_or_unknown -> Q/E -> D -> S/T/C -> useful-result fields"
+iceberg_trace_required_fields: [view_bindings, g_refs, r_refs, capability_or_unknown_refs, q_refs, e_refs, d_refs, stage_refs, task_refs, check_refs, useful_result]
+reference_rules:
+- "task/check inputs resolve only to an input-contract id or output id/path"
+- "PLANNED omits accepted_hash; producer/output/check resolve and producer precedes every consumer"
+- "EXTERNAL declares availability_status AVAILABLE or UNAVAILABLE; AVAILABLE binds accepted EVIDENCE and has no blocked consumers; UNAVAILABLE blocks every consumer and has no availability evidence"
+- "ACCEPTED output binds accepted EVIDENCE in acceptance_evidence_id; PLANNED output omits that field"
+- "SELECTED_BRANCH declares branch_selection_status SELECTED and binds accepted EVIDENCE; other availability values omit branch selection fields"
+- "UNSELECTED_BRANCH has no consumers and cannot be referenced; selected or unconditional outputs feed only later consumers after acceptance"
+validation_scope: Descriptive required-field index synchronized to templates/stage.yaml
+  and scripts/model_validation.py; structural enforcement is performed by validate_model,
+  and does not prove semantic sufficiency.
+architecture_rule: "When snapshot pins ARCHITECTURE_GRAPH_V1, every current stage binds the same exact accepted SYNTHESIS architecture_ref selected by logical S-000; graph is not duplicated in PLAN"
+architecture_ref_fields: ["synthesis_id", "synthesis_sha256", "graph_sha256"]

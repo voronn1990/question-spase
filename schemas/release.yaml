@@ -1,0 +1,16 @@
+schema_version: "question-space-v4"
+id: "SCHEMA-RELEASE"
+required_fields: ["schema_version", "release_id", "run_id", "input_snapshot", "core_manifest", "core_manifest_sha256", "audit_result_id", "audit_path", "audit_sha256", "gate6_path", "gate6_sha256", "administrative_review", "current_plan_projection", "current_plan_projection_sha256", "verdict", "readiness"]
+administrative_review_required_fields: ["result_id", "path", "sha256", "audit_result_id", "audit_sha256", "gate6_path", "gate6_sha256"]
+sequence: ["seal --phase prepare creates state/release-cores/<release_id>.yaml excluding audit", "FINAL_AUDIT binds its core_manifest_sha256", "GATE-6 binds an accepted exact final-audit review", "seal --phase finalize writes releases/<release_id>.yaml, release.yaml and the current-state release pointer"]
+current_plan_projection_required_fields: ["plan_version", "stages"]
+current_plan_projection_stage_required_fields: ["logical_stage_id", "result_id", "sha256", "assignment_id", "attempt_id"]
+conditional_fields:
+  DOUBLE_ICEBERG_V1: ["current_iceberg_views", "current_iceberg_views_sha256"]
+  ARCHITECTURE_GRAPH_V1: ["architecture_ref"]
+architecture_ref_required_fields: ["synthesis_id", "synthesis_sha256", "graph_sha256"]
+architecture_ref_rule: "For marked snapshots, release and core_manifest repeat the exact architecture_ref selected through logical S-000 in the current plan projection. The exact selected final audit binds the same reference. SYNTHESIS owns the graph; derived views and implementation maps do not replace it. Unmarked or iceberg-only legacy snapshots do not claim Architecture Graph V1."
+iceberg_projection_required_kinds: ["CURRENT_REALITY", "DESIRED_REALITY"]
+iceberg_projection_row_required_fields: ["view_id", "view_kind", "result_id", "result_sha256", "revision"]
+iceberg_projection_rule: "For marked snapshots, release and core_manifest repeat the same exact two current heads and canonical projection hash. Unmarked legacy snapshots do not claim Double Iceberg."
+readiness_rule: "Copy verdict and readiness from the exact selected final audit; structural sealing does not establish runtime, quality, implementation or effect."
