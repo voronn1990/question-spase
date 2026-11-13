@@ -94,6 +94,95 @@ class QsTest(unittest.TestCase):
         other_raw = self.base / "other.md"; other_raw.write_text("different source", encoding="utf-8")
         other = self.call("init", "--root", str(self.base / "other-work"), "--run-id", "R2", "--bank", str(self.bank), "--original-bank", str(other_raw))
         self.assertNotEqual(other["input_snapshot"], self.init["input_snapshot"])
+
+    def test_goal_policy_snapshot_is_immutable_and_unknown_policy_fails(self) -> None:
+        goal = self.base / "policy-goal.md"
+        goal.write_text("Bounded policy fixture\n", encoding="utf-8")
+        args = ("--root", str(self.workspace), "--run-id", "POLICY")
+        self.call("init", *args, "--mode", "GOAL_TO_PLAN", "--goal", str(goal), "--test-fixture")
+        run = self.workspace / "runs" / "POLICY"
+        snapshot_path = run / "input/snapshot.yaml"
+        descriptor = qs.load_yaml(snapshot_path)
+        self.assertEqual(descriptor.pop("initial_questions_policy"), "MATERIAL_UNKNOWNS_V1")
+        put(snapshot_path, descriptor)
+        self.assertEqual(self.call("command-cut", *args, ok=False)["error"], "immutable_input_snapshot_drift")
+
+        # Exercise the policy-value guard even for bytes matching the current digest.
+        for value in ("UNKNOWN_FUTURE_POLICY", ["MATERIAL_UNKNOWNS_V1"], ""):
+            with self.subTest(value=value):
+                put(snapshot_path, {**descriptor, "initial_questions_policy": value})
+                current_path = run / "state/current.yaml"
+                current = qs.load_yaml(current_path)
+                current["input_snapshot"] = qs.sha(snapshot_path.read_bytes())
+                put(current_path, current)
+                failure = self.call("command-cut", *args, ok=False)
+                self.assertEqual(failure["error"], "prep:snapshot:initial_questions_policy:invalid")
+
+    def test_goal_policy_participates_in_public_question_comparison(self) -> None:
+        goal = self.base / "comparison-goal.md"
+        goal.write_text("Bounded comparison fixture\n", encoding="utf-8")
+        procedure = self.base / "procedure.yaml"
+        put(procedure, {field: f"Frozen {field}" for field in qs.QUESTION_PROCEDURE_FIELDS})
+        workspace = ("--root", str(self.workspace))
+        for run_id, effort, historical in (
+            ("FAST", "FAST", False),
+            ("DETAILED", "DETAILED", False),
+            ("OLD-FAST", "FAST", True),
+            ("OLD-DETAILED", "DETAILED", True),
+        ):
+            args = (*workspace, "--run-id", run_id)
+            init = self.call(
+                "init", *args, "--mode", "GOAL_TO_PLAN", "--goal", str(goal),
+                "--effort", effort, "--half-budget", "2", "--question-procedure", str(procedure),
+                "--test-fixture",
+            )
+            run = self.workspace / "runs" / run_id
+            snapshot = init["input_snapshot"]
+            if historical:
+                # Before the first assignment, model the exact historical snapshot shape.
+                snapshot_path = run / "input/snapshot.yaml"
+                descriptor = qs.load_yaml(snapshot_path)
+                del descriptor["initial_questions_policy"]
+                put(snapshot_path, descriptor)
+                snapshot = qs.sha(snapshot_path.read_bytes())
+                for name in ("current", "assignments", "launch-intents"):
+                    path = run / "state" / (name + ".yaml")
+                    put(path, {**qs.load_yaml(path), "input_snapshot": snapshot})
+
+            assignment = {
+                "assignment_id": "A-VECTOR", "attempt_id": "TRY-1", "role_id": "OP-VECTOR",
+                "agent_id": "fixture-vector", "input_snapshot": snapshot, "artifact_type": "OPERATOR",
+                "output_path": "operators/vector.yaml", "dependency_hashes": [], "result_id": "VECTOR-001",
+                "lifecycle_scope": "PREP", "prep_stage": "PREP-1_VECTOR", "launch_state": "READY_TO_DISPATCH",
+                "logical_occurrence_id": "O-VECTOR",
+            }
+            path = self.base / f"{run_id}.assignment.yaml"
+            put(path, assignment)
+            self.call("assign", *args, "--assignment", str(path))
+            cut = self.call("command-cut", *args)
+            request = self.base / f"{run_id}.request.yaml"
+            put(request, {
+                "key": "claim-vector", "actor": "fixture-vector", "authority_sha256": qs.sha(path.read_bytes()),
+                "run_id": run_id, "input_snapshot": snapshot, "expected_revision": cut["expected_revision"],
+                **{field: assignment[field] for field in ("assignment_id", "attempt_id", "logical_occurrence_id")},
+            })
+            self.call("claim-effect", *args, "--request", str(request))
+            cut = self.call("command-cut", *args)
+            self.assertEqual(cut["question_capacity"], 2 if effort == "FAST" else 4)
+            if historical:
+                ledger = qs.replay_question_receipts(row["receipt"] for row in qs.command_journal(run)).ledger
+                self.assertEqual(ledger.procedure.routing_inventory.sha256, qs.sha(qs.canon_yaml("Frozen inventory_rule")))
+
+        for fast, detailed, expected in (
+            ("FAST", "DETAILED", "UNSATISFIED_COUNT"),
+            ("OLD-FAST", "OLD-DETAILED", "UNSATISFIED_COUNT"),
+            ("FAST", "OLD-DETAILED", "UNPAIRED_PROCEDURE"),
+            ("OLD-FAST", "DETAILED", "UNPAIRED_PROCEDURE"),
+        ):
+            with self.subTest(fast=fast, detailed=detailed):
+                compared = self.call("question-compare", *workspace, "--run-id", fast, "--other-run-id", detailed)
+                self.assertEqual(compared["count_outcome"], expected)
+
     def test_assign_accept_recover_and_native_agent_id(self) -> None:
         result = self.common("POS-001", "P-01", "/root/v4_tools_resume")
         accepted = self.register_and_accept("p01", "P-01", "PRIMARY", "positions/POS-001.yaml", result, "/root/v4_tools_resume")
@@ -794,7 +883,10 @@ class QsTest(unittest.TestCase):
             review["blind_input_hash"]=registry()[framing]["content_hash"]
             accept_doc(review_id,review)
 
-        framing_ids={result_id for result_id,entry in registry().items() if entry.get("artifact_type")=="FRAMING"}
+        if snapshot_doc.get("initial_questions_policy") == "MATERIAL_UNKNOWNS_V1":
+            framing_ids = {row["result_id"] for row in qs.load_yaml(self.run/"input/prep-admission.yaml")["initial_set_bindings"]}
+        else:
+            framing_ids={result_id for result_id,entry in registry().items() if entry.get("artifact_type")=="FRAMING"}
         normative_reviews={result_id for result_id,entry in registry().items() if entry.get("artifact_type")=="REVIEW" and not result_id.startswith("REVIEW-GATE-")}
         required_by_gate={
             1:{"input/bank.yaml",gate_targets[1]}|framing_ids,
@@ -976,6 +1068,7 @@ class QsTest(unittest.TestCase):
         pap=self.base/"goal-p01-assignment.yaml"; put(pap,p_assignment); self.call("assign","--root",str(workspace),"--run-id","GOAL1","--assignment",str(pap))
         context=self.base/"goal-p01-context.yaml"; context_out=self.call("context","--root",str(workspace),"--run-id","GOAL1","--assignment",str(pap),"--output",str(context)); packet=qs.load_yaml(context)
         self.assertEqual(packet["bank"],"ABSENT"); self.assertEqual(packet["goal"]["requirement_definitions"][0]["id"],"R-001")
+        self.assertEqual(packet["initial_questions_policy"],"MATERIAL_UNKNOWNS_V1")
         self.assertEqual([item["path"] for item in packet["materials"]],["input/materials/001-statement.md"])
         self.assertEqual(packet["materials"][0]["sha256"],qs.sha((run/"input/materials/001-statement.md").read_bytes()))
         self.assertNotIn("input/materials/001-statement.md",[item["path"] for item in packet["readset"]])
@@ -985,6 +1078,30 @@ class QsTest(unittest.TestCase):
         commit_args = ("commit", "--root", str(workspace), "--run-id", "GOAL1", "--assignment", str(pap))
         framing_path = self.base / "goal-p01-result.yaml"
         before = {path.relative_to(run): path.read_bytes() for path in run.rglob("*") if path.is_file()}
+        for changes, error in (
+            ({}, "empty_initial_questions_rationale:invalid"),
+            ({"empty_initial_questions_rationale": "N/A"}, "empty_initial_questions_rationale:invalid"),
+            ({"empty_initial_questions_rationale": "  "}, "empty_initial_questions_rationale:invalid"),
+            ({"empty_initial_questions_rationale": ["reason"]}, "empty_initial_questions_rationale:invalid"),
+            ({"empty_initial_questions_rationale": {"analysis_scope": profile["analysis_scope"], "explanation": ".", "basis_refs": ["VECTOR-001"]}}, "empty_initial_questions_rationale:explanation:invalid"),
+            ({"empty_initial_questions_rationale": {"analysis_scope": profile["analysis_scope"], "explanation": "The reviewed source settles the input boundary.", "basis_refs": ["input/goal.md"]}}, "empty_initial_questions_rationale:basis_refs:unresolved:input/goal.md"),
+            ({"initial_questions": {}}, "initial_questions:not_list"),
+        ):
+            with self.subTest(changes=changes):
+                put(framing_path, {**framing, **changes})
+                rejected = self.call(*commit_args, "--result", str(framing_path), ok=False)
+                self.assertTrue(rejected["error"].endswith(error), rejected)
+        put(framing_path, {key: value for key, value in framing.items() if key != "initial_questions"})
+        rejected = self.call(*commit_args, "--result", str(framing_path), ok=False)
+        self.assertTrue(rejected["error"].endswith("initial_questions:not_list"), rejected)
+        self.assertEqual(
+            {path.relative_to(run): path.read_bytes() for path in run.rglob("*") if path.is_file()},
+            before,
+        )
+        framing["empty_initial_questions_rationale"] = {
+            "analysis_scope": profile["analysis_scope"], "basis_refs": ["VECTOR-001", "input/materials/001-statement.md"],
+            "explanation": "The approved Vector and assigned statement settle the test input boundary.",
+        }
         for label, candidate in (
             ("missing", {key: value for key, value in framing.items() if key != "perspective_profile"}),
             ("changed", {**framing, "perspective_profile": {**profile, "boundary": "changed boundary"}}),
@@ -1194,16 +1311,33 @@ class QsTest(unittest.TestCase):
         perspective={"schema_version":"question-space-v4","id":"MAP-1","run_id":"R1","input_snapshot":snapshot,"vector_result_id":"VECTOR-001","vector_sha256":vector_accept["content_hash"],"approval_sha256":approved["approval_sha256"],"selection_authority":"ROOT","perspectives":rows}
         perspective_path=self.base/"admit-map.yaml"; put(perspective_path,perspective); map_out=self.call("publish-perspective-map","--root",str(workspace),"--run-id","R1","--perspective-map",str(perspective_path))
         frame_bindings=[]; all_initial=[]
+        question_counts = (3, 1, 10, 11, 0, 2, 2, 2, 2, 2)
         for number,row in enumerate(rows,1):
-            role=row["role_id"]; result_id=f"FRAME-P-{number:02d}"; assignment={"assignment_id":f"A-{role}","attempt_id":"TRY-1","role_id":role,"agent_id":row["agent_id"],"input_snapshot":snapshot,"artifact_type":"FRAMING","output_path":f"positions/{role}.yaml","dependency_hashes":[],"result_id":result_id,"lifecycle_scope":"PREP","prep_stage":"PREP-2_PERSPECTIVES","goal_result_id":"VECTOR-001","vector_sha256":vector_accept["content_hash"],"approval_sha256":approved["approval_sha256"],"perspective_profile":{key:row[key] for key in ("role_id","agent_id","title","competence","analysis_scope","unique_contribution","boundary","plausible_blindspots")},"perspective_profile_hash":row["profile_sha256"],"role_instruction_paths":["references/roles/perspectives.md"],"allowed_reads":["references/invariants.md","references/preparation.md"],"assigned_ids":{},"selection_authority":"ROOT","group_id":"1"}
+            role=row["role_id"]; suffix="-HISTORY" if number==10 else ""
+            result_id=f"FRAME-{role}{suffix}"; assignment={"assignment_id":f"A-{role}","attempt_id":"TRY-1","role_id":role,"agent_id":row["agent_id"],"input_snapshot":snapshot,"artifact_type":"FRAMING","output_path":f"positions/{role}{suffix}.yaml","dependency_hashes":[],"result_id":result_id,"lifecycle_scope":"PREP","prep_stage":"PREP-2_PERSPECTIVES","goal_result_id":"VECTOR-001","vector_sha256":vector_accept["content_hash"],"approval_sha256":approved["approval_sha256"],"perspective_profile":{key:row[key] for key in ("role_id","agent_id","title","competence","analysis_scope","unique_contribution","boundary","plausible_blindspots")},"perspective_profile_hash":row["profile_sha256"],"role_instruction_paths":["references/roles/perspectives.md"],"allowed_reads":["references/invariants.md","references/preparation.md"],"assigned_ids":{},"selection_authority":"ROOT","group_id":"1"}
             ap=self.base/f"admit-{role}.assignment.yaml"; put(ap,assignment); self.call("assign","--root",str(workspace),"--run-id","R1","--assignment",str(ap))
             context=self.base/f"admit-{role}.context.yaml"; context_out=self.call("context","--root",str(workspace),"--run-id","R1","--assignment",str(ap),"--output",str(context))
             questions=[]
-            for ix in range(1,11):
+            for ix in range(1, question_counts[number - 1] + 1):
                 qid=f"IQ-{role}-{ix:02d}"; all_initial.append((qid,result_id,role)); questions.append({"id":qid,"unknown":f"unknown {qid}","why_material":f"material {qid}","changeable_decision":f"decision {qid}","applicability":"goal","evidence_needed":f"evidence {qid}","g_refs":["G-1"],"r_refs":["R-001"],"not_g_refs":[],"origin_role":role})
             framing=common(result_id,role,row["agent_id"]); framing.update({"assignment_id":assignment["assignment_id"],"attempt_id":"TRY-1","artifact_type":"FRAMING","role_id":role,"lifecycle_scope":"PREP","prep_stage":"PREP-2_PERSPECTIVES","perspective_profile_hash":row["profile_sha256"],"vector_result_id":"VECTOR-001","vector_sha256":vector_accept["content_hash"],"approval_sha256":approved["approval_sha256"],"context_packet_sha256":context_out["sha256"],"blind_input":{"contains_bank":"NO","contains_foreign_p_results":"NO","contains_preferred_solution":"NO","allowed":["context packet","own assignment"],"protocol":"fixture"},"initial_questions":questions,"iceberg_position":{"position_id":"ICEPOS-"+role,"origin_role":role,"origin_assignment_id":assignment["assignment_id"],"input_snapshot":snapshot,"elements":[{"seed_id":"SEED-"+role,"candidate_view":"CURRENT_REALITY","element_kind":"ASSUMPTION","statement":"bounded blind assumption for "+role,"scope":"fixture goal","g_refs":["VECTOR-001"],"r_refs":["R-001"],"materiality":"changes a bounded decision","knowledge_status":"HYPOTHESIS","source_refs":[],"finite_check":{"check_kind":"OBSERVATION","procedure":"perform one bounded observation","discriminating_outcomes":["supports","refutes"]}}],"relations":[]}})
             framing["perspective_profile"] = assignment["perspective_profile"]
+            if not questions:
+                framing["empty_initial_questions_rationale"] = {
+                    "analysis_scope": row["analysis_scope"], "basis_refs": ["VECTOR-001"],
+                    "explanation": "The approved Vector specifies the finite verification procedure for this scope.",
+                }
             rp=self.base/f"admit-{role}.result.yaml"; put(rp,framing); accepted=self.call("accept","--root",str(workspace),"--run-id","R1","--assignment",str(ap),"--result",str(rp))
+            if number == 10:
+                history_hash = accepted["content_hash"]
+                result_id = "FRAME-P-10"
+                retry = {**assignment, "attempt_id": "TRY-2", "supersedes_attempt_id": "TRY-1", "result_id": result_id, "output_path": "positions/P-10.yaml"}
+                retry_path = self.base / "admit-retry.assignment.yaml"; put(retry_path, retry)
+                self.call("assign", "--root", str(workspace), "--run-id", "R1", "--assignment", str(retry_path))
+                retry_packet = self.call("context", "--root", str(workspace), "--run-id", "R1", "--assignment", str(retry_path), "--output", str(self.base / "admit-retry.context.yaml"))
+                retry_result = {**framing, "id": result_id, "attempt_id": "TRY-2", "context_packet_sha256": retry_packet["sha256"]}
+                retry_result_path = self.base / "admit-retry.result.yaml"; put(retry_result_path, retry_result)
+                accepted = self.call("commit", "--root", str(workspace), "--run-id", "R1", "--assignment", str(retry_path), "--result", str(retry_result_path))
             frame_bindings.append({"result_id":result_id,"sha256":accepted["content_hash"],"role_id":role,"agent_id":row["agent_id"]})
         # Before PREP-4 admission no bank exists.  PREP-3 therefore receives
         # only explicitly assigned initial questions from immutable accepted
@@ -1240,7 +1374,7 @@ class QsTest(unittest.TestCase):
         revised={row["source"]["result_id"]:row for row in qs.load_yaml(reread_path)["accepted_dependencies"]}
         self.assertEqual(revised["FRAME-P-01"]["source"]["sha256"],frame_hashes["FRAME-P-01"])
         self.assertEqual(revised["FRAME-P-01"]["projection"]["view"]["kind"],"FULL_LINKED_EXPANSION")
-        self.assertEqual(len(revised["FRAME-P-01"]["projection"]["view"]["document"]["initial_questions"]),10)
+        self.assertEqual(len(revised["FRAME-P-01"]["projection"]["view"]["document"]["initial_questions"]),3)
         self.assertEqual(revised["FRAME-P-02"],projected["FRAME-P-02"])
         historical_path=self.base/"admit-expand-historical.context.yaml"
         historical=self.call("context","--root",str(workspace),"--run-id","R1","--assignment",str(expansion_assignment_path),"--output",str(historical_path),"--historical","--packet-sha256",expansion_context["sha256"])
@@ -1254,7 +1388,7 @@ class QsTest(unittest.TestCase):
         expanded_packet=qs.load_yaml(expanded_context_path)
         full_view=expanded_packet["accepted_dependencies"][0]["projection"]["view"]
         self.assertEqual(full_view["kind"],"FULL_LINKED_EXPANSION")
-        self.assertEqual(len(full_view["document"]["initial_questions"]),10)
+        self.assertEqual(len(full_view["document"]["initial_questions"]),3)
         unlinked_assignment={**expanded_assignment,"assignment_id":"A-EXPAND-UNLINKED","result_id":"EXPAND-UNLINKED","output_path":"operators/EXPAND-UNLINKED.yaml"}
         unlinked_path=self.base/"admit-expand-unlinked.assignment.yaml"; put(unlinked_path,unlinked_assignment)
         self.call("assign","--root",str(workspace),"--run-id","R1","--assignment",str(unlinked_path))
@@ -1262,6 +1396,25 @@ class QsTest(unittest.TestCase):
         self.assertEqual(unlinked["error"],"context_expansion_not_linked")
         expansion_result=common("EXPAND-001","OP-PROJECTION","/root/OP-PROJECTION")
         expansion_result.update({"assignment_id":"A-EXPAND","attempt_id":"TRY-1","artifact_type":"OPERATOR","lifecycle_scope":"PREP","prep_stage":"PREP-3_EXPAND_NORMALIZE","context_packet_sha256":expansion_context["sha256"]})
+        proposal_base = {
+            "applicability": "The approved fixture scope", "origin_role": "OP-PROJECTION",
+            "g_refs": ["VECTOR-001"], "r_refs": ["R-001"], "not_g_refs": ["not goal"],
+        }
+        linked_proposal = {
+            **proposal_base, "id": "CANDIDATE-1", "source_initial_question_ids": ["IQ-P-01-01"],
+            "unknown": "Which verification procedure distinguishes the proposed inputs?",
+            "why_material": "The choice determines the acceptance procedure.",
+            "changeable_decision": "Choose a verification procedure.",
+            "evidence_needed": "Compare the two procedures on the same input.",
+        }
+        independent_proposal = {
+            **proposal_base, "id": "CANDIDATE-2", "source_initial_question_ids": [],
+            "unknown": "Can the approval statement be validated from the stored bytes alone?",
+            "why_material": "An unavailable validation step would prevent reproducible approval.",
+            "changeable_decision": "Decide which approval bytes must be retained.",
+            "evidence_needed": "Reconstruct approval from the Vector and the stored statement.",
+        }
+        expansion_result["resulting_questions"] = [linked_proposal, independent_proposal]
         expansion_result_path=self.base/"admit-expand.result.yaml"; put(expansion_result_path,expansion_result)
         stale_context=self.call("accept","--root",str(workspace),"--run-id","R1","--assignment",str(expansion_assignment_path),"--result",str(expansion_result_path),ok=False)
         self.assertEqual(stale_context["error"],"result_context_binding")
@@ -1283,6 +1436,11 @@ class QsTest(unittest.TestCase):
             {path.relative_to(run): path.read_bytes() for path in run.rglob("*") if path.is_file()},
             before,
         )
+        invalid_parent = {**linked_proposal, "source_initial_question_ids": ["IQ-P-01-02"]}
+        put(expansion_result_path, {**expansion_result, "resulting_questions": [invalid_parent, independent_proposal]})
+        invalid_proposal = self.call(*commit_args, ok=False)
+        self.assertIn(":proposal:CANDIDATE-1:source_initial_question_ids:unbound", invalid_proposal["error"])
+        self.assertFalse((run / expansion_assignment["output_path"]).exists())
         put(expansion_result_path, expansion_result)
         committed = self.call(*commit_args)
         self.assertEqual(committed["status"], "ACCEPTED")
@@ -1298,28 +1456,93 @@ class QsTest(unittest.TestCase):
         evidence=common("E-001","P-01","/root/P-01"); evidence.update({"assignment_id":"A-EVIDENCE","attempt_id":"TRY-1","artifact_type":"EVIDENCE","lifecycle_scope":"PREP","prep_stage":"PREP-3_EXPAND_NORMALIZE","tool_id":"FIXTURE-TOOL","tool_version":"1","policy_hash":"FIXTURE-POLICY","exposure_hash":"FIXTURE-EXPOSURE","freshness":"CURRENT-AS-DECLARED","changed":"UNCHANGED"})
         eap=self.base/"admit-evidence.assignment.yaml"; erp=self.base/"admit-evidence.result.yaml"; put(eap,evidence_assignment); put(erp,evidence); self.call("assign","--root",str(workspace),"--run-id","R1","--assignment",str(eap)); self.call("accept","--root",str(workspace),"--run-id","R1","--assignment",str(eap),"--result",str(erp))
         questions=[]
-        # This structural fixture normalizes the 100 accepted initial unknowns
-        # into three explicit research groups.  Every source remains listed;
-        # none is padded, discarded, or invented.
-        for index, group in enumerate((all_initial[0::3], all_initial[1::3], all_initial[2::3]),1):
+        # Keep the three Core fixture IDs while exercising both expansion origins.
+        for index, group in enumerate((all_initial[0::2], all_initial[1::2]), 1):
             source_ids=[item[0] for item in group]
             source_results=sorted({item[1] for item in group})
             source_roles=sorted({item[2] for item in group})
-            questions.append({"id":f"Q-{index:03d}","text":f"normalized research group {index}","source_offset":str(index),"unknown_key":f"normalized-group-{index}","mechanism":"researchable normalized mechanism","applicability":"goal","changeable_decision":f"decision group {index}","evidence_needed":f"evidence group {index}","lineage":{"operation":"SEMANTIC_MERGE","source_question_ids":source_ids,"source_result_ids":source_results,"source_roles":source_roles,"reason":"fixture normalization retains every distinct initial unknown with addressable provenance"},"g_refs":["G-1"],"r_refs":["R-001"],"not_g_refs":[]})
+            if "IQ-P-01-01" in source_ids:
+                source_ids.append("EXPAND-001/CANDIDATE-1")
+                source_results.append("EXPAND-001")
+                source_roles.append("OP-PROJECTION")
+            questions.append({"id":f"Q-{index:03d}","text":f"normalized research group {index}","source_offset":str(index),"unknown_key":f"normalized-group-{index}","mechanism":"researchable normalized mechanism","applicability":"goal","changeable_decision":f"decision group {index}","evidence_needed":f"evidence group {index}","lineage":{"operation":"SEMANTIC_MERGE","source_question_ids":source_ids,"source_result_ids":source_results,"source_roles":source_roles,"reason":"fixture normalization retains addressable IQ provenance"},"g_refs":["G-1"],"r_refs":["R-001"],"not_g_refs":[]})
+        questions.append({
+            "id": "Q-003", "text": independent_proposal["unknown"], "source_offset": "3",
+            "unknown_key": "approval-reproducibility", "mechanism": "Validation from retained approval bytes",
+            "applicability": independent_proposal["applicability"],
+            "changeable_decision": independent_proposal["changeable_decision"],
+            "evidence_needed": independent_proposal["evidence_needed"],
+            "lineage": {
+                "operation": "DERIVED_UNKNOWN", "source_question_ids": ["EXPAND-001/CANDIDATE-2"],
+                "source_result_ids": ["EXPAND-001"], "source_roles": ["OP-PROJECTION"],
+                "reason": "The independently anchored expansion proposal identifies a new approval unknown.",
+            },
+            "g_refs": ["VECTOR-001"], "r_refs": ["R-001"], "not_g_refs": ["not goal"],
+        })
         bank={"schema_version":"bank-v1","questions":questions,"requirements":["R-001"]}; bank_path=self.base/"admit-bank.yaml"; put(bank_path,bank); bank_hash=qs.sha(bank_path.read_bytes())
         source_ids=["VECTOR_NO_DRIFT","PERSPECTIVES_DISTINCT_NECESSARY","EACH_R","EACH_MATERIAL_NOT_G","ALTERNATIVES","COMMON_UNPROVED_ASSUMPTIONS","INTERACTIONS","RESEARCHABILITY","CHANGEABLE_DECISIONS","CENTRAL_MECHANISM_SUFFICIENCY"]
         source_checks=[]
         for check_id in source_ids:
             row={"check_id":check_id,"outcome":"PASS","basis":f"Root basis {check_id}","evidence_refs":["E-001"],"targeted_repair_assignments":[]}
             if check_id=="PERSPECTIVES_DISTINCT_NECESSARY": row.update({"root_semantic_outcome":"PASS","perspective_assessments":[{"role_id":item["role_id"],"competence":item["competence"],"analysis_scope":item["analysis_scope"],"unique_contribution":item["unique_contribution"],"boundary":item["boundary"],"necessity":f"necessary {item['role_id']}","basis_refs":["E-001"]} for item in rows],"material_overlap_assessments":[]})
+            if check_id=="PERSPECTIVES_DISTINCT_NECESSARY":
+                row["perspective_assessments"][4]["empty_initial_questions_assessment"] = {
+                    "result_id": "FRAME-P-05", "sha256": frame_hashes["FRAME-P-05"], "outcome": "PASS",
+                    "basis": "Root checked that the approved Vector closes the inputs to the verification procedure in scope 5.",
+                    "basis_refs": ["VECTOR-001"],
+                }
             if check_id=="COMMON_UNPROVED_ASSUMPTIONS": row.update({"root_semantic_outcome":"PASS","detected_assumptions":[],"none_with_basis":{"outcome":"NONE_WITH_BASIS","basis_refs":["E-001"]}})
             source_checks.append(row)
-        admission={"schema_version":"prep-admission-v1","id":"ADMISSION-1","run_id":"R1","input_snapshot":snapshot,"input_mode":"GOAL_TO_PLAN","goal_sha256":qs.sha((run/"input/goal.md").read_bytes()),"vector_binding":{"result_id":"VECTOR-001","sha256":vector_accept["content_hash"]},"approval_binding":{"id":"APP-1","sha256":approved["approval_sha256"]},"perspective_map_binding":{"id":"MAP-1","sha256":map_out["perspective_map_sha256"]},"initial_set_bindings":frame_bindings,"expansion_bindings":[],"normalization_decisions":[{"id":"N-1","decision":"retain exact lineage"}],"bank_path":"input/bank.yaml","bank_sha256":bank_hash,"requirements_sha256":qs.sha(qs.canon_yaml(["R-001"])),"question_count":"3","size_assessment":{"classification":"BELOW_TARGET_WITH_RATIONALE","rationale":"fixture normalizes all one hundred initial unknowns into three addressable groups without padding"},"source_checks":source_checks,"uncovered_areas":[],"generation_performed":"YES","status":"ADMITTED"}
+        admission={"schema_version":"prep-admission-v1","id":"ADMISSION-1","run_id":"R1","input_snapshot":snapshot,"input_mode":"GOAL_TO_PLAN","goal_sha256":qs.sha((run/"input/goal.md").read_bytes()),"vector_binding":{"result_id":"VECTOR-001","sha256":vector_accept["content_hash"]},"approval_binding":{"id":"APP-1","sha256":approved["approval_sha256"]},"perspective_map_binding":{"id":"MAP-1","sha256":map_out["perspective_map_sha256"]},"initial_set_bindings":frame_bindings,"expansion_bindings":[{"result_id":"EXPAND-001","sha256":committed["content_hash"]}],"normalization_decisions":[{"id":"N-1","decision":"retain exact lineage"}],"bank_path":"input/bank.yaml","bank_sha256":bank_hash,"requirements_sha256":qs.sha(qs.canon_yaml(["R-001"])),"question_count":"3","size_assessment":{"classification":"BELOW_TARGET_WITH_RATIONALE","rationale":"fixture retains every accepted initial unknown in three addressable groups without padding"},"source_checks":source_checks,"uncovered_areas":[],"generation_performed":"YES","status":"ADMITTED"}
         admission_path=self.base/"admission.yaml"; put(admission_path,admission)
         broken={"id":"ADMISSION-BROKEN"}; broken_path=self.base/"admission-broken.yaml"; put(broken_path,broken)
         self.call("admit-bank","--root",str(workspace),"--run-id","R1","--bank",str(bank_path),"--admission",str(broken_path),"--test-fixture",ok=False)
         self.assertFalse((run/"input/bank.yaml").exists())
         admit_args = ("admit-bank", "--root", str(workspace), "--run-id", "R1", "--bank", str(bank_path), "--test-fixture")
+        # Fork this synthetic run to show that two independent accepted P-10 heads
+        # cannot feed PREP-3 or be silently reduced to ten bindings at admission.
+        conflict_workspace = self.base / "conflicting-goal"
+        shutil.copytree(workspace, conflict_workspace)
+        conflict_run = conflict_workspace / "runs" / "R1"
+        conflict_args = ("--root", str(conflict_workspace), "--run-id", "R1")
+        extra_id = "FRAME-P-10-EXTRA"
+        extra_assignment = {**assignment, "assignment_id": "A-P-10-EXTRA", "result_id": extra_id, "output_path": "positions/P-10-EXTRA.yaml"}
+        extra_path = self.base / "admit-extra.assignment.yaml"; put(extra_path, extra_assignment)
+        self.call("assign", *conflict_args, "--assignment", str(extra_path))
+        extra_context = self.call("context", *conflict_args, "--assignment", str(extra_path), "--output", str(self.base / "admit-extra.context.yaml"))
+        extra_result = {
+            **framing, "id": extra_id, "assignment_id": "A-P-10-EXTRA", "context_packet_sha256": extra_context["sha256"],
+            "initial_questions": [{**framing["initial_questions"][0], "id": "IQ-P-10-UNBOUND"}],
+            "iceberg_position": {**framing["iceberg_position"], "origin_assignment_id": "A-P-10-EXTRA"},
+        }
+        extra_result_path = self.base / "admit-extra.result.yaml"; put(extra_result_path, extra_result)
+        self.call("commit", *conflict_args, "--assignment", str(extra_path), "--result", str(extra_result_path))
+        extra_expansion = {
+            **expanded_assignment, "assignment_id": "A-EXPAND-EXTRA", "result_id": "EXPAND-EXTRA", "output_path": "operators/EXPAND-EXTRA.yaml",
+            "dependency_result_ids": ["FRAME-P-10-HISTORY"], "dependency_hashes": [history_hash],
+            "assigned_ids": {**expanded_assignment["assigned_ids"], "questions": ["IQ-P-10-01"]},
+        }
+        extra_expansion_path = self.base / "admit-expand-extra.assignment.yaml"; put(extra_expansion_path, extra_expansion)
+        self.call("assign", *conflict_args, "--assignment", str(extra_expansion_path))
+        refused_context = self.call("context", *conflict_args, "--assignment", str(extra_expansion_path), "--output", str(self.base / "admit-expand-extra.context.yaml"), ok=False)
+        self.assertIn("prep:initial_framings:P-10:ambiguous_heads", refused_context["error"])
+        refused_admission = self.call("admit-bank", *conflict_args, "--bank", str(bank_path), "--admission", str(admission_path), "--test-fixture", ok=False)
+        self.assertIn("prep:initial_framings:P-10:ambiguous_heads", refused_admission["error"])
+        self.assertFalse((conflict_run / "input/bank.yaml").exists())
+        self.call("assign", "--root", str(workspace), "--run-id", "R1", "--assignment", str(extra_expansion_path))
+        carried = self.base / "admit-carried.context.yaml"
+        self.call("context", "--root", str(workspace), "--run-id", "R1", "--assignment", str(extra_expansion_path), "--output", str(carried))
+        self.assertEqual(qs.load_yaml(carried)["initial_question_sources"], [{
+            "question_id": "IQ-P-10-01", "source_result_id": "FRAME-P-10-HISTORY", "source_sha256": history_hash, "source_role_id": "P-10",
+        }])
+        previous_expansion = {
+            **expansion_result, "id": "EXPAND-FULL", "assignment_id": "A-EXPAND-FULL",
+            "context_packet_sha256": qs.sha(expanded_context_path.read_bytes()),
+        }
+        previous_expansion_path = self.base / "admit-expand-previous.result.yaml"; put(previous_expansion_path, previous_expansion)
+        rejected_commit = self.call("commit", *conflict_args, "--assignment", str(expanded_path), "--result", str(previous_expansion_path), ok=False)
+        self.assertIn("prep:initial_framings:P-10:ambiguous_heads", rejected_commit["error"])
+        self.assertFalse((conflict_run / "operators/EXPAND-FULL.yaml").exists())
         source_path = run / "positions/P-10.yaml"
         index_path = run / "state/assignments.yaml"
         tx_path = run / "transactions/FRAME-P-10.yaml"
@@ -1338,7 +1561,7 @@ class QsTest(unittest.TestCase):
                 digest = qs.sha(raw)
                 index = qs.load_yaml(index_path)
                 index["results"]["FRAME-P-10"]["content_hash"] = digest
-                index["attempts"]["A-P-10\0TRY-1"]["content_hash"] = digest
+                index["attempts"]["A-P-10\0TRY-2"]["content_hash"] = digest
                 put(index_path, index)
                 tx = qs.load_yaml(tx_path)
                 tx["result_sha256"] = digest

@@ -136,8 +136,10 @@ from model_validation import (
 from architecture_validation import architecture_impact, derive_architecture_views, render_architecture_mermaid
 from orchestration import ADVISER_ROLE, dispatch_resource_conflict, ordinary_adviser_assignment, validate_orchestration
 from prep_validation import (
-    PERSPECTIVE_PROFILE_FIELDS, approved_import_for_framing, frontier_transition_valid,
-    perspective_profile_hash, plan_projection_transition_valid, resolve_admission_state, validate_prep,
+    MATERIAL_UNKNOWNS_V1, PERSPECTIVE_PROFILE_FIELDS, approved_import_for_framing,
+    current_initial_framings, frontier_transition_valid, initial_questions_policy_valid, perspective_profile_hash,
+    plan_projection_transition_valid, resolve_admission_state, validate_empty_initial_questions,
+    validate_expansion_proposals, validate_initial_questions, validate_prep,
 )
 from question_admission import Arm, prepare_question_receipt, replay_question_receipts
 from question_ledger import (
@@ -400,6 +402,8 @@ def _new_snapshot_init(args: argparse.Namespace, workspace: Path, rid: str, mode
                 "input_mode":mode,"goal_path":goal_info["path"],"goal_sha256":goal_info["sha256"],
                 "materials":materials,"bank_binding":"DEFERRED_TO_PREP_ADMISSION" if mode=="GOAL_TO_PLAN" else "BOUND_AT_INIT",
                 "methodology_features":[ICEBERG_FEATURE,ARCHITECTURE_FEATURE]}
+    if mode=="GOAL_TO_PLAN":
+        descriptor["initial_questions_policy"]=MATERIAL_UNKNOWNS_V1
     if getattr(args,"test_fixture",False):
         # Strict YAML forbids unquoted implicit booleans.  `fixture_only: YES`
         # is the accepted explicit fixture marker consumed by prep_validation.
@@ -1714,7 +1718,14 @@ def _question_arm(run,current):
     else:
         original=Ref(snapshot["goal_path"],snapshot["goal_sha256"])
     pin=lambda field: Ref(procedure_path+"#"+field,sha(canon_yaml(policy[field])))
-    procedure=Procedure(mode,original,pin("inventory_rule"),pin("evidence_cutoff"),pin("tools"),
+    inventory=pin("inventory_rule")
+    if "initial_questions_policy" in snapshot:
+        # Bind the snapshot's generation rule without changing legacy journal fields.
+        inventory=Ref(inventory.id,sha(canon_yaml({
+            "inventory_rule":policy["inventory_rule"],
+            "initial_questions_policy":snapshot["initial_questions_policy"],
+        })))
+    procedure=Procedure(mode,original,inventory,pin("evidence_cutoff"),pin("tools"),
                         pin("routing_rules"),pin("methodology"),
                         Ref("required_roles_and_phases",sha(canon_yaml([sorted(ROLES),sorted(PREP_STAGES),ROLE_KINDS]))),
                         pin("review_and_audit"))
@@ -2953,6 +2964,40 @@ def _accept_locked(args: argparse.Namespace, run: Path) -> dict[str, Any]:
             error=("question_work_result_context" if needs_question_context else
                    "result_prep_context_binding" if needs_framing_context else "result_context_binding")
             raise QSError(error)
+    if needs_framing_context:
+        snapshot_doc=load_bound_yaml(run,"input/snapshot.yaml",snapshot,"immutable_input_snapshot_drift")
+        if snapshot_doc.get("initial_questions_policy")==MATERIAL_UNKNOWNS_V1:
+            if chain[-1].packet.get("initial_questions_policy")!=MATERIAL_UNKNOWNS_V1:
+                raise QSError("result_prep_context_policy_binding")
+            question_errors=[]
+            validate_initial_questions(result,assignment["role_id"],True,
+                                       "prep:initial_set:"+assignment["role_id"],question_errors)
+            _validate_delivered_empty_framing(result,chain[-1].packet,
+                                              "prep:initial_set:"+assignment["role_id"],question_errors)
+            if question_errors:
+                raise QSError("result_prep_initial_questions_invalid:"+"|".join(sorted(set(question_errors))))
+    if (assignment.get("lifecycle_scope")=="PREP" and assignment.get("prep_stage")=="PREP-3_EXPAND_NORMALIZE"
+        and (assignment.get("assigned_ids") or "resulting_questions" in result)):
+        snapshot_doc=load_bound_yaml(run,"input/snapshot.yaml",snapshot,"immutable_input_snapshot_drift")
+        if snapshot_doc.get("initial_questions_policy")==MATERIAL_UNKNOWNS_V1 and not assignment.get("adviser"):
+            assigned=assignment.get("assigned_ids",{})
+            qids=assigned.get("questions",[]) if isinstance(assigned,dict) else None
+            if qids or result.get("resulting_questions",[])!=[]:
+                sources=prep_initial_question_sources(run,state,snapshot_doc)
+                if (not qids or not chain or chain[-1].packet.get("packet_type")!="PREP_EXPANSION_CONTEXT"
+                    or result.get("context_packet_sha256")!=sha(chain[-1].raw)
+                    or chain[-1].packet.get("initial_question_sources")!=_prep_expansion_source_bindings(qids,sources)):
+                    raise QSError("result_prep_expansion_source_binding")
+                packet=chain[-1].packet
+                not_g=packet["goal"]["NOT_G"]
+                proposal_errors=[]
+                validate_expansion_proposals(
+                    result,set(qids),packet["goal"]["result_id"],{row["id"] for row in packet["requirements"]},
+                    {value for value in not_g if isinstance(value,str)} if isinstance(not_g,list) else set(),
+                    "prep:expansion_binding:"+result_id,proposal_errors,
+                )
+                if proposal_errors:
+                    raise QSError("result_prep_expansion_proposals_invalid:"+"|".join(sorted(set(proposal_errors))))
     if needs_question_context:
         view=(state,latest_current,bank,journal)
         _question_context(run,view,arm,registered,[])
@@ -3244,8 +3289,10 @@ def _admit_bank_locked(args: argparse.Namespace, run: Path) -> dict[str,Any]:
     current_for_pure={**current,"sha256":sha((run/"state/current.yaml").read_bytes())}
     approval=load_yaml(run/"input/vector-approval.yaml") if (run/"input/vector-approval.yaml").is_file() else None
     perspective=load_yaml(run/"input/perspective-map.yaml") if (run/"input/perspective-map.yaml").is_file() else None
-    context_errors=prep_framing_context_errors(run,state)
-    errors=validate_prep(snap,current_for_pure,state.get("results",{}),docs,inputs,bank,approval,perspective,admission,transactions,"admit")
+    context_errors=prep_framing_context_errors(run,state,snap)
+    framing_state=prep_initial_framing_state(run,state,snap,context_errors)
+    context_errors.extend(prep_expansion_commit_errors(run,state,snap,admission))
+    errors=validate_prep(snap,current_for_pure,framing_state,docs,inputs,bank,approval,perspective,admission,transactions,"admit")
     errors=sorted(set(errors+context_errors))
     if errors: raise QSError("admission_invalid:"+"|".join(errors))
     tx_path=run/txpath
@@ -3781,7 +3828,7 @@ def context_receipt(output, raw, packet, *, historical=False):
             "cost":"UNAVAILABLE","scope":"STRUCTURAL_ONLY"}
 
 
-def prep_framing_context_errors(run: Path, state: dict[str,Any]) -> list[str]:
+def prep_framing_context_errors(run: Path, state: dict[str,Any], snapshot: dict[str,Any]) -> list[str]:
     """Check every accepted PREP-2 result against its immutable context packet."""
     errors=[]
     registered=state.get("registered",{})
@@ -3809,12 +3856,90 @@ def prep_framing_context_errors(run: Path, state: dict[str,Any]) -> list[str]:
             digest=document.get("context_packet_sha256") if isinstance(document,dict) else None
             if not isinstance(digest,str):
                 raise QSError("result_prep_context_binding")
-            resolve_context_revision(run,assignment,registered_entry["assignment_sha256"],state,digest)
+            revision=resolve_context_revision(run,assignment,registered_entry["assignment_sha256"],state,digest)
+            if snapshot.get("initial_questions_policy")==MATERIAL_UNKNOWNS_V1:
+                if revision.packet.get("initial_questions_policy")!=MATERIAL_UNKNOWNS_V1:
+                    errors.append(prefix+":initial_questions_policy:mismatch")
+                _validate_delivered_empty_framing(document,revision.packet,prefix,errors)
         except (QSError,OSError,ValueError):
             errors.append(prefix+":hash_mismatch")
     return errors
 
-def prep_initial_question_sources(run: Path, state: dict[str,Any]) -> dict[str,dict[str,Any]]:
+def _validate_delivered_empty_framing(document, packet, prefix, errors):
+    if document.get("initial_questions")!=[]:
+        return
+    profile,goal,materials=(packet.get(field) for field in ("perspective_profile","goal","materials"))
+    if (not isinstance(profile,dict) or not isinstance(goal,dict) or not isinstance(materials,list)
+        or any(not isinstance(item,dict) or not isinstance(item.get("path"),str) for item in materials)):
+        errors.append(prefix+":empty_initial_questions_rationale:packet_basis_invalid")
+        return
+    validate_empty_initial_questions(
+        document,profile,goal.get("result_id"),(item["path"] for item in materials),prefix,errors,
+    )
+
+
+def prep_initial_framing_state(run: Path, state: dict[str,Any], snapshot: dict[str,Any], errors: list[str]) -> dict[str,Any]:
+    """Bind the PREP-2 attempt inventory to existing immutable journal records."""
+    if snapshot.get("initial_questions_policy")!=MATERIAL_UNKNOWNS_V1:
+        return state
+    registered=state.get("registered",{})
+    if not isinstance(registered,dict):
+        return state
+    terminal_pairs={row["receipt"]["assignment_id"]+"\0"+row["receipt"]["attempt_id"]
+                    for row in command_journal(run) if row["operation"]=="terminal-author-failure"}
+    matched=set()
+    for path in (run/"intents").glob("*.yaml"):
+        try:
+            intent=load_yaml(path)
+        except QSError:
+            # A missing match for any registered PREP-2 attempt is rejected below.
+            continue
+        assignment=intent.get("assignment") if isinstance(intent,dict) else None
+        if not isinstance(assignment,dict) or assignment.get("prep_stage")!="PREP-2_PERSPECTIVES":
+            continue
+        aid=assignment.get("assignment_id"); attempt_id=assignment.get("attempt_id")
+        if not isinstance(aid,str) or not isinstance(attempt_id,str):
+            errors.append("prep:initial_framings:intent:identity")
+            continue
+        pair=aid+"\0"+attempt_id
+        row=registered.get(pair)
+        prefix=f"prep:initial_framings:{aid}:{attempt_id}"
+        if (not isinstance(row,dict) or row.get("assignment")!=assignment
+            or row.get("assignment_sha256")!=intent.get("assignment_sha256")
+            or path.name!=sha(pair.encode()).upper()+".yaml"
+            or intent.get("run_id")!=run.name or intent.get("input_snapshot")!=state.get("input_snapshot")
+            or intent.get("publication")!="JOURNAL_FIRST" or intent.get("status")!="ASSIGNED"
+            or intent.get("predecessor_attempt_id")!=assignment.get("supersedes_attempt_id","ABSENT")):
+            errors.append(prefix+":intent_binding")
+            continue
+        try:
+            raw=base64.b64decode(intent.get("assignment_bytes_b64",""),validate=True)
+            if sha(raw)!=intent.get("assignment_sha256") or load_yaml(CapturedInput(str(path),raw))!=assignment:
+                raise QSError("assignment_bytes")
+        except (QSError,ValueError,binascii.Error):
+            errors.append(prefix+":intent_bytes")
+            continue
+        matched.add(pair)
+        result_id=assignment.get("result_id")
+        if not isinstance(result_id,str):
+            errors.append(prefix+":result_id")
+            continue
+        committed=(run/"transactions"/(ident(result_id,"result_id")+".yaml")).is_file()
+        if (committed or row.get("status")=="ACCEPTED") and _immutable_accepted_attempt_result(run,state,aid,attempt_id)!=result_id:
+            errors.append(prefix+":accepted_commit_binding")
+    projected=dict(registered)
+    for pair,row in registered.items():
+        assignment=row.get("assignment") if isinstance(row,dict) else None
+        if not isinstance(assignment,dict) or assignment.get("prep_stage")!="PREP-2_PERSPECTIVES":
+            continue
+        if pair not in matched:
+            errors.append("prep:initial_framings:registered_attempt_without_intent:"+str(pair).replace("\0",":"))
+        if pair in terminal_pairs and row.get("status")!="ACCEPTED":
+            projected[pair]={**row,"status":"REJECTED"}
+    return {**state,"registered":projected}
+
+
+def prep_initial_question_sources(run: Path, state: dict[str,Any], snapshot: dict[str,Any]) -> dict[str,dict[str,Any]]:
     """Resolve initial PREP-2 questions from accepted immutable framing bytes.
 
     Before GOAL admission there is intentionally no ``input/bank.yaml``.  A
@@ -3824,6 +3949,12 @@ def prep_initial_question_sources(run: Path, state: dict[str,Any]) -> dict[str,d
     """
     results=state.get("results",{})
     if not isinstance(results,dict): raise QSError("prep_initial_sources_registry")
+    if snapshot.get("initial_questions_policy")==MATERIAL_UNKNOWNS_V1:
+        errors=[]
+        framing_state=prep_initial_framing_state(run,state,snapshot,errors)
+        _,sources=current_initial_framings(framing_state,_prep_documents(run,state),errors)
+        if errors: raise QSError("|".join(sorted(set(errors))))
+        return sources
     sources: dict[str,dict[str,Any]]={}
     for result_id,entry in sorted(results.items()):
         if not isinstance(result_id,str) or not isinstance(entry,dict): continue
@@ -3841,6 +3972,49 @@ def prep_initial_question_sources(run: Path, state: dict[str,Any]) -> dict[str,d
             if qid in sources: raise QSError("prep_initial_question_duplicate")
             sources[qid]={"result_id":result_id,"sha256":entry.get("content_hash"),"role_id":entry.get("role_id"),"question":question}
     return sources
+
+
+def _prep_expansion_source_bindings(qids, sources):
+    if not isinstance(qids,list) or any(not isinstance(qid,str) or qid not in sources for qid in qids):
+        raise QSError("prep_expansion_unknown_initial_question")
+    return [{"question_id":qid,"source_result_id":sources[qid]["result_id"],
+             "source_sha256":sources[qid]["sha256"],"source_role_id":sources[qid]["role_id"]} for qid in qids]
+
+
+def prep_expansion_commit_errors(run, state, snapshot, admission):
+    if snapshot.get("initial_questions_policy")!=MATERIAL_UNKNOWNS_V1 or not isinstance(admission,dict):
+        return []
+    bindings=admission.get("expansion_bindings")
+    if not isinstance(bindings,list):
+        return []
+    errors=[]
+    for binding in bindings:
+        rid=binding.get("result_id") if isinstance(binding,dict) else None
+        entry=state.get("results",{}).get(rid) if isinstance(rid,str) else None
+        if not isinstance(entry,dict):
+            continue  # The pure validator reports an unresolved binding.
+        aid=entry.get("assignment_id"); attempt_id=entry.get("attempt_id")
+        prefix=f"prep:expansion_binding:{rid}"
+        if (not isinstance(aid,str) or not isinstance(attempt_id,str)
+            or _immutable_accepted_attempt_result(run,state,aid,attempt_id)!=rid):
+            errors.append(prefix+":accepted_commit_binding")
+            continue
+        registered=state["registered"][aid+"\0"+attempt_id]
+        assignment=registered["assignment"]
+        try:
+            document=load_bound_yaml(run,entry["path"],entry["content_hash"],"prep_expansion_result_drift")
+            digest=document.get("context_packet_sha256")
+            if not isinstance(digest,str):
+                raise QSError("result_prep_expansion_source_binding")
+            revision=resolve_context_revision(
+                run,assignment,registered["assignment_sha256"],state,digest,result_witness=digest,
+            )
+            if revision.packet.get("packet_type")!="PREP_EXPANSION_CONTEXT":
+                raise QSError("result_prep_expansion_source_binding")
+        except (QSError,OSError,ValueError,KeyError):
+            errors.append(prefix+":accepted_context_binding")
+    return errors
+
 
 CONTEXT_PROJECTION_VERSION="CONTEXT_DEPENDENCY_PROJECTION_V1"
 
@@ -4057,6 +4231,8 @@ def _context_locked(args: argparse.Namespace, run: Path) -> dict[str, Any]:
         if armed_bank and "requirement_definitions" in bounded_goal:
             bounded_goal["requirement_definitions"]=_blind_requirement_definitions(bounded_goal["requirement_definitions"])[0]
         packet={"schema_version":SCHEMA,"packet_type":"PREP_FRAMING_CONTEXT","run_id":args.run_id,"input_snapshot":state["input_snapshot"],"assignment_id":assignment["assignment_id"],"attempt_id":assignment["attempt_id"],"role_id":assignment["role_id"],"artifact_type":"FRAMING","lifecycle_scope":"PREP","prep_stage":"PREP-2_PERSPECTIVES","readset":readset,"goal":{"result_id":goal_id,"sha256":goal_entry["content_hash"],"G":goal_doc["G"],"NOT_G":goal_doc["NOT_G"],"requirements":goal_doc.get("requirements",[]),**bounded_goal},"materials":material_rows,"perspective_profile":profile,"perspective_profile_hash":assignment["perspective_profile_hash"],"vector_sha256":assignment["vector_sha256"],"approval_sha256":assignment["approval_sha256"],"bank":"ABSENT","blind":"true"}
+        if "initial_questions_policy" in snapshot_doc:
+            packet["initial_questions_policy"]=snapshot_doc["initial_questions_policy"]
         if armed_bank:
             _bank_blind_question_guard(bank,packet["goal"],material_rows)
         return publish(packet)
@@ -4065,15 +4241,19 @@ def _context_locked(args: argparse.Namespace, run: Path) -> dict[str, Any]:
         # GOAL_TO_PLAN has no bank until PREP-4 admission.  Source questions
         # remain in the accepted PREP-2 framing records, so project just the
         # explicitly assigned subset with source-result bindings.
+        if snapshot_doc.get("initial_questions_policy")==MATERIAL_UNKNOWNS_V1:
+            approval=load_yaml(run/"input/vector-approval.yaml")
+            if (not isinstance(approval,dict) or approval.get("vector_result_id")!=goal_id
+                or approval.get("vector_sha256")!=goal_entry.get("content_hash")):
+                raise QSError("prep_expansion_approved_vector_mismatch")
         assigned=assignment.get("assigned_ids",{})
         if not isinstance(assigned,dict): raise QSError("prep_expansion_assigned_obligations")
         qids=assigned.get("questions",[]); rids=assigned.get("requirements",[])
         if (not isinstance(qids,list) or not qids or len(qids)!=len(set(qids))
             or not isinstance(rids,list) or not rids or len(rids)!=len(set(rids))):
             raise QSError("prep_expansion_assigned_obligations")
-        source_questions=prep_initial_question_sources(run,state)
-        if any(not isinstance(qid,str) or qid not in source_questions for qid in qids):
-            raise QSError("prep_expansion_unknown_initial_question")
+        source_questions=prep_initial_question_sources(run,state,snapshot_doc)
+        source_bindings=_prep_expansion_source_bindings(qids,source_questions)
         definitions=goal_doc.get("requirement_definitions",[])
         known_requirements={item.get("id"):item for item in definitions if isinstance(item,dict) and isinstance(item.get("id"),str)}
         if any(not isinstance(rid,str) or rid not in known_requirements for rid in rids):
@@ -4094,7 +4274,7 @@ def _context_locked(args: argparse.Namespace, run: Path) -> dict[str, Any]:
             raise QSError("context_expansion_not_linked")
         allowed_goal_fields=("value_recipient","scope","success_criteria","requirements","requirement_definitions","hard_constraints","changeable_assumptions","current_state","resources","authority","owner_decisions","open_research_questions")
         bounded_goal={field:goal_doc[field] for field in allowed_goal_fields if field in goal_doc}
-        packet={"schema_version":SCHEMA,"packet_type":"PREP_EXPANSION_CONTEXT","run_id":args.run_id,"input_snapshot":state["input_snapshot"],"assignment_id":assignment["assignment_id"],"attempt_id":assignment["attempt_id"],"role_id":assignment["role_id"],"artifact_type":assignment["artifact_type"],"lifecycle_scope":"PREP","prep_stage":"PREP-3_EXPAND_NORMALIZE","output_path":assignment["output_path"],"readset":readset,"goal":{"result_id":goal_id,"sha256":goal_entry["content_hash"],"G":goal_doc["G"],"NOT_G":goal_doc["NOT_G"],**bounded_goal},"questions":[source_questions[qid]["question"] for qid in qids],"requirements":[known_requirements[rid] for rid in rids],"initial_question_sources":[{"question_id":qid,"source_result_id":source_questions[qid]["result_id"],"source_sha256":source_questions[qid]["sha256"],"source_role_id":source_questions[qid]["role_id"]} for qid in qids],"dependency_projection_version":CONTEXT_PROJECTION_VERSION,"accepted_dependencies":[dependency_view(run,results[result_id],set(qids),result_id in expanded) for result_id in sorted(wanted)],"bank":"ABSENT","blind":"false"}
+        packet={"schema_version":SCHEMA,"packet_type":"PREP_EXPANSION_CONTEXT","run_id":args.run_id,"input_snapshot":state["input_snapshot"],"assignment_id":assignment["assignment_id"],"attempt_id":assignment["attempt_id"],"role_id":assignment["role_id"],"artifact_type":assignment["artifact_type"],"lifecycle_scope":"PREP","prep_stage":"PREP-3_EXPAND_NORMALIZE","output_path":assignment["output_path"],"readset":readset,"goal":{"result_id":goal_id,"sha256":goal_entry["content_hash"],"G":goal_doc["G"],"NOT_G":goal_doc["NOT_G"],**bounded_goal},"questions":[source_questions[qid]["question"] for qid in qids],"requirements":[known_requirements[rid] for rid in rids],"initial_question_sources":source_bindings,"dependency_projection_version":CONTEXT_PROJECTION_VERSION,"accepted_dependencies":[dependency_view(run,results[result_id],set(qids),result_id in expanded) for result_id in sorted(wanted)],"bank":"ABSENT","blind":"false"}
         return publish(packet)
     if is_blind:
         # Even the goal document is a bounded handoff.  It cannot turn a
@@ -4597,8 +4777,11 @@ def prep_state(run: Path, state: dict[str,Any] | None=None, current: dict[str,An
     perspective=load_yaml(run/"input/perspective-map.yaml") if (run/"input/perspective-map.yaml").is_file() else None
     admission=load_yaml(run/"input/prep-admission.yaml") if (run/"input/prep-admission.yaml").is_file() else None
     docs=_prep_documents(run,state); transactions=_prep_transactions(run)
-    errors=validate_prep(snapshot,current,state.get("results",{}),docs,inputs,bank,approval,perspective,admission,transactions,"recover")
-    errors=sorted(set(errors+prep_framing_context_errors(run,state)))
+    context_errors=prep_framing_context_errors(run,state,snapshot)
+    framing_state=prep_initial_framing_state(run,state,snapshot,context_errors)
+    context_errors.extend(prep_expansion_commit_errors(run,state,snapshot,admission))
+    errors=validate_prep(snapshot,current,framing_state,docs,inputs,bank,approval,perspective,admission,transactions,"recover")
+    errors=sorted(set(errors+context_errors))
     return snapshot,state,current,inputs,bank,approval,admission,errors
 
 
@@ -4642,6 +4825,7 @@ def accepted(run: Path, *, recovering=False) -> tuple[dict[str,Any],dict[str,Any
     state=load_state(run,"assignments"); current=load_state(run,"current"); snapshot=current["input_snapshot"]
     snap=load_bound_yaml(run,"input/snapshot.yaml",snapshot,"immutable_input_snapshot_drift")
     if not isinstance(snap,dict): raise QSError("immutable_input_snapshot_drift")
+    if not initial_questions_policy_valid(snap): raise QSError("prep:snapshot:initial_questions_policy:invalid")
     mode=snap.get("input_mode")
     if mode in NEW_MODES:
         features=snap.get("methodology_features")

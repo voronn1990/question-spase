@@ -18,6 +18,7 @@ from typing import Any, Iterable
 import yaml
 
 
+MATERIAL_UNKNOWNS_V1 = "MATERIAL_UNKNOWNS_V1"
 PERSPECTIVE_ROLES = tuple(f"P-{number:02d}" for number in range(1, 11))
 PERSPECTIVE_PROFILE_FIELDS = (
     "role_id", "agent_id", "title", "competence", "analysis_scope",
@@ -359,6 +360,13 @@ def _snapshot_hash(snapshot: dict[str, Any], inputs: dict[str, dict[str, Any]]) 
             return snapshot[field]
     path = snapshot.get("path", "input/snapshot.yaml")
     return _input_hash(inputs, path)
+
+
+def initial_questions_policy_valid(snapshot: dict[str, Any]) -> bool:
+    return "initial_questions_policy" not in snapshot or (
+        snapshot.get("input_mode") == "GOAL_TO_PLAN"
+        and snapshot["initial_questions_policy"] == MATERIAL_UNKNOWNS_V1
+    )
 
 
 def _validate_snapshot(snapshot: Any, inputs: dict[str, dict[str, Any]], errors: list[str]) -> tuple[dict[str, Any], str | None]:
@@ -799,25 +807,216 @@ def _validate_prep_framing_profiles(
             errors.append(f"{prefix}:perspective_profile_hash:mismatch")
 
 
+def validate_initial_questions(
+    doc: dict[str, Any],
+    role: str,
+    material_unknowns: bool,
+    prefix: str,
+    errors: list[str],
+) -> set[str]:
+    questions = _list(doc.get("initial_questions"))
+    if not material_unknowns and (questions is None or len(questions) != 10):
+        errors.append(f"{prefix}:initial_questions:count_not_10")
+        return set()
+    if questions is None:
+        errors.append(f"{prefix}:initial_questions:not_list")
+        return set()
+    ids: set[str] = set()
+    for q_index, question in enumerate(questions):
+        qid = question.get("id", f"INDEX-{q_index}") if isinstance(question, dict) else f"INDEX-{q_index}"
+        q_prefix = f"prep:initial_question:{qid}"
+        if not _required(
+            question,
+            ("id", "unknown", "why_material", "changeable_decision", "applicability", "evidence_needed", "g_refs", "r_refs", "not_g_refs", "origin_role"),
+            q_prefix,
+            errors,
+        ):
+            continue
+        if not isinstance(qid, str) or not qid.strip():
+            errors.append(f"{prefix}:initial_questions:{q_index}:id:invalid")
+        elif qid in ids:
+            errors.append(f"{q_prefix}:duplicate_id")
+        else:
+            ids.add(qid)
+        if question.get("origin_role") != role:
+            errors.append(f"{q_prefix}:origin_role:mismatch")
+        for field in ("unknown", "why_material", "changeable_decision", "applicability", "evidence_needed"):
+            if not _text(question.get(field)):
+                errors.append(f"{q_prefix}:{field}:empty")
+        if _strings(question.get("g_refs"), nonempty=True) is None:
+            errors.append(f"{q_prefix}:g_refs:invalid")
+        for field in ("r_refs", "not_g_refs"):
+            if _strings(question.get(field)) is None:
+                errors.append(f"{q_prefix}:{field}:invalid")
+    return ids
+
+
+def _explanatory_text(value: Any) -> bool:
+    return _text(value) and any(character.isalpha() for character in value)
+
+
+def validate_empty_initial_questions(
+    doc: dict[str, Any],
+    profile: dict[str, Any],
+    vector_result_id: Any,
+    material_paths: Iterable[str],
+    prefix: str,
+    errors: list[str],
+) -> list[str]:
+    if doc.get("initial_questions") != []:
+        return []
+    prefix += ":empty_initial_questions_rationale"
+    rationale = doc.get("empty_initial_questions_rationale")
+    if not isinstance(rationale, dict):
+        errors.append(f"{prefix}:invalid")
+        return []
+    scope = profile.get("analysis_scope")
+    if scope is None or rationale.get("analysis_scope") != scope:
+        errors.append(f"{prefix}:analysis_scope:mismatch")
+    if not _explanatory_text(rationale.get("explanation")):
+        errors.append(f"{prefix}:explanation:invalid")
+    allowed_refs = set(material_paths)
+    if isinstance(vector_result_id, str):
+        allowed_refs.add(vector_result_id)
+    return _validate_refs(rationale.get("basis_refs"), allowed_refs, f"{prefix}:basis_refs", errors)
+
+
+def current_initial_framings(
+    state: Any, docs: dict[str, Any], errors: list[str],
+) -> tuple[dict[str, str], dict[str, dict[str, Any]]]:
+    """Resolve PREP-2 heads and preserve the first accepted origin of every IQ."""
+    state = _mapping(state) or {}
+    results = _mapping(state.get("results"))
+    registered = _mapping(state.get("registered"))
+    attempts = _mapping(state.get("attempts"))
+    current_attempts = _mapping(state.get("current_attempts"))
+    if any(value is None for value in (results, registered, attempts, current_attempts)):
+        errors.append("prep:initial_framings:attempt_registry:invalid")
+        return {}, {}
+    frames = {
+        result_id for result_id, entry in results.items()
+        if isinstance(entry, dict) and entry.get("status") in {None, "ACCEPTED"}
+        and (entry.get("artifact_type") == "FRAMING" or docs.get(result_id, {}).get("artifact_type") == "FRAMING")
+        and (entry.get("lifecycle_scope") == "PREP" or docs.get(result_id, {}).get("prep_stage") == "PREP-2_PERSPECTIVES")
+    }
+    groups: dict[str, dict[str, Any]] = {}
+    for pair, record in registered.items():
+        assignment = record.get("assignment") if isinstance(record, dict) else None
+        if not isinstance(assignment, dict) or assignment.get("prep_stage") != "PREP-2_PERSPECTIVES":
+            continue
+        aid, attempt_id = assignment.get("assignment_id"), assignment.get("attempt_id")
+        if not _text(aid) or not _text(attempt_id) or pair != aid + "\0" + attempt_id:
+            errors.append("prep:initial_framings:attempt_registry:identity")
+            continue
+        groups.setdefault(aid, {})[attempt_id] = record
+
+    heads: dict[str, str] = {}
+    pending_roles: set[str] = set()
+    sources: dict[str, dict[str, Any]] = {}
+    covered_frames: set[str] = set()
+    terminal = {"ACCEPTED", "REJECTED", "BLOCKED", "STALE", "SUPERSEDED"}
+    for aid, records in sorted(groups.items()):
+        prefix = f"prep:initial_framings:{aid}"
+        cursor = current_attempts.get(aid)
+        head = records.get(cursor) if isinstance(cursor, str) else None
+        if head is None:
+            errors.append(f"{prefix}:current_attempt:missing")
+            continue
+        assignment = head["assignment"]
+        role, agent = assignment.get("role_id"), assignment.get("agent_id")
+        occurrence = assignment.get("logical_occurrence_id")
+        if not isinstance(role, str) or role not in PERSPECTIVE_ROLES or not _text(agent):
+            errors.append(f"{prefix}:current_attempt:role_or_agent")
+            continue
+        if not any(record.get("status") == "ACCEPTED" for record in records.values()):
+            if head.get("status") not in terminal:
+                pending_roles.add(role)
+            continue
+        if head.get("status") != "ACCEPTED":
+            errors.append(f"{prefix}:current_attempt:not_accepted")
+            continue
+
+        seen: set[str] = set()
+        chain: list[str] = []
+        while isinstance(cursor, str) and cursor in records and cursor not in seen:
+            seen.add(cursor)
+            record = records[cursor]
+            assignment = record["assignment"]
+            if (record.get("status") not in terminal or assignment.get("artifact_type") != "FRAMING"
+                or assignment.get("lifecycle_scope") != "PREP" or assignment.get("role_id") != role
+                or assignment.get("agent_id") != agent or assignment.get("logical_occurrence_id") != occurrence):
+                errors.append(f"{prefix}:attempt:{cursor}:invalid_predecessor")
+                break
+            if record.get("status") == "ACCEPTED":
+                result_id = assignment.get("result_id")
+                entry = results.get(result_id) if isinstance(result_id, str) else None
+                doc = docs.get(result_id) if isinstance(result_id, str) else None
+                proof = attempts.get(aid + "\0" + cursor)
+                if (not isinstance(result_id, str) or result_id not in frames or not isinstance(doc, dict)
+                    or doc.get("id") != result_id or doc.get("artifact_type") != "FRAMING"
+                    or doc.get("lifecycle_scope") != "PREP" or doc.get("prep_stage") != "PREP-2_PERSPECTIVES"
+                    or doc.get("author_role") != role or doc.get("agent_id") != agent
+                    or any(row.get("assignment_id") != aid or row.get("attempt_id") != cursor for row in (entry, doc))
+                    or entry.get("artifact_type") != "FRAMING" or entry.get("role_id") != role or entry.get("agent_id") != agent
+                    or not isinstance(proof, dict) or proof.get("result_id") != result_id
+                    or not _hash(_entry_hash(entry)) or proof.get("content_hash") != _entry_hash(entry)):
+                    errors.append(f"{prefix}:attempt:{cursor}:accepted_binding")
+                    break
+                chain.append(result_id)
+            cursor = assignment.get("supersedes_attempt_id")
+        if cursor is not None or seen != records.keys() or not chain:
+            errors.append(f"{prefix}:attempt_lineage:unresolved")
+            continue
+        if role in heads:
+            errors.append(f"prep:initial_framings:{role}:ambiguous_heads")
+        else:
+            heads[role] = chain[0]
+        covered_frames.update(chain)
+        for result_id in reversed(chain):
+            doc = docs[result_id]
+            ids = validate_initial_questions(doc, role, True, f"prep:initial_set:{role}", errors)
+            for question in _list(doc.get("initial_questions")) or []:
+                qid = question.get("id") if isinstance(question, dict) else None
+                if not isinstance(qid, str) or qid not in ids:
+                    continue
+                existing = sources.get(qid)
+                if existing is None:
+                    sources[qid] = {"result_id": result_id, "sha256": _entry_hash(results[result_id]), "role_id": role, "question": question}
+                elif existing["result_id"] not in chain or existing["question"] != question:
+                    errors.append(f"prep:initial_question:{qid}:duplicate_or_changed_origin")
+    for role in sorted(heads.keys() & pending_roles):
+        errors.append(f"prep:initial_framings:{role}:pending_competing_head")
+    for result_id in sorted(frames - covered_frames):
+        errors.append(f"prep:initial_framings:{result_id}:unresolved_accepted_frame")
+    if len(heads) == len(PERSPECTIVE_ROLES) and all(docs[result_id].get("initial_questions") == [] for result_id in heads.values()):
+        errors.append("prep:initial_sets:no_material_questions")
+    return heads, sources
+
+
 def _validate_initial_framings(
     admission: dict[str, Any],
     registry: dict[str, Any],
     docs: dict[str, Any],
+    framing_state: Any,
     perspectives: dict[str, dict[str, Any]],
     vector_result_id: str | None,
     vector_sha256: str | None,
     approval_sha256: str | None,
     snapshot_hash: str | None,
+    material_unknowns: bool,
+    material_paths: set[str],
     errors: list[str],
-) -> tuple[set[str], dict[str, str]]:
+) -> tuple[dict[str, tuple[str, str]], dict[str, tuple[str, str | None, list[str]]]]:
+    current_frames, initial_sources = current_initial_framings(framing_state, docs, errors) if material_unknowns else ({}, {})
+    registered = _mapping((_mapping(framing_state) or {}).get("registered")) or {}
+    empty_frames: dict[str, tuple[str, str | None, list[str]]] = {}
     bindings = _list(admission.get("initial_set_bindings"))
     if bindings is None:
         errors.append("prep:admission:initial_set_bindings:not_list")
-        return set(), {}
+        return {}, empty_frames
     if len(bindings) != 10:
         errors.append("prep:admission:initial_set_bindings:count_not_10")
-    all_questions: set[str] = set()
-    result_roles: dict[str, str] = {}
+    all_questions: dict[str, tuple[str, str]] = {}
     observed_roles: list[str] = []
     for index, binding in enumerate(bindings):
         if not isinstance(binding, dict):
@@ -835,6 +1034,8 @@ def _validate_initial_framings(
             errors.append(f"{prefix}:artifact_type:not_FRAMING")
         if role not in perspectives:
             errors.append(f"{prefix}:binding_role_id:not_admitted_P_role")
+        if material_unknowns and current_frames.get(role) != result_id:
+            errors.append(f"{prefix}:binding:not_current_frame")
         canonical_role = _canonical_p_result_role(doc, entry, role, prefix, errors)
         if canonical_role == role and role in perspectives:
             observed_roles.append(role)
@@ -843,7 +1044,6 @@ def _validate_initial_framings(
             expected_profile = perspectives[role].get("profile_sha256", _canonical_hash(perspectives[role]))
             if doc.get("perspective_profile_hash") != expected_profile:
                 errors.append(f"{prefix}:perspective_profile_hash:mismatch")
-        result_roles[str(result_id)] = str(role)
         for field, expected in (
             ("vector_result_id", vector_result_id),
             ("vector_sha256", vector_sha256),
@@ -865,38 +1065,30 @@ def _validate_initial_framings(
             allowed = _strings(blind.get("allowed"), nonempty=True)
             if allowed is None:
                 errors.append(f"{prefix}:blind_input:allowed:invalid")
-        questions = _list(doc.get("initial_questions"))
-        if questions is None or len(questions) != 10:
-            errors.append(f"{prefix}:initial_questions:count_not_10")
-            continue
-        for q_index, question in enumerate(questions):
-            qid = question.get("id", f"INDEX-{q_index}") if isinstance(question, dict) else f"INDEX-{q_index}"
-            q_prefix = f"prep:initial_question:{qid}"
-            if not _required(
-                question,
-                ("id", "unknown", "why_material", "changeable_decision", "applicability", "evidence_needed", "g_refs", "r_refs", "not_g_refs", "origin_role"),
-                q_prefix,
-                errors,
-            ):
-                continue
-            if qid in all_questions:
-                errors.append(f"{q_prefix}:duplicate_id")
-            all_questions.add(qid)
-            if question.get("origin_role") != role:
-                errors.append(f"{q_prefix}:origin_role:mismatch")
-            for field in ("unknown", "why_material", "changeable_decision", "applicability", "evidence_needed"):
-                if not _text(question.get(field)):
-                    errors.append(f"{q_prefix}:{field}:empty")
-            if _strings(question.get("g_refs"), nonempty=True) is None:
-                errors.append(f"{q_prefix}:g_refs:invalid")
-            for field in ("r_refs", "not_g_refs"):
-                if _strings(question.get(field)) is None:
-                    errors.append(f"{q_prefix}:{field}:invalid")
+        if material_unknowns:
+            if doc.get("initial_questions") == []:
+                pair = str(doc.get("assignment_id")) + "\0" + str(doc.get("attempt_id"))
+                record = _mapping(registered.get(pair)) or {}
+                assignment = _mapping(record.get("assignment")) or {}
+                allowed_reads = _strings(assignment.get("allowed_reads")) or []
+                basis_refs = validate_empty_initial_questions(
+                    doc, perspectives.get(role, {}), vector_result_id, material_paths.intersection(allowed_reads), prefix, errors,
+                )
+                empty_frames[role] = (result_id, _entry_hash(entry), basis_refs)
+        else:
+            for qid in sorted(validate_initial_questions(doc, role, False, prefix, errors)):
+                if qid in all_questions:
+                    errors.append(f"prep:initial_question:{qid}:duplicate_id")
+                all_questions[qid] = (result_id, role)
     if Counter(observed_roles) != Counter(PERSPECTIVE_ROLES):
         errors.append("prep:initial_sets:roles:not_exact_once")
+    if material_unknowns:
+        if not initial_sources:
+            errors.append("prep:initial_sets:no_material_questions")
+        return {qid: (row["result_id"], row["role_id"]) for qid, row in initial_sources.items()}, empty_frames
     if len(all_questions) != 100:
         errors.append(f"prep:initial_sets:question_total:{len(all_questions)}:not_100")
-    return all_questions, result_roles
+    return all_questions, empty_frames
 
 
 def _requirement_ids(bank: dict[str, Any]) -> set[str]:
@@ -909,13 +1101,132 @@ def _requirement_ids(bank: dict[str, Any]) -> set[str]:
     return result
 
 
+def _validate_expansion_bindings(
+    bindings: Any,
+    state: Any,
+    registry: dict[str, Any],
+    docs: dict[str, Any],
+    snapshot_hash: str | None,
+    vector_result_id: str | None,
+    initial_questions: dict[str, tuple[str, str]],
+    errors: list[str],
+) -> dict[str, tuple[set[str], dict[str, set[str]]]]:
+    state = _mapping(state) or {}
+    registered = _mapping(state.get("registered")) or {}
+    attempts = _mapping(state.get("attempts")) or {}
+    expansion: dict[str, tuple[set[str], dict[str, set[str]]]] = {}
+    vector = docs.get(vector_result_id, {})
+    vector_r = {
+        row["id"] for row in _list(vector.get("requirement_definitions")) or []
+        if isinstance(row, dict) and isinstance(row.get("id"), str)
+    }
+    vector_not_g = set(_strings(vector.get("NOT_G")) or [])
+    for index, binding in enumerate(_list(bindings) or []):
+        prefix = f"prep:expansion_binding:{index}"
+        if not _required(binding, ("result_id", "sha256"), prefix, errors):
+            continue
+        result_id = binding["result_id"]
+        entry, doc = _accepted_result(result_id, registry, docs, prefix, errors)
+        if entry is None or doc is None:
+            continue
+        prefix = f"prep:expansion_binding:{result_id}"
+        aid, attempt_id = entry.get("assignment_id"), entry.get("attempt_id")
+        if not isinstance(aid, str) or not isinstance(attempt_id, str):
+            errors.append(f"{prefix}:assignment:unbound")
+            continue
+        pair = aid + "\0" + attempt_id
+        record = _mapping(registered.get(pair)) or {}
+        assignment = _mapping(record.get("assignment")) or {}
+        attempt = _mapping(attempts.get(pair)) or {}
+        digest = _entry_hash(entry)
+        if (result_id in expansion or not _hash(digest) or binding["sha256"] != digest
+            or attempt.get("result_id") != result_id or attempt.get("content_hash") != digest
+            or record.get("status") != "ACCEPTED" or doc.get("workflow_status") != "ACCEPTED"
+            or assignment.get("result_id") != result_id or doc.get("id") != result_id
+            or assignment.get("prep_stage") != "PREP-3_EXPAND_NORMALIZE" or doc.get("prep_stage") != assignment.get("prep_stage")
+            or any(row.get("lifecycle_scope") != "PREP" or row.get("input_snapshot") != snapshot_hash for row in (entry, doc, assignment))
+            or any(row.get("assignment_id") != aid or row.get("attempt_id") != attempt_id for row in (doc, assignment))
+            or entry.get("artifact_type") == "FRAMING" or any(row.get("artifact_type") != entry.get("artifact_type") for row in (doc, assignment))
+            or assignment.get("role_id") != entry.get("role_id") or doc.get("author_role") != entry.get("role_id")
+            or any(row.get("agent_id") != entry.get("agent_id") for row in (doc, assignment))):
+            errors.append(f"{prefix}:accepted_prep3_binding:invalid")
+            continue
+        assigned = _mapping(assignment.get("assigned_ids", {}))
+        assigned_iqs = _strings(assigned.get("questions", [])) if assigned is not None else None
+        if not assigned_iqs or set(assigned_iqs) - initial_questions.keys():
+            errors.append(f"{prefix}:question_contribution:unbound")
+            continue
+        assigned_r = set(_strings(assigned.get("requirements")) or [])
+        if not assigned_r or assigned_r - vector_r or assignment.get("goal_result_id", vector_result_id) != vector_result_id:
+            errors.append(f"{prefix}:assigned_vector_requirements:unbound")
+            continue
+        source_ids = {initial_questions[qid][0] for qid in assigned_iqs}
+        source_hashes = {_entry_hash(registry.get(source_id)) for source_id in source_ids}
+        if (source_ids - set(_strings(assignment.get("dependency_result_ids")) or [])
+            or source_hashes - set(_strings(assignment.get("dependency_hashes")) or [])):
+            errors.append(f"{prefix}:assigned_initial_dependencies:unbound")
+            continue
+        proposals = validate_expansion_proposals(
+            doc, set(assigned_iqs), vector_result_id, assigned_r, vector_not_g, prefix, errors,
+        )
+        if any(f"{result_id}/{qid}" in initial_questions for qid in proposals):
+            errors.append(f"{prefix}:proposal:initial_id_collision")
+        claims = set()
+        if doc.get("artifact_type") in {"PRIMARY", "ANSWER"}:
+            claims.update(_strings(doc.get("addressed_q_ids")) or [])
+            claims.update(
+                row["q_id"] for row in _list(doc.get("per_question_outcomes")) or []
+                if isinstance(row, dict) and isinstance(row.get("q_id"), str)
+            )
+        expansion[result_id] = (claims & set(assigned_iqs), proposals)
+    return expansion
+
+
+def validate_expansion_proposals(
+    doc: dict[str, Any], assigned_iqs: set[str], vector_result_id: Any,
+    requirement_ids: set[str], not_g: set[str], prefix: str, errors: list[str],
+) -> dict[str, set[str]]:
+    rows = doc.get("resulting_questions", [])
+    ids = validate_initial_questions({"initial_questions": rows}, doc.get("author_role"), True, prefix, errors)
+    proposals: dict[str, set[str]] = {}
+    for row in _list(rows) or []:
+        qid = row.get("id") if isinstance(row, dict) else None
+        if not isinstance(qid, str) or qid not in ids:
+            continue
+        if "/" in qid:
+            errors.append(f"{prefix}:proposal:{qid}:local_id:invalid")
+            continue
+        if any(not _explanatory_text(row.get(field)) for field in (
+            "unknown", "why_material", "changeable_decision", "applicability", "evidence_needed",
+        )):
+            errors.append(f"{prefix}:proposal:{qid}:material_question:uncheckable")
+            continue
+        parents = _strings(row.get("source_initial_question_ids"))
+        if parents is None or set(parents) - assigned_iqs:
+            errors.append(f"{prefix}:proposal:{qid}:source_initial_question_ids:unbound")
+            continue
+        r_refs = set(_strings(row.get("r_refs")) or [])
+        not_g_refs = set(_strings(row.get("not_g_refs")) or [])
+        if not parents and (
+            not isinstance(vector_result_id, str) or row.get("g_refs") != [vector_result_id]
+            or not (r_refs or not_g_refs) or r_refs - requirement_ids or not_g_refs - not_g
+        ):
+            errors.append(f"{prefix}:proposal:{qid}:delivered_anchors:unbound")
+            continue
+        proposals[qid] = set(parents)
+    return proposals
+
+
 def _validate_bank(
     bank: Any,
     question_count: int | None,
     mode: str,
-    known_results: set[str],
+    registry: dict[str, Any],
+    docs: dict[str, Any],
     imported_result_id: str | None,
-    initial_questions: set[str],
+    initial_questions: dict[str, tuple[str, str]],
+    expansion: dict[str, tuple[set[str], dict[str, set[str]]]],
+    material_unknowns: bool,
     errors: list[str],
 ) -> tuple[set[str], set[str]]:
     if not isinstance(bank, dict):
@@ -929,8 +1240,12 @@ def _validate_bank(
     qids: set[str] = set()
     unknown_keys: set[str] = set()
     covered_initial: set[str] = set()
+    proposal_sources = {
+        f"{result_id}/{proposal_id}": (result_id, parents)
+        for result_id, (_, proposals) in expansion.items() for proposal_id, parents in proposals.items()
+    }
     covered_requirements: set[str] = set()
-    allowed_result_ids = set(known_results)
+    allowed_result_ids = set(registry)
     if imported_result_id:
         allowed_result_ids.add(imported_result_id)
     for index, question in enumerate(questions):
@@ -1001,16 +1316,56 @@ def _validate_bank(
         if unresolved:
             errors.append(f"{prefix}:lineage:source_result_ids:unresolved:{','.join(unresolved)}")
         if mode == "GOAL_TO_PLAN":
-            unknown_sources = sorted(set(source_q) - initial_questions)
+            cited_iqs = set(source_q) & initial_questions.keys()
+            unknown_sources = sorted(set(source_q) - initial_questions.keys() - proposal_sources.keys())
             if unknown_sources:
                 errors.append(f"{prefix}:lineage:source_question_ids:unknown:{','.join(unknown_sources)}")
-            covered_initial.update(source_q)
-            if lineage.get("operation") == "INITIAL_KEPT" and not source_q:
+            if material_unknowns:
+                expected_framings = set()
+                for source_id in sorted(cited_iqs):
+                    result_id, role = initial_questions[source_id]
+                    expected_framings.add(result_id)
+                    if result_id not in source_results:
+                        errors.append(f"{prefix}:lineage:{source_id}:source_result_id:mismatch")
+                    if role not in (source_roles or ()):
+                        errors.append(f"{prefix}:lineage:{source_id}:source_role:mismatch")
+                cited_expansions = set()
+                for source_id in sorted((set(source_q) & proposal_sources.keys()) - initial_questions.keys()):
+                    result_id, parents = proposal_sources[source_id]
+                    if result_id not in source_results or parents - cited_iqs:
+                        errors.append(f"{prefix}:lineage:{source_id}:proposal_origin:mismatch")
+                    elif not parents and lineage.get("operation") == "INITIAL_KEPT":
+                        errors.append(f"{prefix}:lineage:{source_id}:proposal_origin:not_an_initial_question")
+                    else:
+                        cited_expansions.add(result_id)
+                actual_roles = set()
+                for result_id in sorted(set(source_results) & registry.keys()):
+                    entry, source = _accepted_result(result_id, registry, docs, f"{prefix}:lineage", errors)
+                    if source is None:
+                        continue
+                    role = entry.get("role_id", source.get("author_role"))
+                    if not isinstance(role, str) or role not in ALL_ROLES or source.get("author_role") != role:
+                        errors.append(f"{prefix}:lineage:{result_id}:source_role:unbound")
+                    else:
+                        actual_roles.add(role)
+                    if source.get("artifact_type") == "FRAMING":
+                        if result_id not in expected_framings:
+                            errors.append(f"{prefix}:lineage:{result_id}:framing_without_initial_question")
+                    elif result_id not in expansion:
+                        errors.append(f"{prefix}:lineage:{result_id}:not_bound_prep3_expansion")
+                    else:
+                        claimed_iqs, proposals = expansion[result_id]
+                        if result_id not in cited_expansions and (proposals or not claimed_iqs.intersection(cited_iqs)):
+                            errors.append(f"{prefix}:lineage:{result_id}:question_contribution:mismatch")
+                if set(source_roles or ()) != actual_roles:
+                    errors.append(f"{prefix}:lineage:source_roles:result_roles_mismatch")
+            covered_initial.update(cited_iqs)
+            if lineage.get("operation") == "INITIAL_KEPT" and not cited_iqs:
                 errors.append(f"{prefix}:lineage:initial_kept_without_source")
     if requirements - covered_requirements:
         errors.append(f"prep:bank:requirements:uncovered:{','.join(sorted(requirements - covered_requirements))}")
-    if mode == "GOAL_TO_PLAN" and initial_questions - covered_initial:
-        errors.append(f"prep:bank:initial_questions:uncovered:{','.join(sorted(initial_questions - covered_initial))}")
+    if mode == "GOAL_TO_PLAN" and initial_questions.keys() - covered_initial:
+        errors.append(f"prep:bank:initial_questions:uncovered:{','.join(sorted(initial_questions.keys() - covered_initial))}")
     if question_count is not None and question_count != len(questions):
         errors.append("prep:admission:question_count:mismatch")
     return qids, requirements
@@ -1076,7 +1431,10 @@ def _validate_refs(refs: Any, allowed: set[str], prefix: str, errors: list[str],
     return values
 
 
-def _validate_perspective_check(row: dict[str, Any], perspectives: dict[str, Any], allowed_refs: set[str], errors: list[str]) -> None:
+def _validate_perspective_check(
+    row: dict[str, Any], perspectives: dict[str, Any], allowed_refs: set[str],
+    empty_frames: dict[str, tuple[str, str | None, list[str]]], errors: list[str],
+) -> None:
     prefix = "prep:source_check:PERSPECTIVES_DISTINCT_NECESSARY"
     for field in ("root_semantic_outcome", "perspective_assessments", "material_overlap_assessments"):
         if field not in row:
@@ -1109,6 +1467,21 @@ def _validate_perspective_check(row: dict[str, Any], perspectives: dict[str, Any
         if not _text(assessment.get("necessity")):
             errors.append(f"{item_prefix}:necessity:empty")
         _validate_refs(assessment.get("basis_refs"), allowed_refs, f"{item_prefix}:basis_refs", errors)
+        if assessment["role_id"] in empty_frames:
+            result_id, digest, grounds = empty_frames[assessment["role_id"]]
+            disposition = assessment.get("empty_initial_questions_assessment")
+            check_prefix = f"{item_prefix}:empty_initial_questions_assessment"
+            if not _required(disposition, ("result_id", "sha256", "outcome", "basis", "basis_refs"), check_prefix, errors):
+                continue
+            if disposition.get("result_id") != result_id or disposition.get("sha256") != digest or not _hash(digest):
+                errors.append(f"{check_prefix}:frame_binding:mismatch")
+            if disposition.get("outcome") != "PASS":
+                errors.append(f"{check_prefix}:outcome:not_PASS")
+            if not _explanatory_text(disposition.get("basis")):
+                errors.append(f"{check_prefix}:basis:invalid")
+            refs = _validate_refs(disposition.get("basis_refs"), allowed_refs, f"{check_prefix}:basis_refs", errors)
+            if not set(grounds).issubset(refs):
+                errors.append(f"{check_prefix}:basis_refs:missing_frame_grounds")
     if Counter(roles) != Counter(PERSPECTIVE_ROLES):
         errors.append(f"{prefix}:perspective_assessments:not_exact_10")
     overlaps = _list(row.get("material_overlap_assessments"))
@@ -1168,6 +1541,7 @@ def _validate_source_checks(
     admission: dict[str, Any],
     perspectives: dict[str, Any],
     allowed_refs: set[str],
+    empty_frames: dict[str, tuple[str, str | None, list[str]]],
     errors: list[str],
 ) -> None:
     rows = _list(admission.get("source_checks"))
@@ -1198,7 +1572,7 @@ def _validate_source_checks(
         if outcome == "NONCRITICAL_GAP_WITH_RATIONALE" and not _text(row.get("rationale")):
             errors.append(f"{prefix}:rationale:missing")
         if check_id == "PERSPECTIVES_DISTINCT_NECESSARY":
-            _validate_perspective_check(row, perspectives, allowed_refs, errors)
+            _validate_perspective_check(row, perspectives, allowed_refs, empty_frames, errors)
         if check_id == "COMMON_UNPROVED_ASSUMPTIONS":
             _validate_assumptions_check(row, allowed_refs, errors)
     if tuple(observed) != SOURCE_CHECK_IDS:
@@ -1622,7 +1996,7 @@ def _validate_current_chain(
 def _legacy_positive(snapshot: Any, current: Any, exact_inputs: dict[str, Any], bank: Any) -> bool:
     if not isinstance(snapshot, dict) or snapshot.get("schema_version") != "question-space-v4":
         return False
-    if "input_mode" in snapshot or "bank_binding" in snapshot or "import_binding" in snapshot:
+    if any(field in snapshot for field in ("input_mode", "bank_binding", "import_binding", "initial_questions_policy")):
         return False
     required = {
         "schema_version",
@@ -1670,6 +2044,9 @@ def resolve_admission_state(
         return {"state": "LEGACY_CORE", "action": "NONE", "stable_binding": {}, "current_revision": None, "errors": sorted(set(errors))}
     if not isinstance(snapshot, dict) or snapshot.get("input_mode") not in {"GOAL_TO_PLAN", "BANK_TO_PLAN"}:
         errors.append("prep:admission_state:INVALID:not_positive_legacy_or_new_mode")
+        return {"state": "INVALID", "action": "FAIL", "stable_binding": {}, "current_revision": None, "errors": sorted(set(errors))}
+    if not initial_questions_policy_valid(snapshot):
+        errors.append("prep:snapshot:initial_questions_policy:invalid")
         return {"state": "INVALID", "action": "FAIL", "stable_binding": {}, "current_revision": None, "errors": sorted(set(errors))}
     admission_txs = _admission_transactions(txs)
     if len(admission_txs) > 1:
@@ -2062,39 +2439,52 @@ def validate_prep(
         approval_sha256,
         errors,
     )
-    initial_questions: set[str] = set()
-    result_roles: dict[str, str] = {}
+    material_unknowns = snapshot_value.get("initial_questions_policy") == MATERIAL_UNKNOWNS_V1
+    initial_questions: dict[str, tuple[str, str]] = {}
+    empty_frames: dict[str, tuple[str, str | None, list[str]]] = {}
     if mode == "GOAL_TO_PLAN":
-        initial_questions, result_roles = _validate_initial_framings(
+        material_paths = {
+            row["path"] for row in _list(snapshot_value.get("materials")) or []
+            if isinstance(row, dict) and isinstance(row.get("path"), str)
+        }
+        initial_questions, empty_frames = _validate_initial_framings(
             admission,
             accepted,
             accepted_docs,
+            registry,
             perspectives,
             vector_result_id,
             vector_sha256,
             approval_sha256,
             snapshot_hash,
+            material_unknowns,
+            material_paths,
             errors,
         )
     elif admission.get("initial_set_bindings") != []:
         errors.append("prep:admission:initial_set_bindings:bank_mode_must_be_empty")
 
-    known_results = set(accepted)
     question_count = _question_count(admission, errors)
+    expansion = _validate_expansion_bindings(
+        admission.get("expansion_bindings"), registry, accepted, accepted_docs, snapshot_hash, vector_result_id, initial_questions, errors,
+    ) if material_unknowns else {}
     qids, requirements = _validate_bank(
         bank,
         question_count,
         mode,
-        known_results,
+        accepted,
+        accepted_docs,
         vector_result_id if mode == "BANK_TO_PLAN" else None,
         initial_questions,
+        expansion,
+        material_unknowns,
         errors,
     )
     _validate_size(admission, question_count, errors)
     allowed_refs = _reference_set(accepted, accepted_docs, inputs)
     allowed_refs.update(qids)
     allowed_refs.update(requirements)
-    _validate_source_checks(admission, perspectives, allowed_refs, errors)
+    _validate_source_checks(admission, perspectives, allowed_refs, empty_frames, errors)
 
     txs = _transaction_collection(transactions, errors)
     admission_txs = _admission_transactions(txs)

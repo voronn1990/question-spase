@@ -50,7 +50,7 @@ wire:
 initialization:
   options: [effort, half-budget, question-procedure]
   procedure_fields: [inventory_rule, evidence_cutoff, tools, routing_rules, methodology, review_and_audit]
-  binding: "Snapshot pins exact procedure bytes, source goal or BANK original, and ordinary role roster."
+  binding: "Snapshot pins exact procedure bytes, source goal or BANK original, and ordinary role roster. With MATERIAL_UNKNOWNS_V1 the routing_inventory reference hash covers the canonical mapping of inventory_rule and initial_questions_policy. Earlier GOAL and BANK keep the original hash of inventory_rule. Procedure mismatch returns UNPAIRED_PROCEDURE."
 request:
   common_fields: [key, actor, authority_sha256, run_id, input_snapshot, expected_revision]
   assignment_authority_fields: [assignment_id, attempt_id, logical_occurrence_id]

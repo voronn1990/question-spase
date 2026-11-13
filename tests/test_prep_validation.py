@@ -47,7 +47,10 @@ def blob(path: str, document: dict[str, Any], *, policy: str | None = None) -> d
 
 
 class CompletePrep:
-    def __init__(self, mode: str = "GOAL_TO_PLAN", *, question_count: int | None = None) -> None:
+    def __init__(
+        self, mode: str = "GOAL_TO_PLAN", *, question_count: int | None = None,
+        initial_counts: tuple[int, ...] | None = None,
+    ) -> None:
         self.mode = mode
         self.run_id = "RUN-GOAL" if mode == "GOAL_TO_PLAN" else "RUN-BANK"
         goal_bytes = b"bounded goal v2\n"
@@ -55,6 +58,7 @@ class CompletePrep:
         self.registry: dict[str, dict[str, Any]] = {}
         self.docs: dict[str, dict[str, Any]] = {}
         self.inputs: dict[str, Any] = {}
+        self.framing_state = {"results": self.registry, "registered": {}, "attempts": {}, "current_attempts": {}}
         self.snapshot: dict[str, Any] = {
             "schema_version": "prep-snapshot-v1",
             "id": "SNAPSHOT-1",
@@ -67,6 +71,8 @@ class CompletePrep:
             "path": "input/snapshot.yaml",
             "test_fixture": True,
         }
+        if initial_counts is not None:
+            self.snapshot["initial_questions_policy"] = "MATERIAL_UNKNOWNS_V1"
         snapshot_bytes = canonical_yaml_bytes(self.snapshot)
         self.snapshot_hash = hashlib.sha256(snapshot_bytes).hexdigest()
         evidence_bytes = b"accepted evidence\n"
@@ -88,10 +94,15 @@ class CompletePrep:
         )
         self.perspective_map = self.make_perspective_map()
         self.perspective_map["path"] = "input/perspective-map.yaml"
+        if initial_counts is not None:
+            for row in self.perspective_map["perspectives"]:
+                row["profile_sha256"] = canonical_hash(row)
 
         if mode == "GOAL_TO_PLAN":
             self.vector_result_id = "RES-VECTOR"
             vector_doc = self.make_vector(self.vector_result_id, self.run_id, self.snapshot_hash, revision="7")
+            if initial_counts is not None:
+                vector_doc["requirement_definitions"] = [{"id": "R-001", "definition": "Bound the event fold"}]
             self.vector_hash = hashlib.sha256(canonical_yaml_bytes(vector_doc)).hexdigest()
             self.approval = self.make_approval(self.run_id, self.snapshot_hash, self.vector_result_id, self.vector_hash)
             self.approval["path"] = "input/vector-approval.yaml"
@@ -112,8 +123,8 @@ class CompletePrep:
                 "content_hash": self.vector_hash,
             }
             self.docs[self.vector_result_id] = vector_doc
-            self.initial_bindings, initial_ids = self.make_framings()
-            target_count = question_count if question_count is not None else 100
+            self.initial_bindings, initial_ids = self.make_framings(initial_counts or (10,) * 10)
+            target_count = question_count if question_count is not None else len(initial_ids)
             self.bank = self.make_goal_bank(initial_ids, target_count)
         else:
             self.vector_result_id = "FOREIGN-VECTOR"
@@ -345,15 +356,15 @@ class CompletePrep:
             "perspectives": rows,
         }
 
-    def make_framings(self) -> tuple[list[dict[str, Any]], list[tuple[str, str]]]:
+    def make_framings(self, counts: tuple[int, ...]) -> tuple[list[dict[str, Any]], list[tuple[str, str]]]:
         bindings: list[dict[str, Any]] = []
         initial: list[tuple[str, str]] = []
-        for row in self.perspective_map["perspectives"]:
+        for row, count in zip(self.perspective_map["perspectives"], counts, strict=True):
             role = row["role_id"]
             result_id = f"RES-FRAMING-{role}"
             result_hash = digest(result_id)
             questions = []
-            for number in range(1, 11):
+            for number in range(1, count + 1):
                 qid = f"IQ-{role}-{number:02d}"
                 initial.append((qid, result_id))
                 questions.append(
@@ -382,7 +393,7 @@ class CompletePrep:
                 "author_role": role,
                 "agent_id": row["agent_id"],
                 "input_snapshot": self.snapshot_hash,
-                "perspective_profile_hash": canonical_hash(row),
+                "perspective_profile_hash": row.get("profile_sha256", canonical_hash(row)),
                 "vector_result_id": self.vector_result_id,
                 "vector_sha256": self.vector_hash,
                 "approval_sha256": self.approval_hash,
@@ -395,10 +406,69 @@ class CompletePrep:
                 },
                 "initial_questions": questions,
             }
+            if not questions:
+                self.docs[result_id]["empty_initial_questions_rationale"] = {
+                    "analysis_scope": row["analysis_scope"],
+                    "basis_refs": [self.vector_result_id],
+                    "explanation": "The approved Vector fixes the input boundary and verification procedure for this scope.",
+                }
+            if "profile_sha256" in row:
+                self.docs[result_id]["perspective_profile"] = {key: value for key, value in row.items() if key != "profile_sha256"}
+                self.register_framing(result_id, f"A-{role}", "TRY-1")
             bindings.append(
                 {"result_id": result_id, "sha256": result_hash, "role_id": role, "agent_id": row["agent_id"]}
             )
         return bindings, initial
+
+    def register_framing(self, result_id: str, assignment_id: str, attempt_id: str, previous: str | None = None) -> None:
+        document = self.docs[result_id]
+        entry = self.registry[result_id]
+        identity = {"assignment_id": assignment_id, "attempt_id": attempt_id, "lifecycle_scope": "PREP"}
+        document.update(identity, prep_stage="PREP-2_PERSPECTIVES")
+        entry.update(identity, agent_id=document["agent_id"])
+        assignment = {
+            **identity, "result_id": result_id, "role_id": document["author_role"], "agent_id": document["agent_id"],
+            "prep_stage": document["prep_stage"], "artifact_type": "FRAMING",
+        }
+        if previous:
+            assignment["supersedes_attempt_id"] = previous
+        pair = assignment_id + "\0" + attempt_id
+        self.framing_state["registered"][pair] = {"assignment": assignment, "status": "ACCEPTED"}
+        self.framing_state["attempts"][pair] = {"result_id": result_id, "content_hash": entry["content_hash"]}
+        self.framing_state["current_attempts"][assignment_id] = attempt_id
+
+    def add_expansion(
+        self, assigned_iq: str, proposals: list[dict[str, Any]] | None = None,
+        *, addressed_iqs: list[str] | None = None,
+    ) -> None:
+        rid = "RES-EXPANSION"
+        role = "OP-PROJECTION" if addressed_iqs is None else "P-01"
+        agent = f"AGENT-{role}"
+        identity = {
+            "assignment_id": "A-EXPANSION", "attempt_id": "TRY-1", "input_snapshot": self.snapshot_hash,
+            "lifecycle_scope": "PREP", "artifact_type": "OPERATOR" if addressed_iqs is None else "ANSWER",
+            "agent_id": agent,
+        }
+        prep_stage = "PREP-3_EXPAND_NORMALIZE"
+        self.docs[rid] = {
+            **identity, "id": rid, "author_role": role, "workflow_status": "ACCEPTED", "prep_stage": prep_stage,
+        }
+        if proposals is not None:
+            self.docs[rid]["resulting_questions"] = proposals
+        if addressed_iqs is not None:
+            self.docs[rid]["addressed_q_ids"] = addressed_iqs
+        result_hash = canonical_hash(self.docs[rid])
+        self.registry[rid] = {**identity, "status": "ACCEPTED", "content_hash": result_hash, "role_id": role}
+        pair = "A-EXPANSION\0TRY-1"
+        frame_id = f"RES-FRAMING-{assigned_iq[3:7]}"
+        self.framing_state["registered"][pair] = {"status": "ACCEPTED", "assignment": {
+            **identity, "result_id": rid, "role_id": role, "prep_stage": prep_stage,
+            "assigned_ids": {"questions": [assigned_iq], "requirements": ["R-001"]},
+            "goal_result_id": "RES-VECTOR", "dependency_result_ids": [frame_id],
+            "dependency_hashes": [self.registry[frame_id]["content_hash"]],
+        }}
+        self.framing_state["attempts"][pair] = {"result_id": rid, "content_hash": result_hash}
+        self.admission["expansion_bindings"] = [{"result_id": rid, "sha256": result_hash}]
 
     @staticmethod
     def bank_question(qid: str, source_qid: str, source_result: str, role: str) -> dict[str, Any]:
@@ -473,6 +543,16 @@ class CompletePrep:
                         "material_overlap_assessments": [],
                     }
                 )
+                if "initial_questions_policy" in self.snapshot:
+                    for assessment in row["perspective_assessments"]:
+                        result_id = "RES-FRAMING-" + assessment["role_id"]
+                        doc = self.docs[result_id]
+                        if doc["initial_questions"] == []:
+                            assessment["empty_initial_questions_assessment"] = {
+                                "result_id": result_id, "sha256": self.registry[result_id]["content_hash"],
+                                "outcome": "PASS", "basis": "Root checked the bounded verification procedure against the Vector.",
+                                "basis_refs": doc["empty_initial_questions_rationale"]["basis_refs"],
+                            }
             if check_id == "COMMON_UNPROVED_ASSUMPTIONS":
                 row.update(
                     {
@@ -623,7 +703,7 @@ class CompletePrep:
         return validate_prep(
             self.snapshot,
             self.current,
-            self.registry,
+            self.framing_state if "initial_questions_policy" in self.snapshot else self.registry,
             self.docs,
             self.inputs,
             self.bank,
@@ -837,6 +917,158 @@ class PrepValidationTest(unittest.TestCase):
         fixture = CompletePrep()
         fixture.docs["RES-FRAMING-P-01"]["initial_questions"].pop()
         self.assertIn("prep:initial_set:P-01:initial_questions:count_not_10", fixture.validate())
+
+    def test_material_initial_questions_accept_variable_counts_and_one_empty_profile(self) -> None:
+        fixture = CompletePrep(initial_counts=(1, 3, 10, 11, 0, 2, 2, 2, 2, 2))
+        self.assertEqual(fixture.admission["question_count"], "35")
+        self.assertEqual(fixture.validate(), [])
+
+    def test_material_initial_questions_reject_all_empty_as_an_admission_gap(self) -> None:
+        fixture = CompletePrep(initial_counts=(0,) * 10)
+        self.assertIn("prep:initial_sets:no_material_questions", fixture.validate())
+
+    def test_material_empty_framing_requires_addressable_ground_and_root_assessment(self) -> None:
+        fixture = CompletePrep(initial_counts=(0,) * 9 + (1,))
+        self.assertEqual(fixture.validate(), [])
+        prefix = "prep:initial_set:P-01:empty_initial_questions_rationale"
+        rationale = fixture.docs["RES-FRAMING-P-01"]["empty_initial_questions_rationale"]
+        for update, error in (
+            ({"analysis_scope": "Some other scope"}, "analysis_scope:mismatch"),
+            ({"explanation": "."}, "explanation:invalid"),
+            ({"basis_refs": None}, "basis_refs:invalid"),
+            ({"basis_refs": ["RES-EVIDENCE"]}, "basis_refs:unresolved:RES-EVIDENCE"),
+        ):
+            with self.subTest(update=update):
+                frame = fixture.docs["RES-FRAMING-P-01"]
+                frame["empty_initial_questions_rationale"] = {**rationale, **update}
+                self.assertIn(f"{prefix}:{error}", fixture.validate())
+                frame["empty_initial_questions_rationale"] = rationale
+        self.assertEqual(fixture.validate(), [])
+        assessment = fixture.admission["source_checks"][1]["perspective_assessments"][0]
+        name = "empty_initial_questions_assessment"
+        review = assessment.pop(name)
+        prefix = f"prep:perspective:P-01:assessment:{name}"
+        self.assertIn(f"{prefix}:not_mapping", fixture.validate())
+        for update, error in (
+            ({"sha256": digest("unrelated frame")}, "frame_binding:mismatch"),
+            ({"outcome": "CRITICAL_GAP"}, "outcome:not_PASS"),
+            ({"basis": "."}, "basis:invalid"),
+            ({"basis_refs": ["RES-EVIDENCE"]}, "basis_refs:missing_frame_grounds"),
+        ):
+            with self.subTest(update=update):
+                assessment[name] = {**review, **update}
+                self.assertIn(f"{prefix}:{error}", fixture.validate())
+
+    def test_material_initial_questions_require_all_framing_bindings(self) -> None:
+        fixture = CompletePrep(initial_counts=(1,) * 9 + (0,))
+        fixture.admission["initial_set_bindings"].pop()
+        errors = fixture.validate()
+        self.assertIn("prep:admission:initial_set_bindings:count_not_10", errors)
+        self.assertIn("prep:initial_sets:roles:not_exact_once", errors)
+
+    def test_material_initial_questions_preserve_their_exact_origin(self) -> None:
+        fixture = CompletePrep(initial_counts=(1,) * 10)
+        lineage = fixture.bank["questions"][0]["lineage"]
+        lineage.update(source_result_ids=["RES-FRAMING-P-02"], source_roles=["P-02"])
+        errors = fixture.validate()
+        prefix = "prep:bank_question:Q-001:lineage:IQ-P-01-01"
+        self.assertIn(prefix + ":source_result_id:mismatch", errors)
+        self.assertIn(prefix + ":source_role:mismatch", errors)
+        lineage["source_question_ids"] = []
+        self.assertIn("prep:bank:initial_questions:uncovered:IQ-P-01-01", fixture.validate())
+
+    def test_material_lineage_rejects_extra_framing_and_wrong_role_but_accepts_operator(self) -> None:
+        fixture = CompletePrep(initial_counts=(1,) * 10)
+        lineage = fixture.bank["questions"][0]["lineage"]
+        lineage.update(source_result_ids=["RES-FRAMING-P-01", "RES-FRAMING-P-02"], source_roles=["P-01", "P-03"])
+        prefix = "prep:bank_question:Q-001:lineage"
+        errors = fixture.validate()
+        self.assertIn(f"{prefix}:RES-FRAMING-P-02:framing_without_initial_question", errors)
+        self.assertIn(f"{prefix}:source_roles:result_roles_mismatch", errors)
+        lineage.update(source_result_ids=["RES-FRAMING-P-01", "RES-VECTOR"], source_roles=["OP-VECTOR", "P-01"])
+        self.assertIn(f"{prefix}:RES-VECTOR:not_bound_prep3_expansion", fixture.validate())
+        fixture.add_expansion("IQ-P-02-01")
+        lineage.update(source_result_ids=["RES-FRAMING-P-01", "RES-EXPANSION"], source_roles=["OP-PROJECTION", "P-01"])
+        self.assertIn(f"{prefix}:RES-EXPANSION:question_contribution:mismatch", fixture.validate())
+        fixture.add_expansion("IQ-P-01-01")
+        self.assertIn(f"{prefix}:RES-EXPANSION:question_contribution:mismatch", fixture.validate())
+        proposal = {
+            **fixture.docs["RES-FRAMING-P-01"]["initial_questions"][0],
+            "id": "CANDIDATE-1", "origin_role": "OP-PROJECTION",
+            "source_initial_question_ids": ["IQ-P-01-01"],
+        }
+        fixture.add_expansion("IQ-P-01-01", [proposal])
+        lineage["source_question_ids"].append("RES-EXPANSION/CANDIDATE-1")
+        self.assertEqual(fixture.validate(), [])
+        lineage["source_question_ids"].pop()
+        fixture.add_expansion("IQ-P-01-01", addressed_iqs=["IQ-P-02-01"])
+        lineage["source_roles"] = ["P-01"]
+        self.assertIn(f"{prefix}:RES-EXPANSION:question_contribution:mismatch", fixture.validate())
+        fixture.add_expansion("IQ-P-01-01", addressed_iqs=["IQ-P-01-01"])
+        self.assertEqual(fixture.validate(), [])
+        fixture.admission["expansion_bindings"][0]["sha256"] = digest("wrong expansion hash")
+        self.assertIn("prep:expansion_binding:RES-EXPANSION:accepted_prep3_binding:invalid", fixture.validate())
+
+    def test_material_lineage_resolves_independent_proposal_from_its_accepted_expansion(self) -> None:
+        fixture = CompletePrep(initial_counts=(1,) * 10, question_count=11)
+        proposal = {**fixture.docs["RES-FRAMING-P-01"]["initial_questions"][0],
+                    "id": "CANDIDATE-1", "source_initial_question_ids": [], "origin_role": "OP-PROJECTION",
+                    "unknown": "Can a partial write be detected from the archive manifest?", "g_refs": ["RES-VECTOR"]}
+        fixture.add_expansion("IQ-P-01-01", [proposal])
+        lineage = fixture.bank["questions"][-1]["lineage"]
+        lineage.update(source_question_ids=["RES-EXPANSION/CANDIDATE-1"], source_result_ids=["RES-EXPANSION"], source_roles=["OP-PROJECTION"])
+        self.assertEqual(fixture.validate(), [])
+        prefix = "prep:bank_question:Q-011:lineage"
+        lineage["source_question_ids"] = ["RES-EXPANSION/MISSING"]
+        self.assertIn(f"{prefix}:source_question_ids:unknown:RES-EXPANSION/MISSING", fixture.validate())
+        lineage["source_question_ids"] = ["RES-EXPANSION/CANDIDATE-1", "IQ-P-02-01"]
+        lineage["source_result_ids"].append("RES-FRAMING-P-02")
+        lineage["source_roles"].append("P-02")
+        fixture.add_expansion("IQ-P-01-01", [{**proposal, "source_initial_question_ids": ["IQ-P-01-01"]}])
+        self.assertIn(f"{prefix}:RES-EXPANSION/CANDIDATE-1:proposal_origin:mismatch", fixture.validate())
+        anchor_error = "prep:expansion_binding:RES-EXPANSION:proposal:CANDIDATE-1:delivered_anchors:unbound"
+        for anchors in (
+            {"g_refs": ["UNDELIVERED-VECTOR"]}, {"r_refs": ["R-UNKNOWN"]},
+            {"not_g_refs": ["UNDELIVERED-BOUNDARY"]}, {"r_refs": [], "not_g_refs": []},
+        ):
+            with self.subTest(anchors=anchors):
+                fixture.add_expansion("IQ-P-01-01", [{**proposal, **anchors}])
+                self.assertIn(anchor_error, fixture.validate())
+        fixture.add_expansion("IQ-P-01-01", [{**proposal, "unknown": "."}])
+        self.assertIn("prep:expansion_binding:RES-EXPANSION:proposal:CANDIDATE-1:material_question:uncheckable", fixture.validate())
+
+    def test_material_initial_framing_inventory_rejects_competing_current_heads(self) -> None:
+        fixture = CompletePrep(initial_counts=(1,) * 10)
+        first, extra = "RES-FRAMING-P-01", "RES-EXTRA-P-01"
+        fixture.docs[extra] = copy.deepcopy(fixture.docs[first])
+        fixture.docs[extra]["id"] = extra
+        fixture.docs[extra]["initial_questions"][0]["id"] = "IQ-P-01-UNBOUND"
+        fixture.registry[extra] = {**fixture.registry[first], "content_hash": digest(extra)}
+        fixture.register_framing(extra, "A-EXTRA-P-01", "TRY-1")
+        self.assertIn("prep:initial_framings:P-01:ambiguous_heads", fixture.validate())
+
+    def test_material_retry_preserves_the_original_origin_and_coverage(self) -> None:
+        fixture = CompletePrep(initial_counts=(1,) * 10)
+        first, retry = "RES-FRAMING-P-01", "RES-FRAMING-P-01-RETRY"
+        fixture.docs[retry] = copy.deepcopy(fixture.docs[first])
+        fixture.docs[retry]["id"] = retry
+        fixture.registry[retry] = {**fixture.registry[first], "content_hash": digest(retry)}
+        fixture.register_framing(retry, "A-P-01", "TRY-2", "TRY-1")
+        self.assertIn("prep:initial_set:P-01:binding:not_current_frame", fixture.validate())
+        fixture.admission["initial_set_bindings"][0].update(result_id=retry, sha256=digest(retry))
+        self.assertEqual(fixture.validate(), [])
+        fixture.docs[retry]["initial_questions"][0]["unknown"] = "A different unknown using the old identifier"
+        self.assertIn("prep:initial_question:IQ-P-01-01:duplicate_or_changed_origin", fixture.validate())
+        fixture.docs[retry]["initial_questions"] = []
+        fixture.bank["questions"][0]["lineage"].update(source_question_ids=[])
+        self.assertIn("prep:bank:initial_questions:uncovered:IQ-P-01-01", fixture.validate())
+        fixture.framing_state["registered"]["A-P-01\0TRY-2"]["status"] = "ASSIGNED"
+        self.assertIn("prep:initial_framings:A-P-01:current_attempt:not_accepted", fixture.validate())
+
+    def test_material_initial_questions_keep_the_below_target_rationale_guard(self) -> None:
+        fixture = CompletePrep(initial_counts=(1,) * 10)
+        fixture.admission["size_assessment"]["rationale"] = "N/A"
+        self.assertIn("prep:admission:size_assessment:below:rationale_missing", fixture.validate())
 
     def test_initial_question_lineage_must_be_complete(self) -> None:
         fixture = CompletePrep()

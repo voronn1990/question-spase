@@ -130,6 +130,16 @@ R берутся только из approved Vector
 dependency прекращают выпуск context. Пакет остаётся `bank: "ABSENT"` и не
 формирует bank до admission.
 
+A new GOAL snapshot sets `initial_questions_policy: MATERIAL_UNKNOWNS_V1`.
+`PREP_FRAMING_CONTEXT` projects the exact value from that snapshot. In this
+policy the result contains an explicit `initial_questions` list. An empty list
+requires `empty_initial_questions_rationale` with the exact profile
+`analysis_scope`, `basis_refs` addressing the delivered Vector or materials,
+and an `explanation`. The Root `PERSPECTIVES_DISTINCT_NECESSARY` assessment
+binds the empty FRAMING ID and hash and records its semantic disposition.
+An absent policy on a GOAL snapshot retains the historical ten rows per
+perspective and one hundred total.
+
 Each accepted PREP-2 `initial_questions` row uses nonempty quoted strings
 `id`, `unknown`, `why_material`, `changeable_decision`, `applicability`,
 `evidence_needed`, and `origin_role`; `g_refs`, `r_refs`, and `not_g_refs` are

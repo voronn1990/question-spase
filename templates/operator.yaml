@@ -20,6 +20,9 @@ operator_contract: "OP-VECTOR"
 applicability: "APPLICABLE"
 not_applicable_basis: []
 procedure: "operator-specific bounded transformation"
+# MATERIAL_UNKNOWNS_V1 PREP-3 proposal rows use the material IQ fields
+# and source_initial_question_ids. The normalized lineage cites result_id/id.
+# See schemas/assignment-result.yaml, prep_expansion_provenance.
 resulting_questions: []
 resulting_decisions: []
 resulting_evidence: []

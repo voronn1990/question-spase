@@ -1715,6 +1715,34 @@ def _validate_iceberg_consumers(
             errors.append(prefix + ":ready_with_unavailable_dependent_check")
 
 
+def _core_framing_ids(
+    run: Path, snapshot: Any, results: dict[str, Any], load_yaml: Callable[[Path], Any],
+) -> set[str]:
+    from prep_validation import MATERIAL_UNKNOWNS_V1
+
+    roles = {f"P-{number:02d}" for number in range(1, 11)}
+    framing_ids = {
+        result_id for result_id, entry in results.items()
+        if isinstance(entry, dict) and entry.get("artifact_type") == "FRAMING" and entry.get("role_id") in roles
+    }
+    if isinstance(snapshot, dict) and snapshot.get("initial_questions_policy") == MATERIAL_UNKNOWNS_V1:
+        # PREP validates the selected heads and the admission file's exact bytes.
+        # Historical results remain available to the rest of the model as sources.
+        admission = _load_mapping(run / "input" / "prep-admission.yaml", load_yaml) or {}
+        bindings = admission.get("initial_set_bindings")
+        if not isinstance(bindings, list):
+            return set()
+        selected = {
+            row["result_id"] for row in bindings if isinstance(row, dict)
+            and isinstance(row.get("result_id"), str) and row["result_id"] in framing_ids
+            and row.get("role_id") == results[row["result_id"]].get("role_id")
+            and row.get("sha256") == results[row["result_id"]].get("content_hash")
+        }
+        # An unexpected Core FRAMING still contributes to a coverage error.
+        return selected | {result_id for result_id in framing_ids if results[result_id].get("lifecycle_scope") != "PREP"}
+    return framing_ids
+
+
 def validate_double_iceberg(
     run: Path,
     bank: dict[str, Any],
@@ -1748,12 +1776,7 @@ def validate_double_iceberg(
     if anchor is None:
         errors.append("double_iceberg:vector_anchor")
         return {}, set(), errors
-    framing_ids = {
-        result_id for result_id, entry in results.items()
-        if isinstance(entry, dict)
-        and entry.get("artifact_type") == "FRAMING"
-        and entry.get("role_id") in {f"P-{number:02d}" for number in range(1, 11)}
-    }
+    framing_ids = _core_framing_ids(run, snapshot, results, load_yaml)
     if len(framing_ids) != 10:
         errors.append(f"double_iceberg:framing_coverage:{len(framing_ids)}")
     for result_id in sorted(framing_ids):
@@ -3809,12 +3832,7 @@ def _validate_gates(
     snapshot = next(iter(snapshots)) if len(snapshots) == 1 else None
     review_use: dict[str, str] = {}
     last_gate = 5 if phase == "core" else 6
-    framing_ids = {
-        result_id for result_id, entry in results.items()
-        if isinstance(entry, dict)
-        and entry.get("artifact_type") == "FRAMING"
-        and entry.get("role_id") in {f"P-{number:02d}" for number in range(1, 11)}
-    }
+    framing_ids = _core_framing_ids(run, _load_mapping(run / "input" / "snapshot.yaml", load_yaml), results, load_yaml)
     framing_vector_ids = {
         docs[result_id].get("vector_result_id")
         for result_id in framing_ids

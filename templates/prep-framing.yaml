@@ -68,7 +68,14 @@ iceberg_position:
         procedure: "finite check of the capability contract"
         discriminating_outcomes: ["available", "unavailable", "insufficiently established"]
   relations: []
-# Replicate this typed row to exactly ten distinct initial questions for this P.
+# MATERIAL_UNKNOWNS_V1 in the blind packet: use one row per material unknown
+# in your perspective. If none remain, use initial_questions: [] and supply
+# this mapping with your exact scope, delivered references, and explanation.
+# empty_initial_questions_rationale:
+#   analysis_scope: "exact analysis_scope from the delivered profile"
+#   basis_refs: ["VECTOR-RESULT-EXAMPLE"]
+#   explanation: "which inputs are settled and why no material decision remains open in this scope"
+# A GOAL packet without initial_questions_policy requires ten distinct rows.
 initial_questions:
   - id: "IQ-P-01-01"
     unknown: "one resolvable unknown"
