@@ -16,6 +16,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from command_admission import CapturedInput, Committed, Request, admit, cached_loader, capture_file, command_cut, publish_bytes, publish_locked
 from model_validation import (
+    current_iceberg_consumer_result_ids,
     current_iceberg_view_projection,
     model_revision_scope_for_run,
     double_iceberg_enabled,
@@ -5451,29 +5452,6 @@ def active_critical_decision_result_ids(state: dict[str,Any], docs: dict[str,dic
     return critical-historical,errors
 
 
-def current_iceberg_consumer_result_ids(
-    docs: dict[str,dict[str,Any]],
-    stale: set[str],
-) -> set[str]:
-    """Return view result IDs selected by non-stale downstream consumers."""
-    selected:set[str]=set()
-    for consumer_id,doc in docs.items():
-        if consumer_id in stale or not isinstance(doc,dict): continue
-        candidates=[]
-        for field in ("iceberg_view_bindings","view_bindings"):
-            value=doc.get(field)
-            if isinstance(value,dict): candidates.extend(value.values())
-            elif isinstance(value,list): candidates.extend(value)
-        trace=doc.get("iceberg_trace")
-        if isinstance(trace,dict):
-            value=trace.get("view_bindings")
-            if isinstance(value,dict): candidates.extend(value.values())
-            elif isinstance(value,list): candidates.extend(value)
-        for binding in candidates:
-            if isinstance(binding,dict) and isinstance(binding.get("result_id"),str):
-                selected.add(binding["result_id"])
-    return selected
-
 def validate(args: argparse.Namespace) -> dict[str, Any]:
     run=run_dir(root(args.root),args.run_id)
     if not (run/"state").is_dir():
@@ -5695,11 +5673,12 @@ def _validate_locked(args: argparse.Namespace,run: Path) -> dict[str, Any]:
         errors.append(str(exc)); audit_selector=None
     active_critical_decisions,decision_projection_errors=active_critical_decision_result_ids(state,docs)
     errors.extend(decision_projection_errors)
+    diagnostics: list[str] = []
     errors.extend(validate_model(run, bank, results, docs, args.phase, load_yaml, sha, plan_projection,
                                  current_source_outcomes_id=outcome_selector.get("result_id") if isinstance(outcome_selector,dict) else None,
                                  current_final_audit_id=audit_selector.get("result_id") if isinstance(audit_selector,dict) else None,
                                  active_critical_decision_ids=active_critical_decisions,
-                                 question_gap_proofs=gap_proofs))
+                                 question_gap_proofs=gap_proofs, diagnostics=diagnostics))
     def requirement_refs(value: Any) -> set[str]:
         found:set[str]=set()
         if isinstance(value,dict):
@@ -5714,7 +5693,10 @@ def _validate_locked(args: argparse.Namespace,run: Path) -> dict[str, Any]:
     unclosed_r=sorted(required_r-planned_r)
     if unclosed_r: errors.append("requirement_plan_coverage")
     unclosed_decisions=sorted({match.group(1) for error in errors for match in [re.match(r"decision:([^:]+):critical_review_coverage",error)] if match})
-    return {"status":"PASS" if not errors else "FAIL","errors":errors,"unclosed_q_ids":sorted(unclosed_q),"unclosed_r_ids":unclosed_r,"unclosed_decision_ids":unclosed_decisions,"scope":"STRUCTURAL_ONLY"}
+    report = {"status":"PASS" if not errors else "FAIL","errors":errors,"unclosed_q_ids":sorted(unclosed_q),"unclosed_r_ids":unclosed_r,"unclosed_decision_ids":unclosed_decisions,"scope":"STRUCTURAL_ONLY"}
+    if diagnostics:
+        report["diagnostics"] = diagnostics
+    return report
 
 def _cycle(nodes:set[str], edges:list[tuple[Any,Any]]) -> bool:
     graph={n:[] for n in nodes}

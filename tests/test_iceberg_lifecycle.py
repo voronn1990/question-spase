@@ -15,6 +15,7 @@ from tests.test_iceberg_contracts import (
     CompleteIcebergModel,
     _refresh_hash_bindings,
 )
+from tests.test_model_contracts import digest, load_yaml, model_validation
 
 
 HERE = Path(__file__).resolve().parents[1]
@@ -394,14 +395,20 @@ class IcebergLifecycleTest(unittest.TestCase):
         self.assertEqual(qs.current_iceberg_consumer_result_ids(docs, set()), {"CUR-1", "CUR-2"})
 
     def iceberg_model_with_historical_current_view(
-        self, *, malformed_current: bool = False
+        self, *, malformed_current: bool = False, borrow_current_synthesis: bool = False,
+        model: CompleteIcebergModel | None = None,
     ) -> CompleteIcebergModel:
-        model = CompleteIcebergModel(self.base / "history-model")
+        if model is None:
+            model = CompleteIcebergModel(self.base / "history-model")
         current_id = "VIEW-CURRENT-RESULT"
         old_id = "VIEW-CURRENT-OLD"
         old_view = copy.deepcopy(model.docs[current_id]["iceberg_view"])
         old_view["view_id"] = "ICE-CURRENT-000"
         old_view["revision"] = "1"
+        old_edges = [{"id": "MALFORMED-HISTORICAL-EDGE"}]
+        if not borrow_current_synthesis:
+            old_view["semantic_edge_ids"] = ["EDGE-OLD-OWNED"]
+            old_edges.append(model.edge("EDGE-OLD-OWNED", "ENABLES", "E", "E-001", "H", "H-001"))
         model.add_result(
             old_id,
             "OPERATOR",
@@ -410,7 +417,7 @@ class IcebergLifecycleTest(unittest.TestCase):
             "operators/VIEW-CURRENT-OLD.yaml",
             {
                 "iceberg_view": old_view,
-                "semantic_edges": [{"id": "MALFORMED-HISTORICAL-EDGE"}],
+                "semantic_edges": old_edges,
             },
         )
         current = model.docs[current_id]
@@ -425,13 +432,166 @@ class IcebergLifecycleTest(unittest.TestCase):
         })
         model.projection["CURRENT_REALITY"]["revision"] = "2"
         if malformed_current:
-            current["semantic_edges"] = [{"id": "MALFORMED-CURRENT-EDGE"}]
+            current["semantic_edges"] = [{"id": "MALFORMED-HISTORICAL-EDGE"}]
         _refresh_hash_bindings(model)
         return model
 
     def test_malformed_historical_edge_is_ignored_after_valid_successor(self) -> None:
         model = self.iceberg_model_with_historical_current_view()
+        diagnostics: list[str] = []
+        errors = model_validation.validate_model(
+            model.run, model.bank, model.results, model.docs, "core", load_yaml, digest,
+            diagnostics=diagnostics,
+        )
+        self.assertEqual(errors, [])
+        self.assertEqual(diagnostics, [
+            "iceberg_view:VIEW-CURRENT-OLD:semantic_edges:0:MALFORMED-HISTORICAL-EDGE:undeclared_id_only",
+        ])
+
+    def test_validate_cli_reports_undeclared_historical_edge(self) -> None:
+        class PersistedIcebergModel(CompleteIcebergModel):
+            def _build(self) -> None:
+                self.snapshot_doc = {
+                    "schema_version": qs.SCHEMA,
+                    "run_id": self.run.name,
+                    "bank_sha256": self.bank_hash,
+                    "requirements_sha256": qs.sha(qs.canon_yaml(self.bank["requirements"])),
+                    "methodology_features": [qs.ICEBERG_FEATURE],
+                }
+                self.snapshot = qs.sha(qs.canon_yaml(self.snapshot_doc))
+                super()._build()
+
+        model = self.iceberg_model_with_historical_current_view(
+            model=PersistedIcebergModel(self.base),
+        )
+        for role in ("OP-DIVERGENCE", "OP-INDULGENCE"):
+            model.add_result(role, "OPERATOR", role, "/root/" + role, f"operators/{role}.yaml")
+        model.docs["ANSWER-001"]["addressed_q_ids"].append("Q-ICE-001")
+        model.docs["SOURCE-OUTCOMES-001"]["records"][-1].update(
+            answer_result_id="ANSWER-001",
+            author_assignment_id=model.results["ANSWER-001"]["assignment_id"],
+        )
+        _refresh_hash_bindings(model)
+        put(model.run / "input" / "snapshot.yaml", model.snapshot_doc)
+        put(model.run / "state" / "current.yaml", {"input_snapshot": model.snapshot})
+        put(model.run / "state" / "assignments.yaml", {"results": model.results})
+
+        report = self.cli("validate", "--root", str(self.base), "--run-id", model.run.name, "--phase", "core")
+        self.assertEqual(report["status"], "PASS")
+        self.assertEqual(report["errors"], [])
+        self.assertEqual(report["diagnostics"], [
+            "iceberg_view:VIEW-CURRENT-OLD:semantic_edges:0:MALFORMED-HISTORICAL-EDGE:undeclared_id_only",
+        ])
+
+    def test_historical_view_cannot_borrow_current_synthesis_edges(self) -> None:
+        model = self.iceberg_model_with_historical_current_view(borrow_current_synthesis=True)
+        self.assertIn(
+            "historical:iceberg_view:VIEW-CURRENT-OLD:semantic_edge_ids",
+            model.validate("core"),
+        )
+
+    def test_declared_historical_edge_requires_full_contract(self) -> None:
+        model = self.iceberg_model_with_historical_current_view()
+        model.docs["VIEW-CURRENT-OLD"]["iceberg_view"]["semantic_edge_ids"].append(
+            "MALFORMED-HISTORICAL-EDGE"
+        )
+        _refresh_hash_bindings(model)
+        errors = model.validate("core")
+        self.assertIn("historical:iceberg_edge:index-0:contract", errors)
+        self.assertIn("historical:iceberg_view:VIEW-CURRENT-OLD:semantic_edge_ids", errors)
+
+    def test_exact_historical_audit_consumer_requires_full_edge_contract(self) -> None:
+        model = self.iceberg_model_with_historical_current_view()
+        old = model.docs["VIEW-CURRENT-OLD"]
+
+        def bind_old_audit() -> None:
+            model.docs["AUDIT-001"]["iceberg_view_bindings"][0] = {
+                "view_id": "ICE-CURRENT-000",
+                "view_kind": "CURRENT_REALITY",
+                "result_id": "VIEW-CURRENT-OLD",
+                "result_sha256": model.results["VIEW-CURRENT-OLD"]["content_hash"],
+                "revision": "1",
+            }
+            model.sync("AUDIT-001")
+            model.docs["REVIEW-GATE-6"]["target_hash"] = model.results["AUDIT-001"]["content_hash"]
+            model.sync("REVIEW-GATE-6")
+
+        bind_old_audit()
+        errors = model.validate("core")
+        self.assertIn("historical:iceberg_edge:index-0:contract", errors)
+        self.assertNotIn("iceberg_consumer:AUDIT-001:current_view_bindings", errors)
+
+        old["semantic_edges"].pop(0)
+        _refresh_hash_bindings(model)
+        bind_old_audit()
         self.assertEqual(model.validate("core"), [])
+
+    def test_successor_claim_using_predecessor_requires_full_edge_contract(self) -> None:
+        model = self.iceberg_model_with_historical_current_view()
+        current = model.docs["VIEW-CURRENT-RESULT"]["iceberg_view"]
+        current["members"][0].update(
+            source_binding=current["source_bindings"][-1],
+            canonical_claim_path="/iceberg_view/members/0",
+        )
+        _refresh_hash_bindings(model)
+        self.assertEqual(model.validate("core"), ["historical:iceberg_edge:index-0:contract"])
+
+    def test_other_view_source_binding_is_not_predecessor_lineage(self) -> None:
+        model = self.iceberg_model_with_historical_current_view()
+        old_source = model.docs["VIEW-CURRENT-RESULT"]["iceberg_view"]["source_bindings"][-1]
+        model.docs["VIEW-DESIRED-RESULT"]["iceberg_view"]["source_bindings"].append(old_source)
+        _refresh_hash_bindings(model)
+        self.assertEqual(model.validate("core"), ["historical:iceberg_edge:index-0:contract"])
+
+    def test_other_historical_edge_defects_still_fail(self) -> None:
+        for defect, expected in (
+            ("other_shape", "historical:iceberg_edge:index-0:contract"),
+            ("duplicate_id", "historical:iceberg_edge:index-0:contract"),
+            ("dangling_endpoint", "historical:iceberg_edge:EDGE-OLD-OWNED:to_binding"),
+        ):
+            with self.subTest(defect=defect):
+                model = self.iceberg_model_with_historical_current_view()
+                rows = model.docs["VIEW-CURRENT-OLD"]["semantic_edges"]
+                if defect == "other_shape":
+                    rows[0]["relation"] = "ENABLES"
+                elif defect == "duplicate_id":
+                    rows[0]["id"] = "EDGE-OLD-UNDECLARED"
+                    rows.append(model.edge("EDGE-OLD-UNDECLARED", "ENABLES", "E", "E-001", "H", "H-001"))
+                else:
+                    rows[1]["to_id"] = "H-MISSING"
+                _refresh_hash_bindings(model)
+                self.assertIn(expected, model.validate("core"))
+
+    def test_historical_edge_groups_include_undeclared_full_members(self) -> None:
+        model = self.iceberg_model_with_historical_current_view()
+        rows = model.docs["VIEW-CURRENT-OLD"]["semantic_edges"]
+        rows[1].update(combination_kind="AND", combination_id="COMBO-OLD")
+        rows.append(model.edge(
+            "EDGE-OLD-GROUP-PARTNER", "ENABLES", "E", "E-001", "D", "D-001",
+            "AND", combination_id="COMBO-OLD",
+        ))
+        _refresh_hash_bindings(model)
+        self.assertEqual(model.validate("core"), [])
+        rows.pop()
+        _refresh_hash_bindings(model)
+        self.assertIn("historical:iceberg_combination:COMBO-OLD:group_contract", model.validate("core"))
+
+    def test_historical_residue_keeps_exact_disk_and_lineage_checks(self) -> None:
+        model = self.iceberg_model_with_historical_current_view()
+        old_path = model.run / model.results["VIEW-CURRENT-OLD"]["path"]
+        old_bytes = old_path.read_bytes()
+        old_path.write_bytes(old_bytes + b"\n")
+        self.assertIn(
+            "model_scope:VIEW-CURRENT-OLD:immutable_result_hash", model.validate("core"),
+        )
+        old_path.write_bytes(old_bytes)
+
+        current = model.docs["VIEW-CURRENT-RESULT"]
+        current["iceberg_view"]["source_bindings"][-1]["source_sha256"] = "0" * 64
+        model.sync("VIEW-CURRENT-RESULT")
+        self.assertIn(
+            "iceberg_view:ICE-CURRENT-001:lineage_source_binding", model.validate("core"),
+        )
 
     def test_same_malformed_edge_on_current_head_still_fails(self) -> None:
         model = self.iceberg_model_with_historical_current_view(

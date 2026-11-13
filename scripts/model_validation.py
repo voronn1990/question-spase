@@ -8,7 +8,7 @@ module cannot establish that claims, reviews, or audit findings are true.
 """
 from __future__ import annotations
 
-from collections import defaultdict, deque
+from collections import Counter, defaultdict, deque
 import hashlib
 import os
 from pathlib import Path
@@ -1259,14 +1259,24 @@ def _validate_iceberg_edges(
     question_ids: set[str],
     check_ids: set[str],
     errors: list[str],
+    *,
+    unconsumed_historical_view: str | None = None,
+    diagnostics: list[str] | None = None,
 ) -> dict[str, dict[str, Any]]:
     edges: dict[str, dict[str, Any]] = {}
     groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
     evidence_ids = valid_endpoints.get("E", set())
-    for doc in docs.values():
+    for result_id, doc in docs.items():
         value = doc.get("semantic_edges") if isinstance(doc, dict) else None
         if not isinstance(value, list):
             continue
+        allow_residue = unconsumed_historical_view is not None and result_id == unconsumed_historical_view
+        if allow_residue:
+            declared = set(_ids(doc["iceberg_view"].get("semantic_edge_ids")))
+            id_counts = Counter(
+                row["id"] for row in value
+                if isinstance(row, dict) and isinstance(row.get("id"), str)
+            )
         for index, edge in enumerate(value):
             prefix = f"iceberg_edge:index-{index}"
             required = {
@@ -1275,6 +1285,15 @@ def _validate_iceberg_edges(
                 "distinguishing_check_id",
             }
             if not isinstance(edge, dict) or not required.issubset(edge):
+                if allow_residue and isinstance(edge, dict) and edge.keys() == {"id"}:
+                    edge_id = edge["id"]
+                    if (isinstance(edge_id, str) and edge_id.strip()
+                            and edge_id not in declared and id_counts[edge_id] == 1):
+                        if diagnostics is not None:
+                            diagnostics.append(
+                                f"iceberg_view:{result_id}:semantic_edges:{index}:{edge_id}:undeclared_id_only"
+                            )
+                        continue
                 errors.append(prefix + ":contract")
                 continue
             edge_id = edge.get("id")
@@ -1503,6 +1522,50 @@ def _binding_map(value: Any) -> dict[str, dict[str, Any]]:
     return answer
 
 
+def current_iceberg_consumer_result_ids(docs: dict[str, Any], stale: set[str]) -> set[str]:
+    """Return view result IDs selected by the supplied non-stale consumers."""
+    selected: set[str] = set()
+    for result_id, doc in docs.items():
+        if result_id in stale or not isinstance(doc, dict):
+            continue
+        bindings = [doc.get("iceberg_view_bindings"), doc.get("view_bindings")]
+        trace = doc.get("iceberg_trace")
+        if isinstance(trace, dict):
+            bindings.append(trace.get("view_bindings"))
+        for value in bindings:
+            if isinstance(value, dict):
+                value = list(value.values())
+            if isinstance(value, list):
+                selected.update(
+                    binding["result_id"] for binding in value
+                    if isinstance(binding, dict) and isinstance(binding.get("result_id"), str)
+                )
+    return selected
+
+
+def _iceberg_view_semantic_sources(docs: dict[str, Any]) -> set[str]:
+    """Find accepted sources selected for view contents apart from lineage."""
+    sources: set[str] = set()
+    for doc in docs.values():
+        view = doc.get("iceberg_view") if isinstance(doc, dict) else None
+        if not isinstance(view, dict):
+            continue
+        declared = view.get("source_bindings")
+        bindings = [
+            binding for binding in declared
+            if isinstance(binding, dict) and binding.get("source_id") != doc.get("supersedes")
+        ] if isinstance(declared, list) else []
+        members = view.get("members")
+        if isinstance(members, list):
+            bindings.extend(member.get("source_binding") for member in members if isinstance(member, dict))
+        sources.update(
+            binding["source_id"] for binding in bindings
+            if isinstance(binding, dict) and binding.get("source_kind") == "ACCEPTED_RESULT"
+            and isinstance(binding.get("source_id"), str)
+        )
+    return sources
+
+
 def _iceberg_consumer_projection(
     result_id: str, bindings: Any, results: dict[str, Any], docs: dict[str, Any],
     current: dict[str, dict[str, Any]], historical: set[str], errors: list[str],
@@ -1660,9 +1723,14 @@ def validate_double_iceberg(
     phase: str,
     load_yaml: Callable[[Path], Any],
     sha: Callable[[bytes], str],
-    *, revision_scope: dict[str, Any] | None = None,
+    *,
+    revision_scope: dict[str, Any] | None = None,
+    diagnostics: list[str] | None = None,
 ) -> tuple[dict[str, dict[str, Any]], set[str], list[str]]:
-    """Validate the marked feature and return exact current-head projection."""
+    """Validate the marked feature and return exact current-head projection.
+
+    An optional diagnostics list receives addresses of ignored historical rows.
+    """
     run = Path(run)
     errors: list[str] = []
     snapshot = _load_mapping(run / "input" / "snapshot.yaml", load_yaml)
@@ -1722,7 +1790,7 @@ def validate_double_iceberg(
             errors.append(prefix + ":evidence_binding")
         _finite_check(hypothesis.get("finite_check"), prefix, errors)
 
-    projection, historical, lineage_errors = current_iceberg_view_projection(
+    projection, retained_views, lineage_errors = current_iceberg_view_projection(
         results, docs, input_snapshot=input_snapshot
     )
     errors.extend(lineage_errors)
@@ -1732,7 +1800,7 @@ def validate_double_iceberg(
             phase=phase,
         )
     errors.extend(revision_scope.get("errors", []))
-    historical = set(revision_scope.get("historical_result_ids", historical))
+    historical = set(revision_scope.get("historical_result_ids", retained_views))
     if len(projection) != 2:
         errors.append(f"double_iceberg:view_head_coverage:{len(projection)}")
     question_ids = _question_ids(bank, docs)
@@ -1758,6 +1826,19 @@ def validate_double_iceberg(
     edges = _validate_iceberg_edges(
         active_semantic_docs, results, valid_endpoints, question_ids, check_ids, errors
     )
+    unavailable_dependency = _validate_view_contents(
+        run, results, docs, immutable_inputs, load_yaml, anchor, projection,
+        origin_index, edges, question_ids, errors,
+    ) if len(projection) == 2 else False
+    # The lineage validator already checks a successor's predecessor hash.
+    # Semantic use of that predecessor is still subject to strict validation.
+    unconsumed_views = (
+        retained_views
+        - current_iceberg_consumer_result_ids(docs, set())
+        - _iceberg_view_semantic_sources(docs)
+        if not errors else set()
+    )
+    retained_diagnostics: list[str] = []
     historical_edges: dict[str, dict[str, dict[str, Any]]] = {}
     historical_synthesis_edges: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
     ambiguous_view_edges: dict[str, set[str]] = defaultdict(set)
@@ -1811,8 +1892,12 @@ def validate_double_iceberg(
         retained_edges={edge_id:edge for edge_id,edge in historical_synthesis_edges[rid].items()
                         if edge_id not in ambiguous_view_edges[rid]}
         execution=view_execution[rid]
-        own_edges=_validate_iceberg_edges({rid: doc}, results, {**valid_endpoints, **execution},
-                                          question_ids, execution["C"], local_errors)
+        own_edges=_validate_iceberg_edges(
+            {rid: doc}, results, {**valid_endpoints, **execution},
+            question_ids, execution["C"], local_errors,
+            unconsumed_historical_view=rid if rid in unconsumed_views else None,
+            diagnostics=retained_diagnostics,
+        )
         for edge_id in sorted(ambiguous_view_edges[rid] & set(_ids(view.get("semantic_edge_ids"))) - own_edges.keys()):
             local_errors.append(f"iceberg_view:{rid}:ambiguous_historical_edge:{edge_id}")
         _validate_view_contents(
@@ -1821,10 +1906,6 @@ def validate_double_iceberg(
             {**retained_edges, **own_edges}, question_ids, local_errors,
         )
         errors.extend("historical:" + error for error in local_errors)
-    unavailable_dependency = _validate_view_contents(
-        run, results, docs, immutable_inputs, load_yaml, anchor, projection,
-        origin_index, edges, question_ids, errors,
-    ) if len(projection) == 2 else False
     derived_q_ids: set[str] = set()
     for doc in docs.values():
         if not isinstance(doc, dict):
@@ -1887,6 +1968,8 @@ def validate_double_iceberg(
             results, docs, projection, edges, unavailable_dependency, phase, errors,
             historical, historical_edges,
         )
+    if diagnostics is not None and not errors:
+        diagnostics.extend(retained_diagnostics)
     return projection, historical, errors
 
 
@@ -4527,12 +4610,15 @@ def validate_model(
     current_final_audit_id: str | None = None,
     active_critical_decision_ids: set[str] | None = None,
     question_gap_proofs: dict[str, dict[str, str]] | None = None,
+    *,
+    diagnostics: list[str] | None = None,
 ) -> list[str]:
     """Return deterministic, addressable structural errors for one accepted run.
 
     ``phase='core'`` validates the pre-audit model and GATE-1..GATE-5.  The
     final audit and GATE-6 are intentionally outside that phase.  ``final``
-    adds their exact structural bindings and coherence checks.
+    adds their exact structural bindings and coherence checks. Optional
+    diagnostics report nonblocking Double Iceberg observations.
     """
     errors: list[str] = []
     run = Path(run)
@@ -4602,7 +4688,7 @@ def validate_model(
     )
     iceberg_projection, iceberg_history, iceberg_errors = validate_double_iceberg(
         run, bank, results, docs, phase, load_yaml, sha,
-        revision_scope=revision_scope,
+        revision_scope=revision_scope, diagnostics=diagnostics,
     )
     errors.extend(iceberg_errors)
     iceberg_anchor: dict[str, Any] | None = None

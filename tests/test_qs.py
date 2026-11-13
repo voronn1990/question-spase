@@ -1195,12 +1195,24 @@ class QsTest(unittest.TestCase):
         self.assertEqual([row["id"] for row in projected["FRAME-P-02"]["projection"]["view"]["initial_questions"]],["IQ-P-02-01"])
         self.assertNotIn("document",projected["FRAME-P-01"]["projection"]["view"])
         self.assertNotIn("IQ-P-01-02",qs.canon_yaml(expansion_packet).decode("utf-8"))
-        # The same assignment is immutable: asking for a fuller context cannot
-        # overwrite the already-issued minimal packet.
-        reread=self.call("context","--root",str(workspace),"--run-id","R1","--assignment",str(expansion_assignment_path),"--output",str(self.base/"admit-expand-reread.context.yaml"),"--expand","FRAME-P-01",ok=False)
-        self.assertEqual(reread["error"],"context_packet_conflict")
-        # A readset revision is a new registered assignment. Its explicit,
-        # hash-linked expansion may receive the complete selected source only.
+        # A pending assignment may acquire an immutable context revision.
+        # The original bytes remain readable, and only the linked source expands.
+        minimal_raw=expansion_context_path.read_bytes()
+        reread_path=self.base/"admit-expand-reread.context.yaml"
+        reread=self.call("context","--root",str(workspace),"--run-id","R1","--assignment",str(expansion_assignment_path),"--output",str(reread_path),"--expand","FRAME-P-01")
+        self.assertEqual(reread["status"],"CONTEXT_READY")
+        self.assertNotEqual(reread["sha256"],expansion_context["sha256"])
+        self.assertEqual(expansion_context_path.read_bytes(),minimal_raw)
+        revised={row["source"]["result_id"]:row for row in qs.load_yaml(reread_path)["accepted_dependencies"]}
+        self.assertEqual(revised["FRAME-P-01"]["source"]["sha256"],frame_hashes["FRAME-P-01"])
+        self.assertEqual(revised["FRAME-P-01"]["projection"]["view"]["kind"],"FULL_LINKED_EXPANSION")
+        self.assertEqual(len(revised["FRAME-P-01"]["projection"]["view"]["document"]["initial_questions"]),10)
+        self.assertEqual(revised["FRAME-P-02"],projected["FRAME-P-02"])
+        historical_path=self.base/"admit-expand-historical.context.yaml"
+        historical=self.call("context","--root",str(workspace),"--run-id","R1","--assignment",str(expansion_assignment_path),"--output",str(historical_path),"--historical","--packet-sha256",expansion_context["sha256"])
+        self.assertEqual(historical["status"],"CONTEXT_HISTORICAL")
+        self.assertEqual(historical_path.read_bytes(),minimal_raw)
+        # A distinct assignment can request a full linked source in its first packet.
         expanded_assignment={**expansion_assignment,"assignment_id":"A-EXPAND-FULL","result_id":"EXPAND-FULL","output_path":"operators/EXPAND-FULL.yaml","dependency_hashes":[frame_hashes["FRAME-P-01"]],"dependency_result_ids":["FRAME-P-01"],"assigned_ids":{"questions":["IQ-P-01-01"],"requirements":["R-001"],"decisions":[],"evidence":[]}}
         expanded_path=self.base/"admit-expand-full.assignment.yaml"; put(expanded_path,expanded_assignment)
         self.call("assign","--root",str(workspace),"--run-id","R1","--assignment",str(expanded_path))
@@ -1217,6 +1229,10 @@ class QsTest(unittest.TestCase):
         expansion_result=common("EXPAND-001","OP-DIVERGENCE","/root/OP-DIVERGENCE")
         expansion_result.update({"assignment_id":"A-EXPAND","attempt_id":"TRY-1","artifact_type":"OPERATOR","lifecycle_scope":"PREP","prep_stage":"PREP-3_EXPAND_NORMALIZE","context_packet_sha256":expansion_context["sha256"]})
         expansion_result_path=self.base/"admit-expand.result.yaml"; put(expansion_result_path,expansion_result)
+        stale_context=self.call("accept","--root",str(workspace),"--run-id","R1","--assignment",str(expansion_assignment_path),"--result",str(expansion_result_path),ok=False)
+        self.assertEqual(stale_context["error"],"result_context_binding")
+        expansion_result["context_packet_sha256"]=reread["sha256"]
+        put(expansion_result_path,expansion_result)
         self.assertEqual(self.call("accept","--root",str(workspace),"--run-id","R1","--assignment",str(expansion_assignment_path),"--result",str(expansion_result_path))["status"],"ACCEPTED")
         bad_expansion={**expansion_assignment,"assignment_id":"A-EXPAND-BAD","result_id":"EXPAND-BAD","output_path":"operators/EXPAND-BAD.yaml","dependency_hashes":[],"dependency_result_ids":[]}
         bad_expansion_path=self.base/"admit-expand-bad.assignment.yaml"; put(bad_expansion_path,bad_expansion)
