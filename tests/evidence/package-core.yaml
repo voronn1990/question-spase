@@ -1,8 +1,8 @@
 {
-  "candidate_manifest_sha256": "40298bf66935b957411bb9009f777503dc3a8cb09518645a2f695ad42bc6e473",
+  "candidate_manifest_sha256": "c2dbb08ca311f08252d298578758ee7a74ae243ef1cdc9a0161f8ddc210dd251",
   "files": {
     "LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
-    "README.md": "6818cea9a4504a749301b310a745ff5bfdff1d8843f6d3a301d76640e9efe2c2",
+    "README.md": "c12d17caab6bf237f242ab0961a0855e886d07b42fa7b6dd7ed92796025d3077",
     "SKILL.md": "4818507dbba5fd0de32dd938554c8ccb93b19f86e5fdff069636ad8f3056d2b3",
     "agents/openai.yaml": "a2d8c910be186a4f9f1845251920d7003172702f05fadcc870f64009ba8daac7",
     "history/4.2.2/README.md": "e0767c857ccf850475155d7a5c0be319f2d08685bb88b5b68bc68e99fd2469a9",

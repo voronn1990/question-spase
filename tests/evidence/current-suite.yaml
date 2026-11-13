@@ -1,5 +1,5 @@
 {
-  "candidate_manifest_sha256": "40298bf66935b957411bb9009f777503dc3a8cb09518645a2f695ad42bc6e473",
+  "candidate_manifest_sha256": "c2dbb08ca311f08252d298578758ee7a74ae243ef1cdc9a0161f8ddc210dd251",
   "checks": [
     {
       "id": "giq003-pure",
@@ -140,12 +140,26 @@
       "receipt_sha256": "40a37b058d0859b198b92a266f7073ec626df2c37ecdfd7951991e062fba1ed4",
       "status": "PASS",
       "subject_sha256": "40298bf66935b957411bb9009f777503dc3a8cb09518645a2f695ad42bc6e473"
+    },
+    {
+      "id": "readme-methodology-links-and-source-identity",
+      "observation": "Documentation-only update: 67 local README links and anchors resolve, git diff whitespace check passes, and remaining124 core files equal published base3db2ae34a2ea222d49b78ec58ab8e85fade2e6dd. Historical test observations retain their original subjects; no runtime or research quality qualification added.",
+      "receipt_sha256": "cd4328448b21a9df2ad9b5855e8310d56126696e33a8363983b7168ff9ffd3c7",
+      "status": "PASS",
+      "subject_sha256": "c2dbb08ca311f08252d298578758ee7a74ae243ef1cdc9a0161f8ddc210dd251"
+    },
+    {
+      "id": "readme-methodology-independent-review",
+      "observation": "Independent read-only comparison of README methodology against existing operator, double-iceberg and original14 contracts, with targeted followup on two findings. No package or execution qualification. Both findings closed on exact reviewed README.",
+      "receipt_sha256": "a5a93e9f0512c775e3a0f63651d23975f3f95b94cf5fb4163325778d9ec4c0f7",
+      "status": "PASS",
+      "subject_sha256": "c12d17caab6bf237f242ab0961a0855e886d07b42fa7b6dd7ed92796025d3077"
     }
   ],
   "qualification": "LOCAL_STRUCTURAL_ONLY",
-  "readme_sha256": "6818cea9a4504a749301b310a745ff5bfdff1d8843f6d3a301d76640e9efe2c2",
+  "readme_sha256": "c12d17caab6bf237f242ab0961a0855e886d07b42fa7b6dd7ed92796025d3077",
   "receipt_scope": "Supplied public local check observations, each bound to its own exact subject. Receipt digests identify external records.",
   "schema_version": "question-space-public-check-receipts-v1",
-  "verification_metadata_sha256": "42a5ef2959d19e7ad9184b0256584b222bbc8e0a8fe902552054913be3ebc4bf",
+  "verification_metadata_sha256": "18619c169ca99f7e06b76055fe8d36f99ca7fdc150931c6628e5fa07e5f03da8",
   "version": "4.3.0-rc3"
 }
