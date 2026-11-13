@@ -1,5 +1,6 @@
 """Deterministic structural tests for the local YAML controller only."""
 from __future__ import annotations
+import base64
 import importlib.util
 import json
 import shutil
@@ -579,6 +580,19 @@ class QsTest(unittest.TestCase):
                     self.assertEqual(packet["plan_dependency_selection_state"],"REVISION_IN_PROGRESS")
                     self.assertNotIn("architecture_ref",packet)
                     self.assertEqual([row["source"]["result_id"] for row in packet["accepted_dependencies"]],["S-000-R3"])
+            if new_mode and result_id in {"VIEW-CURRENT-RESULT", "VIEW-DESIRED-RESULT"}:
+                commit_args = ("commit", "--root", str(self.workspace), "--run-id", run_id,
+                               "--assignment", str(ap), "--result", str(rp))
+                put(rp, {key: item for key, item in value.items() if key != "iceberg_view"})
+                rejected = self.call(*commit_args, ok=False)
+                self.assertEqual(rejected["error"], "iceberg_view_required_for_owner")
+                self.assertFalse((self.run / output).exists())
+                self.assertFalse((self.run / "transactions" / (result_id + ".yaml")).exists())
+                put(rp, value)
+                committed = self.call(*commit_args)
+                self.assertEqual(committed["status"], "ACCEPTED")
+                self.assertEqual(committed["content_hash"], qs.sha(rp.read_bytes()))
+                return committed
             return self.call("accept", "--root", str(self.workspace), "--run-id", run_id, "--assignment", str(ap), "--result", str(rp))
 
         def patch_review(result_id: str) -> dict:
@@ -967,14 +981,33 @@ class QsTest(unittest.TestCase):
         self.assertNotIn("input/materials/001-statement.md",[item["path"] for item in packet["readset"]])
         framing=common("FRAME-001","P-01","/test/P-01")
         framing.update({"assignment_id":"A-P01","attempt_id":"TRY-1","artifact_type":"FRAMING","lifecycle_scope":"PREP","prep_stage":"PREP-2_PERSPECTIVES","perspective_profile_hash":rows[0]["profile_sha256"],"vector_result_id":"VECTOR-001","vector_sha256":accepted["content_hash"],"approval_sha256":approved["approval_sha256"],"context_packet_sha256":context_out["sha256"],"blind_input":{"contains_bank":"NO","contains_foreign_p_results":"NO","contains_preferred_solution":"NO","allowed":["context packet","own assignment","own profile","role instructions"],"protocol":"native-P-v1","context_source":"state/contexts/A-P01--TRY-1.yaml"},"initial_questions":[],"iceberg_position":{"position_id":"ICEPOS-P-01","origin_role":"P-01","origin_assignment_id":"A-P01","input_snapshot":snapshot,"elements":[{"seed_id":"SEED-P-01","candidate_view":"CURRENT_REALITY","element_kind":"ASSUMPTION","statement":"bounded assumption","scope":"fixture scope","g_refs":["VECTOR-001"],"r_refs":["R-001"],"materiality":"changes a decision","knowledge_status":"HYPOTHESIS","source_refs":[],"finite_check":{"check_kind":"OBSERVATION","procedure":"perform one bounded observation","discriminating_outcomes":["supports","refutes"]}}],"relations":[]}})
+        framing["perspective_profile"] = packet["perspective_profile"]
+        commit_args = ("commit", "--root", str(workspace), "--run-id", "GOAL1", "--assignment", str(pap))
+        framing_path = self.base / "goal-p01-result.yaml"
+        before = {path.relative_to(run): path.read_bytes() for path in run.rglob("*") if path.is_file()}
+        for label, candidate in (
+            ("missing", {key: value for key, value in framing.items() if key != "perspective_profile"}),
+            ("changed", {**framing, "perspective_profile": {**profile, "boundary": "changed boundary"}}),
+        ):
+            with self.subTest(profile=label):
+                put(framing_path, candidate)
+                rejected = self.call(*commit_args, "--result", str(framing_path), ok=False)
+                self.assertEqual(rejected["error"], "result_prep_framing_profile_binding")
+                self.assertEqual(
+                    {path.relative_to(run): path.read_bytes() for path in run.rglob("*") if path.is_file()},
+                    before,
+                )
         wrong={**framing,"vector_result_id":"OTHER"}; wrong_path=self.base/"goal-p01-wrong.yaml"; put(wrong_path,wrong)
         self.call("accept","--root",str(workspace),"--run-id","GOAL1","--assignment",str(pap),"--result",str(wrong_path),ok=False)
         wrong_context={**framing,"context_packet_sha256":"0"*64}; wrong_context_path=self.base/"goal-p01-context-wrong.yaml"; put(wrong_context_path,wrong_context)
         self.call("accept","--root",str(workspace),"--run-id","GOAL1","--assignment",str(pap),"--result",str(wrong_context_path),ok=False)
         wrong_blind={**framing,"blind_input":{**framing["blind_input"],"contains_bank":"YES"}}; wrong_blind_path=self.base/"goal-p01-blind-wrong.yaml"; put(wrong_blind_path,wrong_blind)
         self.call("accept","--root",str(workspace),"--run-id","GOAL1","--assignment",str(pap),"--result",str(wrong_blind_path),ok=False)
-        framing_path=self.base/"goal-p01-result.yaml"; put(framing_path,framing)
-        self.assertEqual(self.call("accept","--root",str(workspace),"--run-id","GOAL1","--assignment",str(pap),"--result",str(framing_path))["status"],"ACCEPTED")
+        put(framing_path, framing)
+        accepted = self.call(*commit_args, "--result", str(framing_path))
+        self.assertEqual(accepted["status"], "ACCEPTED")
+        self.assertEqual((run / "positions/P-01.yaml").read_bytes(), framing_path.read_bytes())
+        self.assertEqual(accepted["content_hash"], qs.sha(framing_path.read_bytes()))
         resumed=self.call("resume","--root",str(workspace),"--run-id","GOAL1")
         self.assertEqual(resumed["tasks"],[])
         stored=run/"state/contexts/A-P01--TRY-1.yaml"; original_context=stored.read_bytes(); stored.write_text("tampered context\n",encoding="utf-8")
@@ -1169,13 +1202,14 @@ class QsTest(unittest.TestCase):
             for ix in range(1,11):
                 qid=f"IQ-{role}-{ix:02d}"; all_initial.append((qid,result_id,role)); questions.append({"id":qid,"unknown":f"unknown {qid}","why_material":f"material {qid}","changeable_decision":f"decision {qid}","applicability":"goal","evidence_needed":f"evidence {qid}","g_refs":["G-1"],"r_refs":["R-001"],"not_g_refs":[],"origin_role":role})
             framing=common(result_id,role,row["agent_id"]); framing.update({"assignment_id":assignment["assignment_id"],"attempt_id":"TRY-1","artifact_type":"FRAMING","role_id":role,"lifecycle_scope":"PREP","prep_stage":"PREP-2_PERSPECTIVES","perspective_profile_hash":row["profile_sha256"],"vector_result_id":"VECTOR-001","vector_sha256":vector_accept["content_hash"],"approval_sha256":approved["approval_sha256"],"context_packet_sha256":context_out["sha256"],"blind_input":{"contains_bank":"NO","contains_foreign_p_results":"NO","contains_preferred_solution":"NO","allowed":["context packet","own assignment"],"protocol":"fixture"},"initial_questions":questions,"iceberg_position":{"position_id":"ICEPOS-"+role,"origin_role":role,"origin_assignment_id":assignment["assignment_id"],"input_snapshot":snapshot,"elements":[{"seed_id":"SEED-"+role,"candidate_view":"CURRENT_REALITY","element_kind":"ASSUMPTION","statement":"bounded blind assumption for "+role,"scope":"fixture goal","g_refs":["VECTOR-001"],"r_refs":["R-001"],"materiality":"changes a bounded decision","knowledge_status":"HYPOTHESIS","source_refs":[],"finite_check":{"check_kind":"OBSERVATION","procedure":"perform one bounded observation","discriminating_outcomes":["supports","refutes"]}}],"relations":[]}})
+            framing["perspective_profile"] = assignment["perspective_profile"]
             rp=self.base/f"admit-{role}.result.yaml"; put(rp,framing); accepted=self.call("accept","--root",str(workspace),"--run-id","R1","--assignment",str(ap),"--result",str(rp))
             frame_bindings.append({"result_id":result_id,"sha256":accepted["content_hash"],"role_id":role,"agent_id":row["agent_id"]})
         # Before PREP-4 admission no bank exists.  PREP-3 therefore receives
         # only explicitly assigned initial questions from immutable accepted
         # FRAMING records, with their exact source result/hash bindings.
         frame_hashes={item["result_id"]:item["sha256"] for item in frame_bindings}
-        expansion_assignment={"assignment_id":"A-EXPAND","attempt_id":"TRY-1","role_id":"OP-DIVERGENCE","agent_id":"/root/OP-DIVERGENCE","input_snapshot":snapshot,"artifact_type":"OPERATOR","output_path":"operators/EXPAND-001.yaml","dependency_hashes":[frame_hashes["FRAME-P-01"],frame_hashes["FRAME-P-02"]],"dependency_result_ids":["FRAME-P-01","FRAME-P-02"],"result_id":"EXPAND-001","lifecycle_scope":"PREP","prep_stage":"PREP-3_EXPAND_NORMALIZE","goal_result_id":"VECTOR-001","assigned_ids":{"questions":["IQ-P-01-01","IQ-P-02-01"],"requirements":["R-001"],"decisions":[],"evidence":[]},"selection_authority":"ROOT","group_id":"1"}
+        expansion_assignment={"assignment_id":"A-EXPAND","attempt_id":"TRY-1","role_id":"OP-PROJECTION","agent_id":"/root/OP-PROJECTION","input_snapshot":snapshot,"artifact_type":"OPERATOR","output_path":"operators/EXPAND-001.yaml","dependency_hashes":[frame_hashes["FRAME-P-01"],frame_hashes["FRAME-P-02"]],"dependency_result_ids":["FRAME-P-01","FRAME-P-02"],"result_id":"EXPAND-001","lifecycle_scope":"PREP","prep_stage":"PREP-3_EXPAND_NORMALIZE","goal_result_id":"VECTOR-001","assigned_ids":{"questions":["IQ-P-01-01","IQ-P-02-01"],"requirements":["R-001"],"decisions":[],"evidence":[]},"selection_authority":"ROOT","group_id":"1"}
         expansion_assignment_path=self.base/"admit-expand.assignment.yaml"; put(expansion_assignment_path,expansion_assignment)
         self.call("assign","--root",str(workspace),"--run-id","R1","--assignment",str(expansion_assignment_path))
         expansion_context_path=self.base/"admit-expand.context.yaml"; expansion_context=self.call("context","--root",str(workspace),"--run-id","R1","--assignment",str(expansion_assignment_path),"--output",str(expansion_context_path))
@@ -1226,14 +1260,35 @@ class QsTest(unittest.TestCase):
         self.call("assign","--root",str(workspace),"--run-id","R1","--assignment",str(unlinked_path))
         unlinked=self.call("context","--root",str(workspace),"--run-id","R1","--assignment",str(unlinked_path),"--output",str(self.base/"admit-expand-unlinked.context.yaml"),"--expand","FRAME-P-02",ok=False)
         self.assertEqual(unlinked["error"],"context_expansion_not_linked")
-        expansion_result=common("EXPAND-001","OP-DIVERGENCE","/root/OP-DIVERGENCE")
+        expansion_result=common("EXPAND-001","OP-PROJECTION","/root/OP-PROJECTION")
         expansion_result.update({"assignment_id":"A-EXPAND","attempt_id":"TRY-1","artifact_type":"OPERATOR","lifecycle_scope":"PREP","prep_stage":"PREP-3_EXPAND_NORMALIZE","context_packet_sha256":expansion_context["sha256"]})
         expansion_result_path=self.base/"admit-expand.result.yaml"; put(expansion_result_path,expansion_result)
         stale_context=self.call("accept","--root",str(workspace),"--run-id","R1","--assignment",str(expansion_assignment_path),"--result",str(expansion_result_path),ok=False)
         self.assertEqual(stale_context["error"],"result_context_binding")
         expansion_result["context_packet_sha256"]=reread["sha256"]
-        put(expansion_result_path,expansion_result)
-        self.assertEqual(self.call("accept","--root",str(workspace),"--run-id","R1","--assignment",str(expansion_assignment_path),"--result",str(expansion_result_path))["status"],"ACCEPTED")
+        commit_args = ("commit", "--root", str(workspace), "--run-id", "R1",
+                       "--assignment", str(expansion_assignment_path), "--result", str(expansion_result_path))
+        premature = {
+            **expansion_result,
+            "iceberg_view": {
+                "view_id": "PREMATURE-CURRENT", "view_kind": "CURRENT_REALITY",
+                "input_snapshot": snapshot, "revision": "1", "workflow_status": "ACCEPTED",
+            },
+        }
+        put(expansion_result_path, premature)
+        before = {path.relative_to(run): path.read_bytes() for path in run.rglob("*") if path.is_file()}
+        rejected = self.call(*commit_args, ok=False)
+        self.assertEqual(rejected["error"], "iceberg_view_premature_in_prep3")
+        self.assertEqual(
+            {path.relative_to(run): path.read_bytes() for path in run.rglob("*") if path.is_file()},
+            before,
+        )
+        put(expansion_result_path, expansion_result)
+        committed = self.call(*commit_args)
+        self.assertEqual(committed["status"], "ACCEPTED")
+        stored = run / expansion_assignment["output_path"]
+        self.assertEqual(stored.read_bytes(), expansion_result_path.read_bytes())
+        self.assertNotIn("iceberg_view", qs.load_yaml(stored))
         bad_expansion={**expansion_assignment,"assignment_id":"A-EXPAND-BAD","result_id":"EXPAND-BAD","output_path":"operators/EXPAND-BAD.yaml","dependency_hashes":[],"dependency_result_ids":[]}
         bad_expansion_path=self.base/"admit-expand-bad.assignment.yaml"; put(bad_expansion_path,bad_expansion)
         self.call("assign","--root",str(workspace),"--run-id","R1","--assignment",str(bad_expansion_path))
@@ -1264,7 +1319,63 @@ class QsTest(unittest.TestCase):
         broken={"id":"ADMISSION-BROKEN"}; broken_path=self.base/"admission-broken.yaml"; put(broken_path,broken)
         self.call("admit-bank","--root",str(workspace),"--run-id","R1","--bank",str(bank_path),"--admission",str(broken_path),"--test-fixture",ok=False)
         self.assertFalse((run/"input/bank.yaml").exists())
-        admitted=self.call("admit-bank","--root",str(workspace),"--run-id","R1","--bank",str(bank_path),"--admission",str(admission_path),"--test-fixture")
+        admit_args = ("admit-bank", "--root", str(workspace), "--run-id", "R1", "--bank", str(bank_path), "--test-fixture")
+        source_path = run / "positions/P-10.yaml"
+        index_path = run / "state/assignments.yaml"
+        tx_path = run / "transactions/FRAME-P-10.yaml"
+        events_path = run / "state/events.yaml"
+        originals = {path: path.read_bytes() for path in (source_path, index_path, tx_path, events_path)}
+        source = qs.load_yaml(source_path)
+        # Model a result accepted by the previous hash-only gate and retain
+        # the exact content bindings of that commit.
+        for label, candidate in (
+            ("missing", {key: value for key, value in source.items() if key != "perspective_profile"}),
+            ("changed", {**source, "perspective_profile": {**source["perspective_profile"], "boundary": "changed boundary"}}),
+        ):
+            with self.subTest(profile=label):
+                raw = qs.canon_yaml(candidate)
+                source_path.write_bytes(raw)
+                digest = qs.sha(raw)
+                index = qs.load_yaml(index_path)
+                index["results"]["FRAME-P-10"]["content_hash"] = digest
+                index["attempts"]["A-P-10\0TRY-1"]["content_hash"] = digest
+                put(index_path, index)
+                tx = qs.load_yaml(tx_path)
+                tx["result_sha256"] = digest
+                tx["result_bytes_b64"] = base64.b64encode(raw).decode("ascii")
+                tx["entry"]["content_hash"] = digest
+                tx["receipt"]["content_hash"] = digest
+                payload = qs.canon_yaml({"assignment_sha256": tx["assignment_sha256"], "result_sha256": digest})
+                tx["request_fingerprint"] = qs.Request(
+                    "commit", tx["request_key"], source["agent_id"], tx["assignment_sha256"],
+                    "R1", snapshot, tx["expected_command_revision"], payload,
+                ).fingerprint()
+                put(tx_path, tx)
+                events = qs.load_yaml(events_path)
+                event = next(row for row in events["events"] if row.get("result_id") == "FRAME-P-10")
+                event["content_hash"] = digest
+                event.pop("event_hash")
+                event["event_hash"] = qs.sha(qs.canon_yaml(event))
+                put(events_path, events)
+                candidate_admission = {
+                    **admission,
+                    "initial_set_bindings": [
+                        {**binding, "sha256": digest} if binding["result_id"] == "FRAME-P-10" else binding
+                        for binding in frame_bindings
+                    ],
+                }
+                candidate_path = self.base / "admission-bad-profile.yaml"
+                put(candidate_path, candidate_admission)
+                before = {path.relative_to(run): path.read_bytes() for path in run.rglob("*") if path.is_file()}
+                rejected = self.call(*admit_args, "--admission", str(candidate_path), ok=False)
+                self.assertEqual(rejected["error"], "admission_invalid:prep:result:FRAME-P-10:perspective_profile:mismatch")
+                self.assertEqual(
+                    {path.relative_to(run): path.read_bytes() for path in run.rglob("*") if path.is_file()},
+                    before,
+                )
+                for path, raw in originals.items():
+                    path.write_bytes(raw)
+        admitted = self.call(*admit_args, "--admission", str(admission_path))
         self.assertEqual(admitted["status"],"CORE_ADMITTED")
         admission_hash=admitted["prep_admission_sha256"]
         missing_core={"assignment_id":"A-CORE-MISSING","attempt_id":"TRY-1","role_id":"OP-INDULGENCE","agent_id":"/root/OP-INDULGENCE","input_snapshot":snapshot,"artifact_type":"OPERATOR","output_path":"operators/CORE-MISSING.yaml","dependency_hashes":[],"result_id":"CORE-MISSING"}

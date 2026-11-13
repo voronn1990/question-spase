@@ -677,6 +677,36 @@ class PrepValidationTest(unittest.TestCase):
         self.assertEqual(fixture.admission["question_count"], "2")
         self.assertEqual(fixture.validate(), [])
 
+    def test_bank_admission_binds_explicit_prep_framing_profile(self) -> None:
+        class BankWithCanonicalProfiles(CompletePrep):
+            def make_perspective_map(self) -> dict[str, Any]:
+                perspective_map = super().make_perspective_map()
+                for row in perspective_map["perspectives"]:
+                    row["profile_sha256"] = canonical_hash(row)
+                return perspective_map
+
+        fixture = BankWithCanonicalProfiles("BANK_TO_PLAN")
+        row = fixture.perspective_map["perspectives"][0]
+        profile = {key: value for key, value in row.items() if key != "profile_sha256"}
+
+        result_id = "RES-PREP-FRAMING"
+        fixture.registry[result_id] = {"artifact_type": "FRAMING", "content_hash": digest(result_id)}
+        result = {
+            "id": result_id, "artifact_type": "FRAMING", "author_role": row["role_id"],
+            "perspective_profile_hash": row["profile_sha256"],
+        }
+        fixture.docs[result_id] = result
+        profile_error = f"prep:result:{result_id}:perspective_profile:mismatch"
+        self.assertEqual(fixture.validate(), [])
+        result.update({"lifecycle_scope": "PREP", "prep_stage": "PREP-2_PERSPECTIVES"})
+        self.assertEqual(fixture.validate(), [profile_error])
+        result["perspective_profile"] = {**profile, "boundary": "different boundary"}
+        self.assertEqual(fixture.validate(), [profile_error])
+        result["perspective_profile"] = profile
+        self.assertEqual(fixture.validate(), [])
+        result["perspective_profile_hash"] = "0" * 64
+        self.assertEqual(fixture.validate(), [f"prep:result:{result_id}:perspective_profile_hash:mismatch"])
+
     def test_canonical_question_count_roundtrips_through_strict_loader(self) -> None:
         fixture = CompletePrep()
         raw = canonical_yaml_bytes(fixture.admission)

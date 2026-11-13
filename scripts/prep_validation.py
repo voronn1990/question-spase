@@ -19,6 +19,10 @@ import yaml
 
 
 PERSPECTIVE_ROLES = tuple(f"P-{number:02d}" for number in range(1, 11))
+PERSPECTIVE_PROFILE_FIELDS = (
+    "role_id", "agent_id", "title", "competence", "analysis_scope",
+    "unique_contribution", "boundary", "plausible_blindspots",
+)
 OPERATOR_ROLES = (
     "OP-VECTOR",
     "OP-PROJECTION",
@@ -203,6 +207,15 @@ def _canonical_hash(value: Any, *, omit: Iterable[str] = ()) -> str:
     if isinstance(value, dict) and omit:
         value = {key: item for key, item in value.items() if key not in set(omit)}
     return hashlib.sha256(canonical_yaml_bytes(value)).hexdigest()
+
+
+def perspective_profile_hash(profile: Any) -> str | None:
+    """Hash exactly the eight normative fields of a PREP-2 profile."""
+    if not isinstance(profile, dict) or set(profile) != set(PERSPECTIVE_PROFILE_FIELDS):
+        return None
+    if any(not isinstance(value, str) or not value for value in profile.values()):
+        return None
+    return _canonical_hash(profile)
 
 
 def _required(value: Any, fields: Iterable[str], prefix: str, errors: list[str]) -> bool:
@@ -702,7 +715,7 @@ def _validate_perspective_map(
         prefix = f"prep:perspective:{role}"
         if not _required(
             row,
-            ("role_id", "agent_id", "title", "competence", "analysis_scope", "unique_contribution", "boundary", "plausible_blindspots"),
+            PERSPECTIVE_PROFILE_FIELDS,
             prefix,
             errors,
         ):
@@ -758,6 +771,32 @@ def _canonical_p_result_role(
     if isinstance(entry, dict) and "role_id" in entry and entry.get("role_id") != author_role:
         errors.append(f"{prefix}:registry_role_id:contradicts_author_role")
     return author_role
+
+
+def _validate_prep_framing_profiles(
+    registry: dict[str, Any],
+    docs: dict[str, Any],
+    perspectives: dict[str, dict[str, Any]],
+    errors: list[str],
+) -> None:
+    for result_id, entry in registry.items():
+        doc = docs.get(result_id, {})
+        if entry.get("artifact_type", doc.get("artifact_type")) != "FRAMING":
+            continue
+        if entry.get("lifecycle_scope") != "PREP" and doc.get("prep_stage") != "PREP-2_PERSPECTIVES":
+            continue
+        prefix = f"prep:result:{result_id}"
+        role = entry.get("role_id", doc.get("author_role"))
+        row = perspectives.get(role) if isinstance(role, str) else None
+        if row is None:
+            errors.append(f"{prefix}:perspective_profile:missing_map_role")
+            continue
+        expected = {field: row[field] for field in PERSPECTIVE_PROFILE_FIELDS}
+        if doc.get("perspective_profile") != expected:
+            errors.append(f"{prefix}:perspective_profile:mismatch")
+        digest = perspective_profile_hash(expected)
+        if digest is None or row.get("profile_sha256") != digest or doc.get("perspective_profile_hash") != digest:
+            errors.append(f"{prefix}:perspective_profile_hash:mismatch")
 
 
 def _validate_initial_framings(
@@ -2008,6 +2047,7 @@ def validate_prep(
         approval_sha256,
         errors,
     )
+    _validate_prep_framing_profiles(accepted, accepted_docs, perspectives, errors)
     _validate_identity_reuse(perspectives, accepted, accepted_docs, errors)
     _validate_admission_bindings(
         admission,

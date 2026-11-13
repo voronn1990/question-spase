@@ -1,0 +1,127 @@
+schema_version: question-space-generation-switch-v3
+pointer_version: question-space-generation-pointer-v3
+output:
+  id: OUTPUT-QSSELF-04
+  version: 3
+  provider: WINDOWS-DOTNET-DIRECTORY-MOVE-PROCESS-RECOVERY-V2
+  recovery_scope: WINDOWS_SYSTEM_VOLUME_SUPERVISED_PROCESS_INTERRUPTION_V2
+  raw_pins: [design_sha256, review_sha256, adoption_sha256, runtime_sha256, request_sha256,
+             fixture_runtime_sha256, fixture_request_sha256]
+  selected_subject: [run_id, input_snapshot, plan, task_id, check_id]
+  fixed_portable_members:
+    - switch-output.json
+    - switch-runtime.json
+    - switch-request.json
+    - switch-fixture-runtime.json
+    - switch-fixture-request.json
+    - scripts/skill_generation_switch.py
+    - scripts/continuity_supervisor.py
+    - scripts/switch_admission.py
+    - scripts/switch_output.py
+    - schemas/skill-generation-switch.yaml
+request:
+  dispatch: [activate, restore, reconcile]
+  common: [request_version, operation_id, logical_occurrence_id, operation_fingerprint,
+           action, expected_generation, expected_pointer_sha256, target_generation, scope,
+           profile, provider, recovery_scope, continuity, runtime, active, prior, holding,
+           pointer, journal, fence, occurrence_lock, run_lock, target]
+  target:
+    TARGET_TREE: [tag, staged]
+    VERIFIED_ABSENT: [tag, first_operation_id, first_receipt_sha256, prior_absence]
+  backup_required: TARGET_TREE with existing prior tree
+  reconcile: [request_version, action, operation_id, operation_fingerprint, original]
+  tree_binding: [path, identity, manifest_sha256]
+  continuity: [boot_id, volume_guid, volume_serial, session_id]
+  logical_occurrence_id: '[A-Za-z0-9._-]+'
+  operation_fingerprint: SHA-256 of canonical JSON excluding operation_fingerprint
+  request_sha256: SHA-256 of exact raw file
+runtime:
+  common: [interpreter, members, provider]
+  windows_extra: supervisor_interpreter
+  interpreter: [path, version, sha256]
+  windows_provider: [id, recovery_scope, path, sha256, volume]
+  fixture_provider: [id, recovery_scope]
+session:
+  launch: [runtime_manifest, runtime_sha256, candidate_manifest, candidate_sha256, root_agent_id, active, journal,
+           pointer, fence, mode]
+  qualification_extra: qualification_root
+  continuity_greeting: >-
+    The coordinator reports continuity as null and supplies continuity_error if the native
+    witness could not enroll. An admitted reconcile may still close an exact committed guard.
+    Moves, fresh claims and releases require the existing live witness.
+  candidate_sources: >-
+    Run the direct CLI with python -I -B. It captures the protected launch and raw candidate
+    manifest before repository imports. Only its captured manifest-verified source loader can
+    import repository controller modules during a protected launch. The staged standalone entry
+    and native supervisor retain their exact runtime-member pins.
+selected_effect_scope:
+  source: Current immutable accepted ROOT-selected S-000 PLAN document, field switch_effect_scopes
+  key: request.scope
+  fields: [profile, active, assignment_ids, resource_keys, sole_writer_paths]
+  membership: >-
+    Include the operation's registered occurrence, all registered attempts of the named
+    assignment IDs, and all registered assignments overlapping the active, holding, staged or
+    backup writer paths, the declared additional paths or resource keys, or the preceding fence
+    selector for this scope. Compare C:/ and /mnt/c/ paths with a shared case-insensitive
+    identity for registered assignments and fresh claims. Use component-prefix overlap and
+    exact resource keys.
+  evidence: >-
+    The grant set equals the derived effect set. An independent quiescence observation binds the
+    exact sorted effect IDs and the canonical YAML SHA-256 of the persisted selector.
+  blockers: >-
+    Hold the applicable cut on UNKNOWN ordinary delivery or DISPATCH_UNKNOWN native launch,
+    including durable launch transitions without a command claim.
+  commands:
+    operation: [request, request_sha256, original_sha256, expected_revision, grant]
+    qualification_only: interrupt_at
+    effect_claim: [claim_effect]
+accepted_evidence:
+  encoding: >-
+    Use a quoted YAML scalar containing canonical UTF-8 JSON for typed payloads such as grant,
+    recovery and discovery. Canonical JSON uses sorted keys, compact separators and literal
+    Unicode. Payloads composed entirely of YAML-safe strings and containers may remain mappings.
+  reference: [id, sha256]
+  switch_grant: [adoption, mode, input_snapshot, plan_sha256, graph_sha256, authority_result_id,
+                 authority_sha256, request_sha256, quiescence, restore_source, recovery, discovery,
+                 predecessors, effects, active, journal, pointer, fence, autoload_roots]
+  switch_predecessor: [check, verdict, candidate_sha256]
+  switch_quiescence: [profile, active, request_sha256, cached_writers, client_writers, session_id,
+                      effects, effect_scope_sha256]
+  switch_restore_source: [staged, prior_pointer_sha256, request_sha256]
+  switch_recovery: [continuity, cut_sha256, request_sha256]
+  switch_discovery: [profile, operation_id, pointer_sha256, generation, fresh, success,
+                     same_name_count, selection, client, surfaces, observed_at]
+journal:
+  operation: skill-switch-fence
+  statuses: [SWITCH_CLOSED, SWITCH_RELEASED]
+  receipt: [status, scope, logical_occurrence_id, effects, fingerprint, operation_id,
+            continuity, pointer_sha256, provider, recovery_scope, adoption, effect_scope]
+  effect_scope: [assignment_ids, resource_keys, sole_writer_paths]
+  continuity_encoding: Canonical UTF-8 JSON in a quoted YAML scalar
+  transition: >-
+    Under the command locks, qualify the read-only cut and persist the operation intent before
+    changing the shared fence. Reconcile verifies that intent and the pre or post pointer.
+    The shared transition compares the fence and command revision to the admitted cut.
+    A successor of a released operation must bind its exact post pointer as the expected pointer.
+    A reconcile reopening the released operation must bind its retained intent and exact post
+    pointer. For the exact committed operation, reclose the guard before observing physical
+    state or continuity. Authority admission uses lexical path bindings. The standalone
+    execution observes the physical loader and qualification roots under the command locks.
+    An ambiguous cut returns UNKNOWN and keeps the guard closed.
+    A closed reconcile preserves the operation and selector while an independently
+    observed registered effect set may grow. Release binds that exact closed row and confirms
+    the pointer, commit, discovery, live continuity and physical cut.
+  guard: >-
+    A fresh claim whose assignment matches the selector stays held unless its occurrence
+    was in the independently observed release scope and a live release witness agrees.
+  commit_receipt: [operation_id, operation_fingerprint, generation, pointer_sha256, provider, recovery_scope]
+  phase_history: [absence_if_required, intent, shared_close, PREPARE, O_TO_ABSENT, ABSENT_TO_N, N_TO_HOLDING, commit, verified]
+  shared_close_qualification_cuts: [before_shared_close, after_shared_close]
+  path_separation: >-
+    Use the same Windows path identity for namespace containment, protected-surface exclusions,
+    and physical overlap. The active skill must be beneath an intended loader root.
+    Every physical path in qualification must be beneath its disposable root.
+limits:
+  windows_qualification: NOT_RUN
+  os_crash_and_power_loss_namespace_persistence: OUTSIDE_SELECTED_PROFILE_UNQUALIFIED
+  old_volume_namespace_barrier: UNMET_CURRENT_TOKEN

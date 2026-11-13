@@ -6,14 +6,116 @@ It stores exact accepted YAML bytes, maintains a small coordinator index, and
 checks structural provenance, closure and release bindings.
 Requires PyYAML >= 6.0 (declared in requirements.txt).
 """
-from __future__ import annotations
-import argparse, base64, binascii, errno, hashlib, json, os, re, shutil, stat, sys, tempfile, time
+import sys
+
+_PROTECTED_SWITCH = __name__ == "__main__" and sys.argv[1:2] == ["switch-session"]
+if _PROTECTED_SWITCH and not (sys.flags.isolated and sys.flags.dont_write_bytecode):
+    sys.stderr.write('{"status":"ERROR","error":"switch session requires python -I -B",'
+                     '"scope":"STRUCTURAL_ONLY"}\n')
+    raise SystemExit(2)
+
+import argparse, base64, binascii, errno, hashlib, json, os, re, shutil, stat, tempfile, time
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from typing import Any, NamedTuple
+
+
+def _switch_arguments(parser):
+    for name in ("root", "run-id", "launch", "launch-sha256"):
+        parser.add_argument("--"+name, required=True)
+    return parser
+
+
+def _switch_pinned_source(value, digest, label):
+    if not isinstance(value,str) or not isinstance(digest,str) or not re.fullmatch(r"[0-9a-f]{64}",digest):
+        raise ValueError("switch invalid source binding:"+label)
+    path=Path(value)
+    if not path.is_absolute() or str(path)!=value or path.resolve(strict=True)!=path:
+        raise ValueError("switch noncanonical source path:"+label)
+    flags=os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK
+    with os.fdopen(os.open(path,flags),"rb") as handle:
+        info=os.fstat(handle.fileno())
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink!=1:
+            raise ValueError("switch invalid source file:"+label)
+        raw=handle.read()
+    if hashlib.sha256(raw).hexdigest()!=digest:
+        raise ValueError("switch source hash differs:"+label)
+    return raw
+
+
+def _switch_source_json(raw):
+    def unique(pairs):
+        result={}
+        for key,value in pairs:
+            if key in result:
+                raise ValueError("switch duplicate JSON key:"+key)
+            result[key]=value
+        return result
+
+    def reject_constant(value):
+        raise ValueError("switch invalid JSON constant:"+value)
+
+    return json.loads(raw.decode("utf-8"),object_pairs_hook=unique,parse_constant=reject_constant)
+
+
+def _switch_bootstrap(args):
+    """Verify and capture repository Python before any controller import."""
+    from importlib.util import spec_from_file_location
+
+    launch=_switch_source_json(_switch_pinned_source(args.launch,args.launch_sha256,"launch"))
+    if not isinstance(launch,dict):
+        raise ValueError("switch invalid launch")
+    candidate=_switch_source_json(_switch_pinned_source(
+        launch.get("candidate_manifest"),launch.get("candidate_sha256"),"candidate manifest"))
+    if not isinstance(candidate,dict) or not isinstance(candidate.get("entries"),dict):
+        raise ValueError("switch invalid candidate manifest")
+    entries=candidate["entries"]
+    scripts=Path(__file__).resolve().parent
+    if any(Path(entry).resolve().is_relative_to(scripts.parent) for entry in sys.path):
+        raise ValueError("switch repository path on interpreter import search path")
+    modules=("architecture_validation","command_admission","model_validation","orchestration",
+             "plan_semantics","prep_validation","question_admission","question_ledger",
+             "skill_generation_switch","switch_admission","switch_output")
+    sources={}
+    for module in ("qs","continuity_supervisor",*modules):
+        relative=f"scripts/{module}.py"
+        path=scripts/(module+".py")
+        sources[module]=path,_switch_pinned_source(str(path),entries.get(relative),relative)
+    if set(modules)&sys.modules.keys():
+        raise ValueError("switch controller module already imported")
+
+    class CapturedModules:
+        def find_spec(self, fullname, path=None, target=None):
+            if fullname in modules:
+                origin,_=sources[fullname]
+                return spec_from_file_location(fullname,origin,loader=self)
+            return None
+
+        def create_module(self, spec):
+            return None
+
+        def exec_module(self, module):
+            origin,raw=sources[module.__name__]
+            exec(compile(raw,str(origin),"exec",dont_inherit=True),module.__dict__)
+
+    sys.meta_path.insert(0,CapturedModules())
+    return launch,candidate
+
+
+_SWITCH_BOOTSTRAP=None
+if _PROTECTED_SWITCH:
+    switch_args=_switch_arguments(argparse.ArgumentParser(prog="qs.py switch-session",allow_abbrev=False))
+    try:
+        switch_args=switch_args.parse_args(sys.argv[2:])
+        _SWITCH_BOOTSTRAP=_switch_bootstrap(switch_args)
+    except (OSError,ValueError) as exc:
+        print(json.dumps({"status":"ERROR","error":str(exc),"scope":"STRUCTURAL_ONLY"}),file=sys.stderr)
+        raise SystemExit(2) from None
+
 import yaml
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+if not _PROTECTED_SWITCH:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
 from command_admission import CapturedInput, Committed, Request, admit, cached_loader, capture_file, command_cut, publish_bytes, publish_locked
 from model_validation import (
     current_iceberg_consumer_result_ids,
@@ -34,8 +136,8 @@ from model_validation import (
 from architecture_validation import architecture_impact, derive_architecture_views, render_architecture_mermaid
 from orchestration import ADVISER_ROLE, dispatch_resource_conflict, ordinary_adviser_assignment, validate_orchestration
 from prep_validation import (
-    approved_import_for_framing, frontier_transition_valid, plan_projection_transition_valid,
-    resolve_admission_state, validate_prep,
+    PERSPECTIVE_PROFILE_FIELDS, approved_import_for_framing, frontier_transition_valid,
+    perspective_profile_hash, plan_projection_transition_valid, resolve_admission_state, validate_prep,
 )
 from question_admission import Arm, prepare_question_receipt, replay_question_receipts
 from question_ledger import (
@@ -1167,6 +1269,7 @@ QUESTION_COMMAND_KINDS={
 }
 QUESTION_COMMANDS=set(QUESTION_COMMAND_KINDS)|{"adviser-assign"}
 COMMAND_JOURNAL_OPERATIONS={"evidence-intake","evidence-disposition","terminal-author-failure","claim-effect","reconcile-effect"}|QUESTION_COMMANDS
+SWITCH_FENCE_OPERATION="skill-switch-fence"
 
 
 def command_journal(run: Path) -> list[dict[str,Any]]:
@@ -1179,7 +1282,7 @@ def command_journal(run: Path) -> list[dict[str,Any]]:
         row=load_yaml(CapturedInput(str(path),raw))
         if (path.name!=f"{number:08d}.yaml" or not isinstance(row,dict)
             or row.get("previous_sha256")!=prior or row.get("run_id")!=run.name or row.get("input_snapshot")!=snapshot
-            or row.get("operation") not in COMMAND_JOURNAL_OPERATIONS
+            or row.get("operation") not in COMMAND_JOURNAL_OPERATIONS | {SWITCH_FENCE_OPERATION}
             or row.get("record_sha256")!=sha(canon_yaml({key:value for key,value in row.items() if key!="record_sha256"}))
             or not isinstance(row.get("key"),str) or row["key"] in keys
             or not isinstance(row.get("receipt"),dict) or not isinstance(row.get("fingerprint"),str)):
@@ -2560,7 +2663,7 @@ def terminal_attempt(run: Path, assignment_id: str, attempt_id: str) -> bool:
                and row["receipt"].get("attempt_id")==attempt_id for row in command_journal(run))
 
 
-def journal_command(args: argparse.Namespace, effect_sender=None) -> dict[str,Any]:
+def journal_command(args: argparse.Namespace, effect_sender=None, *, switch_guard=None) -> dict[str,Any]:
     run=run_dir(root(args.root),args.run_id)
     if not (run/"state").is_dir(): raise QSError("command_run_state_missing")
     captured=captured_argument(Path(args.request),64 * 1024)
@@ -2582,7 +2685,15 @@ def journal_command(args: argparse.Namespace, effect_sender=None) -> dict[str,An
                     payload["input_snapshot"],payload["expected_revision"],captured.raw,occurrence)
     prepare=_intake_receipt if evidence_operation else _question_command_receipt
     adapter=_JournalAdmission(run)
-    receipt=admit(adapter,request,lambda cut: canon_yaml(prepare(run,args.command,payload,cut.state)))
+    def prepare_locked(cut):
+        journal=cut.state[3]
+        if args.command=="claim-effect" and any(row["operation"]==SWITCH_FENCE_OPERATION for row in journal):
+            from switch_admission import claim_guard
+            pair=payload["assignment_id"]+"\0"+payload["attempt_id"]
+            assignment=cut.state[0]["registered"][pair]["assignment"]
+            claim_guard(sys.modules[__name__],journal,assignment,switch_guard)
+        return canon_yaml(prepare(run,args.command,payload,cut.state))
+    receipt=admit(adapter,request,prepare_locked)
     result=load_yaml(CapturedInput("committed command receipt",receipt))
     if args.command=="claim-effect" and adapter.created and effect_sender is not None:
         effect_sender(result)
@@ -2749,6 +2860,10 @@ def _accept_locked(args: argparse.Namespace, run: Path) -> dict[str, Any]:
             raise QSError("result_prep_framing_binding")
         for field in ("perspective_profile_hash","vector_sha256","approval_sha256"):
             if result.get(field)!=assignment.get(field): raise QSError("result_prep_framing_binding")
+        profile = result.get("perspective_profile")
+        digest = perspective_profile_hash(profile)
+        if profile != assignment.get("perspective_profile") or digest is None or digest != result.get("perspective_profile_hash"):
+            raise QSError("result_prep_framing_profile_binding")
         blind_input=result.get("blind_input")
         required_blind={"contains_bank","contains_foreign_p_results","contains_preferred_solution","allowed"}
         allowed=blind_input.get("allowed") if isinstance(blind_input,dict) else None
@@ -2911,16 +3026,13 @@ def _approve_vector_locked(args: argparse.Namespace, run: Path) -> dict[str,Any]
     return {"status":"VECTOR_APPROVED","approval_sha256":sha(raw),"input_snapshot":current["input_snapshot"],"scope":"STRUCTURAL_ONLY"}
 
 
-PERSPECTIVE_PROFILE_FIELDS=("role_id","agent_id","title","competence","analysis_scope","unique_contribution","boundary","plausible_blindspots")
 CORE_BLIND_REQUIREMENT_DEFINITION_FIELDS=("id","text","definition","hard_requirement","approved_contract","working_assumption")
 
 def _perspective_profile_hash(profile: dict[str,Any]) -> str:
-    """Hash only the eight normative profile fields, never controller metadata."""
-    if not isinstance(profile,dict) or set(profile) != set(PERSPECTIVE_PROFILE_FIELDS):
+    digest = perspective_profile_hash(profile)
+    if digest is None:
         raise QSError("prep_perspective_profile")
-    if any(not isinstance(profile.get(key),str) or not profile[key] for key in PERSPECTIVE_PROFILE_FIELDS):
-        raise QSError("prep_perspective_profile")
-    return sha(canon_yaml(profile))
+    return digest
 
 def _validate_perspective_map_for_publish(run: Path, state: dict[str,Any], current: dict[str,Any], value: Any) -> dict[str,dict[str,Any]]:
     """Validate the immutable Root map before it can authorize a P readset.
@@ -4381,6 +4493,12 @@ def _validate_iceberg_candidate(
     owner=entry.get("role_id") in set(ICEBERG_VIEW_OWNERS.values()) and entry.get("artifact_type")=="OPERATOR"
     if "iceberg_view" in result and not owner: raise QSError("iceberg_view_owner")
     if not owner: return
+    if (snapshot_doc.get("input_mode") in NEW_MODES and entry.get("lifecycle_scope") == "PREP"
+        and result.get("prep_stage") == "PREP-3_EXPAND_NORMALIZE"):
+        # Expansion precedes the evidence work that produces current views.
+        if "iceberg_view" in result:
+            raise QSError("iceberg_view_premature_in_prep3")
+        return
     view=result.get("iceberg_view")
     expected_kind=next(kind for kind,role in ICEBERG_VIEW_OWNERS.items() if role==entry.get("role_id"))
     if not isinstance(view,dict) or view.get("view_kind")!=expected_kind:
@@ -6666,14 +6784,20 @@ def portable_subject(run: Path, task_id: str, check_id: str):
                 relation(result_id,"review_blind_input",blind,blind)
     # Full accepted history is retained for independent derivation and exact attempt/selector validation.
     paths.update("subject/"+entry["path"] for entry in results.values())
+    if any(row["operation"]==SWITCH_FENCE_OPERATION for row in command_journal(run)):
+        paths.update({"scripts/switch_admission.py","scripts/skill_generation_switch.py"})
     for name in ("current","assignments"):
         paths.add("subject/state/"+name+".yaml")
     for directory in ("input","intents","transactions","state/contexts"):
         for path in child(run,directory).rglob("*"):
             if path.is_symlink(): raise QSError("portable_subject_symlink:"+str(path.relative_to(run)))
             if path.is_file(): paths.add("subject/"+path.relative_to(run).as_posix())
-    return {"run_id":run.name,"input_snapshot":current["input_snapshot"],"task_id":task_id,"check_id":check_id,
-            "plan":selection,"relations":proof},paths
+    subject={"run_id":run.name,"input_snapshot":current["input_snapshot"],"task_id":task_id,"check_id":check_id,
+             "plan":selection,"relations":proof}
+    if any(isinstance(algorithm,dict) and algorithm.get("id")=="GENERATION-SWITCH-PRODUCER"
+           for algorithm in tasks[task_id][1].get("algorithms",[])):
+        subject["switch_output_required"]=True
+    return subject,paths
 
 
 def _portable_file_limit(relative):
@@ -6689,6 +6813,17 @@ def _export_portable_locked(args, run):
         or output.is_relative_to(package) or output.is_relative_to(run.parent)):
         raise QSError("portable_output_protected_or_exists")
     original,paths=portable_subject(run,ident(args.task_id,"task_id"),ident(args.check_id,"check_id"))
+    revision=command_revision(run)
+    switch_required=original.get("switch_output_required",False)
+    switch_source=getattr(args,"switch_output",None)
+    if switch_required!=bool(switch_source):
+        raise QSError("portable_switch_output_selection")
+    if switch_required:
+        from switch_output import ATTACHMENTS, PACKAGE_MEMBERS, verify as verify_switch
+        source_root=Path(switch_source).absolute()
+        if source_root.resolve()!=source_root:
+            raise QSError("portable_switch_source_path")
+        paths.update(ATTACHMENTS|PACKAGE_MEMBERS)
     manifest={"schema_version":SCHEMA,"original":original,"files":{}}
     with tempfile.TemporaryDirectory(prefix=".qs-portable-",dir=output.parent) as temporary:
         draft=Path(temporary)/"bundle"
@@ -6697,13 +6832,18 @@ def _export_portable_locked(args, run):
                 source=child(run,relative.removeprefix("subject/"))
                 target=draft/"subject"/run.name/relative.removeprefix("subject/")
             else:
-                source=child(package,relative)
+                source=child(source_root if switch_required and relative in ATTACHMENTS else package,relative)
                 target=draft/relative
             raw=captured_argument(source,_portable_file_limit(relative)).raw
             atomic(target,raw)
             manifest["files"][relative]=sha(raw)
+        if switch_required:
+            manifest["switch_output_sha256"]=verify_switch(
+                lambda path:captured_argument(child(draft,path),256 * 1024).raw,original)
         save_yaml(draft/"portable-manifest.yaml",manifest)
         portable_verify(argparse.Namespace(package=str(draft)))
+        if command_revision(run)!=revision:
+            raise QSError("portable_publish_cut_drift")
         os.rename(draft,output)
     return {"status":"PORTABLE_EXPORTED","manifest_sha256":sha(canon_yaml(manifest)),"scope":"STRUCTURAL_ONLY"}
 
@@ -6726,6 +6866,16 @@ def portable_verify(args):
     for key,target in derived["relations"].items():
         if relations.get(key)!=target: raise QSError("portable_missing_relation:"+key)
     if derived!=original: raise QSError("portable_authoritative_subject_drift")
+    if derived.get("switch_output_required"):
+        from switch_output import ATTACHMENTS, PACKAGE_MEMBERS, verify as verify_switch
+        if "switch_output_sha256" not in manifest:
+            raise QSError("portable_switch_output_missing")
+        digest=verify_switch(lambda path:captured_argument(child(package,path),256 * 1024).raw,derived)
+        if manifest["switch_output_sha256"]!=digest:
+            raise QSError("portable_switch_output_hash")
+        paths.update(ATTACHMENTS|PACKAGE_MEMBERS)
+    elif "switch_output_sha256" in manifest:
+        raise QSError("portable_switch_output_unexpected")
     if paths!=set(inventory): raise QSError("portable_inventory:"+",".join(sorted(paths^set(inventory))))
     for path in sorted(paths):
         source=child(run,path.removeprefix("subject/")) if path.startswith("subject/") else child(package,path)
@@ -6769,7 +6919,9 @@ def main(argv:list[str]|None=None)->int:
     p=sub.add_parser("context"); p.add_argument("--root",required=True); p.add_argument("--run-id",required=True); p.add_argument("--assignment",required=True); p.add_argument("--output",required=True); p.add_argument("--expand",action="append",default=[]); p.add_argument("--historical",action="store_true"); p.add_argument("--packet-sha256")
     p=sub.add_parser("export-portable"); p.add_argument("--root",required=True); p.add_argument("--run-id",required=True)
     p.add_argument("--output",required=True); p.add_argument("--task-id",required=True); p.add_argument("--check-id",required=True)
+    p.add_argument("--switch-output")
     p=sub.add_parser("portable-verify"); p.add_argument("--package",required=True)
+    _switch_arguments(sub.add_parser("switch-session",allow_abbrev=False))
     p=sub.add_parser("graph-query"); p.add_argument("--root",required=True); p.add_argument("--run-id",required=True)
     p.add_argument("--duty",required=True,choices=sorted(GRAPH_DUTIES)); p.add_argument("--ref",required=True)
     p.add_argument("--assignment",required=True)
@@ -6780,6 +6932,12 @@ def main(argv:list[str]|None=None)->int:
     p.add_argument("--changed-node",action="append",default=[])
     args=parser.parse_args(argv)
     try:
+        if args.command=="switch-session":
+            if _SWITCH_BOOTSTRAP is None:
+                raise QSError("switch session requires verified CLI bootstrap")
+            from switch_admission import session
+            emit(session(args,sys.modules[__name__],*_SWITCH_BOOTSTRAP))
+            return 0
         result={**dict.fromkeys(COMMAND_JOURNAL_OPERATIONS,journal_command),"init":init,"graph-query":lambda args: locked_command(args,_graph_query_locked),"question-compare":_question_compare,"select-plan":select_plan,"assign":assign,"accept":accept,"commit":commit,"command-cut":lambda args: locked_command(args,_read_command_cut),"context":context,"validate":validate,"recover":recover,"resume":resume,"seal":seal,"verify":verify,"launch-intent":launch_intent,"approve-vector":approve_vector,"publish-perspective-map":publish_perspective_map,"admit-bank":admit_bank,"export-portable":lambda args: locked_command(args,_export_portable_locked),"portable-verify":portable_verify,"render":render}[args.command](args); emit(result); return 0 if result.get("status") not in {"FAIL"} else 1
     except Exception as exc: emit({"status":"ERROR","error":str(exc),"scope":"STRUCTURAL_ONLY"},sys.stderr); return 2
 if __name__=="__main__": raise SystemExit(main())

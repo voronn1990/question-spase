@@ -292,6 +292,7 @@ class OrdinaryQuestionCommandTest(unittest.TestCase):
             self.assertNotIn(leaked,output.read_text())
         self.assertEqual(packet["goal"]["requirement_definitions"],[{"id":"R-1","text":"Cover every source obligation"}])
         return self.finish(framing,path,{
+            "perspective_profile":profile,
             "perspective_profile_hash":profiles[1]["profile_sha256"],"vector_result_id":"VECTOR-TEST",
             "vector_sha256":self.vector_sha,"approval_sha256":self.approval_sha,"context_packet_sha256":context["sha256"],
             "blind_input":{"contains_bank":"NO","contains_foreign_p_results":"NO",
