@@ -165,7 +165,20 @@ SHA-256 for addressable declared reads, and it includes accepted Vector
 `G`/`NOT_G`, nested assigned Q/R, and only accepted hash-bound dependencies.
 A `FRAMING` packet is produced only when its assignment has a schema-exact, assignment-bound `blind_handoff` with `handoff_id`, assignment/attempt/role/snapshot bindings, `phase: "FRAMING"`, a bank-free objective and nonempty constraints. Its declared reads must include `references/roles/perspectives.md` and `references/phases/01-intake.md`; `references/invariants.md` is the only optional additional instruction. No bank, original raw source, snapshot, state, result, `runs/*` path, dependency, assigned Q/R, contradiction record or `--expand` is permitted. The accepted Vector goal must itself be an `OP-VECTOR` `OPERATOR` and must not disclose bank Q/R. A valid blind packet includes only that fixed readset, the checked handoff and this bounded goal; it includes no Q, peer result or foreign primary. Nonblind packets retain the normal exact linked-dependency path.
 `resume` runs durable recovery and reports recorded `ACCEPTED`, `READY`,
-`WAITING`, `DISPATCH_UNKNOWN`, and `STALE` states without spawning agents.
+`WAITING`, `DISPATCH_UNKNOWN`, `REJECTED`, and `STALE` states without spawning agents.
+When `recover` or `resume` returns `effect_task_states`, each row identifies the
+exact assignment and attempt. An outstanding `UNKNOWN` claim is
+`DISPATCH_UNKNOWN`. Confirmed delivery awaiting terminal evidence is `WAITING`.
+An independently observed terminal `FAILED` or `CANCELLED` with no accepted
+result is `REJECTED`. An exact attempt reconciled `NOT_SENT` stays `WAITING`
+under its existing claim fence. `COMPLETED` without an accepted result is
+`WAITING` for that result. While a claim holds resources, overlapping resource
+keys or writer path prefixes also keep other occurrences `WAITING`, including
+when the holder has an accepted result. A terminal receipt or `NOT_SENT`
+clears the hold for those other occurrences. Affected attempts stay outside
+`pending_assignments`, ready groups, and approved dispatch proposals. The
+effect projection preserves the assignment, recorded launch state, and
+same-occurrence dispatch fence.
 `--changed` accepts only an `EVIDENCE` result; its typed descendants are saved
 as stale in `state/current.yaml`, blocking validation and sealing. Byte metrics
 are observable; tokens and cost are `UNAVAILABLE` when telemetry is absent.

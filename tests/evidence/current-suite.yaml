@@ -1,5 +1,5 @@
 {
-  "candidate_manifest_sha256": "baf13316dae95864f23ed2566323b0a508a2c6358efdff6e3209549bd601c054",
+  "candidate_manifest_sha256": "40298bf66935b957411bb9009f777503dc3a8cb09518645a2f695ad42bc6e473",
   "checks": [
     {
       "id": "giq003-pure",
@@ -98,12 +98,54 @@
       "receipt_sha256": "eba6e8bea526d7048ec7aae0d4247d6351171a5b55ed63d36a1a24a8a7dc5aee",
       "status": "PASS",
       "subject_sha256": "c4b87d0541cde647923ca67c8f9c5f36ab0c8df63f8fa72e0334635a3817904b"
+    },
+    {
+      "id": "bank-object-requirements-reviewed",
+      "observation": "Independent scoped review of the exact BANK object-requirement delta. Ordinary CLI regression verified addressability, string parity, blind-context guards and unclosed coverage with preserved raw bank bytes.",
+      "receipt_sha256": "5363a2521ea8d71a357ee03e549af68b1310037e0bb725a766629ca5bd817297",
+      "status": "PASS",
+      "subject_sha256": "c57136f2a3c43e6c9ba4ca0c63eebbed6064d2eff19e083a9e559aa7dd04ffdd"
+    },
+    {
+      "id": "observed-author-terminal-reviewed",
+      "observation": "Independent scoped review of terminal002: actual claimed resource remains occupied through UNKNOWN, ACK and accepted-result states until confirmed terminal release; disjoint work remains available, completed unaccepted result waits for admission, original claim replay does not resend.",
+      "receipt_sha256": "452509095755e4f9faf72246a1f562827df263513f1359bf9564c24311bf9b46",
+      "status": "PASS",
+      "subject_sha256": "223b0337a43460c83681d03f32ac87b9f4a1bb6c2f7e1fd42be0b02d91d33a65"
+    },
+    {
+      "id": "combined-delta-targeted-passing-subset",
+      "observation": "Two direct changed-path tests passed on the combined six-file source. Overall command exited 1 because the separate lifecycle test could not import tests from that working directory. The original failure remains recorded; this entry covers only the passing subset.",
+      "receipt_sha256": "6fed59838fd9dc7de031511ae19460e8117790846781765830a7806973d9f14d",
+      "status": "PASS",
+      "subject_sha256": "58e046e1d31a17df7118678fa385a6e0bd718b554f6ae5948f8eeecb91d08ee6"
+    },
+    {
+      "id": "combined-bank-lifecycle-targeted-retry",
+      "observation": "The previously failing test was rerun alone with correct import paths and passed in 336.047 seconds. Ordinary BANK import, CORE, audit and release lifecycle completed; captured implementation files remained unchanged. Other previously passed tests were not repeated.",
+      "receipt_sha256": "521d28727314a48859d781e65b973da5634c2cd56d9f8538d6c872b731fa9b89",
+      "status": "PASS",
+      "subject_sha256": "58e046e1d31a17df7118678fa385a6e0bd718b554f6ae5948f8eeecb91d08ee6"
+    },
+    {
+      "id": "rc3-core-source-identity",
+      "observation": "All six changed implementation members match the independently reviewed composed patches. README changes only candidate version and bounded verification status. All other core members equal base bcaab2c. This check establishes current source identity, not full runtime qualification.",
+      "receipt_sha256": "5d0462bcc4aff112eb8f8b42ee264a725d6216efff21108b1ad7ab38d2ea6ba9",
+      "status": "PASS",
+      "subject_sha256": "07c8f5a2831f8fd31fb8bcf7607183e77898e2321e817184cb53d7668702ce80"
+    },
+    {
+      "id": "rc3-readme-corrected-source-identity",
+      "observation": "README now distinguishes COMPLETED/WAITING from FAILED or CANCELLED/REJECTED, and binds ongoing partial native work to the predecessor source with applicability outstanding. Remaining 124 core files equal the prior exact inventory; no runtime claim added.",
+      "receipt_sha256": "40a37b058d0859b198b92a266f7073ec626df2c37ecdfd7951991e062fba1ed4",
+      "status": "PASS",
+      "subject_sha256": "40298bf66935b957411bb9009f777503dc3a8cb09518645a2f695ad42bc6e473"
     }
   ],
   "qualification": "LOCAL_STRUCTURAL_ONLY",
-  "readme_sha256": "55fded61ae9d585f1b9719a4e10ff193b43b7c7f8f086f8838c1de0a5da10c3c",
+  "readme_sha256": "6818cea9a4504a749301b310a745ff5bfdff1d8843f6d3a301d76640e9efe2c2",
   "receipt_scope": "Supplied public local check observations, each bound to its own exact subject. Receipt digests identify external records.",
   "schema_version": "question-space-public-check-receipts-v1",
-  "verification_metadata_sha256": "904b34038da85c8e95d3ac06734cb96a3bfb89c0f7759015dcc78ad7a7f55e41",
-  "version": "4.3.0-rc2"
+  "verification_metadata_sha256": "42a5ef2959d19e7ad9184b0256584b222bbc8e0a8fe902552054913be3ebc4bf",
+  "version": "4.3.0-rc3"
 }

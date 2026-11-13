@@ -1,8 +1,8 @@
 {
-  "candidate_manifest_sha256": "baf13316dae95864f23ed2566323b0a508a2c6358efdff6e3209549bd601c054",
+  "candidate_manifest_sha256": "40298bf66935b957411bb9009f777503dc3a8cb09518645a2f695ad42bc6e473",
   "files": {
     "LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
-    "README.md": "55fded61ae9d585f1b9719a4e10ff193b43b7c7f8f086f8838c1de0a5da10c3c",
+    "README.md": "6818cea9a4504a749301b310a745ff5bfdff1d8843f6d3a301d76640e9efe2c2",
     "SKILL.md": "4818507dbba5fd0de32dd938554c8ccb93b19f86e5fdff069636ad8f3056d2b3",
     "agents/openai.yaml": "a2d8c910be186a4f9f1845251920d7003172702f05fadcc870f64009ba8daac7",
     "history/4.2.2/README.md": "e0767c857ccf850475155d7a5c0be319f2d08685bb88b5b68bc68e99fd2469a9",
@@ -15,7 +15,7 @@
     "references/architecture-graph.md": "44333c52242305d69cc8049fe158b4ad6276ad02a9eb6bfbf6eae142a02494fd",
     "references/context7.md": "139377fb92e498f30a617ef40824bb242ea88732e427906ae34b65a5092453e1",
     "references/contracts-v4.1.md": "d39f0a558cc34bb56edd5f78f55c3516be6e247ac055c9e151d0c23e66ec9741",
-    "references/data-contract.md": "e57dbe928661d7344efd9a98029811c64709092690a1bd36ea82ecd2ee8377d4",
+    "references/data-contract.md": "3276e9b2ff209f47992f0ebbf5c9b6ae3d977494d844a7db3a079a4019b13247",
     "references/double-iceberg.md": "b1f5cba2661bf0f98dfd86edbd927decbc831739210333d3420d9129713daa16",
     "references/github.md": "aaeb363015fd87d647549b7d522da845397a8299c5b6003d58c0b3c280b0db84",
     "references/invariants.md": "48f77113ff588195eae4842ef6fc89d370805dc1f0fde79164a110f6b118d9ba",
@@ -45,7 +45,7 @@
     "schemas/architecture-graph.yaml": "8c9810c24f212c85ff124c8461b1172192e471b261aaca1fa081295d5c8d464e",
     "schemas/assignment-result.yaml": "ee16e63f9f72ba4282d5bba2cb010824ac69237e96cd95d9eaae180e87971059",
     "schemas/audit.yaml": "773de6ab6ecac1683940e452f025b9eb44bddfe4498f42c200c7b76cef3b6528",
-    "schemas/bank.yaml": "190a594100e6e9dfd3fcbaa0e1a09eb4865fc37e5db7c198f179535356d8864e",
+    "schemas/bank.yaml": "a2938610f0024eab31b92174fe97215124749d8f7fa6b6aacd65164eec25b0aa",
     "schemas/command-admission.yaml": "7278d8535c500d3da04873333c314d82f804ec5f79b087ef6f72101d48cc1beb",
     "schemas/common.yaml": "7cbc46793aa5a0de38d37ab42058783b0b3a2ab6b709b1cbc11d127357f6af0b",
     "schemas/gate.yaml": "37f2ccb07caf8daa61a0e148549f5b993b86611cd1e6e89d806cc4e17911b5f8",
@@ -58,10 +58,10 @@
     "scripts/command_admission.py": "26fe294ea47e745de4a2144132843ef1da856ab53160a2f652ff455f213fcf8b",
     "scripts/continuity_supervisor.py": "15a31fa2b72e35e925921d49e1da8ea36ed7f55ec436bee6144bef68b922afd9",
     "scripts/model_validation.py": "6052b56aeaaed6b251f39b90e3652e76d15894006e0f419287c636e94a43904f",
-    "scripts/orchestration.py": "86760e16f68b18b57d0edef36d7ebf720919c23d075f2314a4d50f4c252cd4e1",
+    "scripts/orchestration.py": "8625712707a6945aabd659d8d97d1d0285f863c9f01f462a705631bcbb18b737",
     "scripts/plan_semantics.py": "541ea438eb383552eb8c3b483a6ac3d2ddc8f28dd10741ff4288325f497e4721",
     "scripts/prep_validation.py": "7f76f169f43f6f82f3e61a0e34e2be76814ba33fc403da1e876da087ee08c434",
-    "scripts/qs.py": "e218ca175ab40b3208e2937dc9cb210042d34f4f7afaee79f7b677c2fb121fd4",
+    "scripts/qs.py": "7a22f00a3484a7bd9a61b24a19a562ba27cfbb0c7a1015861e67b9a165acdb7e",
     "scripts/question_admission.py": "dd022267159870d78d37be5b39bda7c1f2e27e9b2a466b66b434fe2ed6318b8e",
     "scripts/question_ledger.py": "870dff01a17f05b13fc1a936f7c8d16463b302402ebe0c828401331f2794afde",
     "scripts/skill_generation_switch.py": "5d6a7c52f88e12ea5f5ec6a70a71f1c0f4d893805f7ef337103f22bdb77ae971",
@@ -101,7 +101,7 @@
     "tests/test_architecture.py": "46181060c3a324fc39c9715d84a311bba67d79f7e209fd698cb068f6121ad9ea",
     "tests/test_architecture_integration.py": "bb30b4e7d5ee78e6bef689a3f26a3afef0356af28ace190c4b9ac875ad2baffc",
     "tests/test_architecture_revision_context.py": "e018be72d4d1a5d42e66982742caf41469a14a26a9184b6d4adc966a95759872",
-    "tests/test_command_admission.py": "f8048b0f9cf1c3564a6f81ceeedf5c8e039a110aa5d4799aa3c215832b7a806c",
+    "tests/test_command_admission.py": "6be751a0e50c83b436a005157b1167018742976af7f094403a5a911c45e09403",
     "tests/test_delivery_bootstrap.py": "d3a1dcedd1ac3d5ed3b9c896c852684b8292e56c6f15fe026ff83ccbf837ac64",
     "tests/test_github_evidence.py": "185eb299674f40b827adc93283b14257bb90b004ddfe96ca7c9a48129aac49a5",
     "tests/test_graph_consumers.py": "6a6e0e54906887701aa83d55e1ee23289c8cd6a96a8bdc1fdfbc58c29023e93d",
@@ -111,7 +111,7 @@
     "tests/test_orchestration.py": "10241ada465a619965beb8a8847c9594db803bfe942b8371b88f73c40fd84c77",
     "tests/test_portable_closure.py": "51887657df33d6694dc1c67ad7519a010b5245441d91b6cc8146c2a8375549b0",
     "tests/test_prep_validation.py": "1c09dbe2e574958dc58d964547d1a8e2f595a29c3f2661ed9015fae0afded920",
-    "tests/test_qs.py": "3532380123078b722657b94ac43fb0ca1e27c4f149ebe7379a85aee7016fdcae",
+    "tests/test_qs.py": "121183084c86d8f9304bdbbc3f97d08dd7c8e679a44b06d5ae7b2fad5c81a345",
     "tests/test_question_admission.py": "3be6d4f55f65c2e75cff017ee7c4f0fba4ffbfc401a4b99dd958a73db407b911",
     "tests/test_question_ledger.py": "03a02c1dac4833f36943186229d30d44beafa6a6a9598787898a5574128a64e4",
     "tests/test_r421_graph_semantics.py": "73a93cfbb6ad7786d47773dc4e69d414d7b83f642aad674b701f7a237639efcf",
@@ -128,5 +128,5 @@
     "tests/test_vector_revision_anchor.py": "04070f0171cc815e52ac9307823939d5e4531b9b4816fce2ad11521b4fec3d59"
   },
   "schema_version": "question-space-package-core-v1",
-  "version": "4.3.0-rc2"
+  "version": "4.3.0-rc3"
 }

@@ -816,6 +816,8 @@ def validate_orchestration(
     question_gap_proofs: dict[str, dict[str, str]] | None = None,
     question_primary_owners: dict[str, str] | None = None,
     question_retired_claims: set[tuple[str, str, str]] | None = None,
+    *,
+    effect_task_states: dict[tuple[str, str], dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Validate and classify an approved orchestration snapshot.
 
@@ -951,6 +953,7 @@ def validate_orchestration(
 
     states: dict[str, str] = {}
     blockers: dict[str, set[str]] = defaultdict(set)
+    effect_tasks = effect_task_states or {}
     unresolved = set(normalized)
     for _ in range(len(normalized) + 1):
         progressed = False
@@ -959,6 +962,7 @@ def validate_orchestration(
             assignment = wrapped["assignment"]
             result_id = assignment.get("result_id")
             dependency_ids = dependencies_by_assignment.get(assignment_id, [])
+            effect_task = effect_tasks.get((assignment_id, assignment["attempt_id"]))
             if isinstance(result_id, str) and result_id in stale:
                 states[assignment_id] = "STALE"
                 blockers[assignment_id].update(assignment_errors.get(assignment_id, set()))
@@ -966,6 +970,9 @@ def validate_orchestration(
             elif assignment_errors.get(assignment_id):
                 states[assignment_id] = "INVALID"
                 blockers[assignment_id].update(assignment_errors[assignment_id])
+            elif effect_task and effect_task["reason"] != "effect_resource_occupied":
+                states[assignment_id] = effect_task["state"]
+                blockers[assignment_id].add(effect_task["reason"])
             else:
                 planned_dependencies = [producers[dep] for dep in dependency_ids if dep not in results and dep in producers]
                 if any(dep_assignment not in states for dep_assignment in planned_dependencies):
@@ -1011,15 +1018,21 @@ def validate_orchestration(
         states[assignment_id] = "INVALID"
         blockers[assignment_id].add("dependency_graph:unresolved_cycle")
 
-    eligible = [
-        assignment_id
-        for assignment_id in sorted(normalized)
-        if states.get(assignment_id) in {"NOT_LAUNCHED", "READY"}
-    ]
+    eligible: list[str] = []
     selected: list[str] = []
     serialized_after: dict[str, list[str]] = defaultdict(list)
-    for assignment_id in eligible:
+    for assignment_id in sorted(normalized):
+        if states.get(assignment_id) not in {"NOT_LAUNCHED", "READY"}:
+            continue
         assignment = normalized[assignment_id]["assignment"]
+        effect_task = effect_tasks.get((assignment_id, assignment["attempt_id"]))
+        if effect_task and effect_task["reason"] == "effect_resource_occupied":
+            states[assignment_id] = "WAITING"
+            blockers[assignment_id].update(
+                f"effect_resource_occupied:{holder}" for holder in effect_task["resource_holder_assignment_ids"]
+            )
+            continue
+        eligible.append(assignment_id)
         conflicts = [
             earlier
             for earlier in selected

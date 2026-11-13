@@ -131,6 +131,7 @@ from model_validation import (
     validate_model,
     ledger_gap_outcome,
     _immutable_input_hashes,
+    _requirement_ids,
     _review_contract,
     _validate_stages,
 )
@@ -1539,6 +1540,66 @@ def _live_effect_claims(journal):
     return active
 
 
+def _effect_task_states(run,state,current,journal):
+    """Project next actions without changing the launch or assignment record."""
+    registered=state["registered"]
+    states={}
+
+    def record(receipt, status, reason, **observed):
+        key=receipt["assignment_id"]+"\0"+receipt["attempt_id"]
+        entry=registered.get(key)
+        if (entry is None or entry["assignment_sha256"]!=receipt["assignment_sha256"]
+            or entry["assignment"].get("logical_occurrence_id")!=receipt["logical_occurrence_id"]):
+            raise QSError("effect_assignment_projection_binding")
+        if entry["status"]=="ASSIGNED":
+            states[key]={"assignment_id":receipt["assignment_id"],"attempt_id":receipt["attempt_id"],
+                         "state":status,"reason":reason,**observed}
+
+    holds=[]
+    for holder in _live_effect_claims(journal).values():
+        effect=holder["effect_state"]
+        if effect=="UNKNOWN":
+            record(holder,"DISPATCH_UNKNOWN","dispatch_outcome_unknown_no_replay",effect_state=effect)
+        else:
+            record(holder,"WAITING","effect_recipient_confirmed_terminal_pending",effect_state=effect)
+        scope=_effect_claim_resources(run,state,current,holder)
+        if any(scope.values()):
+            holds.append((holder,scope))
+    for row in journal:
+        receipt=row["receipt"]
+        if (row["operation"]!="reconcile-effect"
+            or receipt.get("status") not in {"EFFECT_RECONCILED","EFFECT_RESOURCE_RELEASED"}):
+            continue
+        terminal=receipt.get("resource_terminal_state")
+        effect=receipt.get("effect_state")
+        if terminal not in EFFECT_TERMINAL_STATES and effect!="NOT_SENT":
+            continue
+        evidence=state["results"].get(receipt.get("evidence_result_id"))
+        if (not evidence or evidence["artifact_type"]!="EVIDENCE"
+            or evidence["content_hash"]!=receipt.get("evidence_sha256")):
+            raise QSError("effect_terminal_evidence_recovery_binding")
+        if terminal in {"FAILED","CANCELLED"}:
+            record(receipt,"REJECTED","observed_author_terminal_failure",resource_terminal_state=terminal)
+        elif terminal=="COMPLETED":
+            record(receipt,"WAITING","observed_completed_result_pending",resource_terminal_state=terminal)
+        else:
+            record(receipt,"WAITING","effect_not_sent_attempt_fenced",effect_state=effect)
+
+    for pair,entry in registered.items():
+        if entry["status"]!="ASSIGNED" or pair in states:
+            continue
+        assignment=entry["assignment"]
+        occurrence=assignment.get("logical_occurrence_id")
+        conflicts=sorted({holder["assignment_id"] for holder,scope in holds
+                          if occurrence!=holder["logical_occurrence_id"]
+                          and dispatch_resource_conflict(assignment,scope)})
+        if conflicts:
+            states[pair]={"assignment_id":assignment["assignment_id"],"attempt_id":assignment["attempt_id"],
+                          "state":"WAITING","reason":"effect_resource_occupied",
+                          "resource_holder_assignment_ids":conflicts}
+    return states
+
+
 def _legacy_effect_resources(run,state,current,holder):
     pair=holder["assignment_id"]+"\0"+holder["attempt_id"]
     path=child(run,"intents/"+sha(pair.encode()).upper()+".yaml")
@@ -1558,16 +1619,19 @@ def _legacy_effect_resources(run,state,current,holder):
         raise QSError("effect_legacy_resource_scope:"+holder["logical_occurrence_id"]) from exc
 
 
+def _effect_claim_resources(run,state,current,holder):
+    if all(field in holder for field in EFFECT_RESOURCE_FIELDS):
+        return _effect_resource_scope(holder)
+    return _legacy_effect_resources(run,state,current,holder)
+
+
 def _require_effect_resources(run,state,current,journal,occurrence,scope):
     if not any(scope.values()):
         return
     for identifier,holder in _live_effect_claims(journal).items():
         if identifier==occurrence:
             continue
-        if all(field in holder for field in EFFECT_RESOURCE_FIELDS):
-            resources=_effect_resource_scope(holder)
-        else:
-            resources=_legacy_effect_resources(run,state,current,holder)
+        resources=_effect_claim_resources(run,state,current,holder)
         if dispatch_resource_conflict(scope,resources):
             raise QSError(f"effect_resource_occupied:{identifier}:{holder['claim_key']}:{holder['effect_state']}")
 
@@ -3366,7 +3430,7 @@ def blind_handoff(assignment: dict[str,Any], bank: dict[str,Any]) -> dict[str,An
     forbidden=[]
     for question in bank.get("questions",[]) if isinstance(bank.get("questions"),list) else []:
         if isinstance(question,dict): forbidden.extend(value for value in (question.get("id"),question.get("text")) if isinstance(value,str) and value)
-    forbidden.extend(value for value in bank.get("requirements",[]) if isinstance(value,str) and value)
+    forbidden.extend(_requirement_ids(bank))
     if any(value in encoded for value in forbidden): raise QSError("blind_handoff_bank_disclosure")
     return handoff
 
@@ -4285,7 +4349,7 @@ def _context_locked(args: argparse.Namespace, run: Path) -> dict[str, Any]:
         forbidden=[]
         for question in bank.get("questions",[]) if isinstance(bank.get("questions"),list) else []:
             if isinstance(question,dict): forbidden.extend(value for value in (question.get("id"),question.get("text")) if isinstance(value,str) and value)
-        forbidden.extend(value for value in bank.get("requirements",[]) if isinstance(value,str) and value)
+        forbidden.extend(_requirement_ids(bank))
         if any(value in goal_text for value in forbidden): raise QSError("blind_goal_bank_disclosure")
     core_blind=(core_blind_vector_projection(run,state,load_state(run,"current"),snapshot_doc,assignment,goal_id,goal_entry,goal_doc)
                 if is_blind and assignment.get("lifecycle_scope")=="CORE" and isinstance(snapshot_doc,dict) and snapshot_doc.get("input_mode") in NEW_MODES else None)
@@ -4303,7 +4367,7 @@ def _context_locked(args: argparse.Namespace, run: Path) -> dict[str, Any]:
             known_q,_outcomes=current_question_index(run,state,load_state(run,"current"),bank)
         except QSError as exc:
             raise QSError("context_source_outcomes:"+str(exc))
-        known_r={r for r in bank.get("requirements",[]) if isinstance(r,str)}
+        known_r=_requirement_ids(bank)
         if not isinstance(qids,list) or any(q not in known_q for q in qids) or not isinstance(rids,list) or any(r not in known_r for r in rids): raise QSError("context_assigned_obligations")
         packet["questions"]=[known_q[q] for q in qids]
         packet["requirements"]=[{"id":item} for item in rids]
@@ -4400,6 +4464,8 @@ def _resume_locked(args: argparse.Namespace, run: Path) -> dict[str,Any]:
             projection_override=_approved_map_plan_override(run,before_recovery,proposed)
     started=time.monotonic(); recovered=_recover_locked(args,run,projection_override)
     if recovered.get("status")!="RECOVERED": return {**recovered,"status":"FAIL"}
+    effect_tasks={(row["assignment_id"],row["attempt_id"]):row
+                  for row in recovered.get("effect_task_states",[])}
     state,current,bank=accepted(run); results=state.get("results",{})
     changed=list(getattr(args,"changed",[]) or [])
     if len(changed)!=len(set(changed)): raise QSError("duplicate_changed_result")
@@ -4422,7 +4488,8 @@ def _resume_locked(args: argparse.Namespace, run: Path) -> dict[str,Any]:
         gap_proofs,primary_owners,retired=_question_route_proofs(run,(state,current,bank,command_journal(run)))
         orchestration=validate_orchestration(
             bank,approved_map,{"registered":state.get("registered",{}),"current_attempts":state.get("current_attempts",{})},results,docs,changed,
-            completed_unknown,current_question_claims,sorted(stale),gap_proofs,primary_owners,retired
+            completed_unknown,current_question_claims,sorted(stale),gap_proofs,primary_owners,retired,
+            effect_task_states=effect_tasks,
         )
         if orchestration.get("errors"): raise QSError("orchestration_invalid:"+"|".join(str(item) for item in orchestration["errors"]))
         stale.update(item for item in orchestration.get("stale_ids",[]) if isinstance(item,str))
@@ -4465,21 +4532,24 @@ def _resume_locked(args: argparse.Namespace, run: Path) -> dict[str,Any]:
     for registered in state.get("registered",{}).values():
         if not isinstance(registered,dict) or not isinstance(registered.get("assignment"),dict): continue
         assignment=registered["assignment"]; result_id=assignment.get("result_id")
+        effect_task=effect_tasks.get((assignment["assignment_id"],assignment["attempt_id"]),{})
         dependencies=assignment.get("dependency_hashes",[]) if isinstance(assignment.get("dependency_hashes"),list) else []
         for digest in dependencies: reused[str(digest)]=reused.get(str(digest),0)+1
         launch_state=registered.get("launch_state",assignment.get("launch_state","NOT_LAUNCHED"))
         occurrence=assignment.get("logical_occurrence_id")
-        if isinstance(occurrence,str) and occurrence_effect(run,occurrence)=="UNKNOWN":
+        if (not effect_task or effect_task["reason"]=="effect_resource_occupied") and isinstance(occurrence,str) and occurrence_effect(run,occurrence)=="UNKNOWN":
             launch_state="DISPATCH_UNKNOWN"
         dependency_ids=set(assignment.get("dependency_result_ids") or [])
         references={result_id,*dependency_ids,*(by_hash.get(digest) for digest in dependencies)}
         if result_id in stale: status="STALE"
         elif terminal_attempt(run,assignment.get("assignment_id"),assignment.get("attempt_id")): status="REJECTED"
         elif registered.get("status")=="ACCEPTED": status="ACCEPTED"
+        elif effect_task and effect_task["reason"]!="effect_resource_occupied": status=effect_task["state"]
         elif not set(dependencies).issubset(set(by_hash)): status="WAITING"
         elif launch_state=="DISPATCH_UNKNOWN": status="DISPATCH_UNKNOWN"
         elif references & pending_intake: status="WAITING"
         elif launch_state=="READY_TO_DISPATCH" and references & stale: status="WAITING"
+        elif effect_task: status="WAITING"
         elif launch_state=="READY_TO_DISPATCH": status="READY"
         else: status="NOT_LAUNCHED"
         tasks.append({"assignment_id":assignment.get("assignment_id"),"result_id":result_id,"role_id":assignment.get("role_id"),"group_id":assignment.get("group_id","1"),"status":status})
@@ -4528,7 +4598,8 @@ def _resume_locked(args: argparse.Namespace, run: Path) -> dict[str,Any]:
             raise QSError("resume_confirmation_binding")
         continuation["last_confirmed_transition"]={"operation":confirmed["mutation_type"],
             "revision":confirmed["to_revision"],"path":str(marker.relative_to(run)),"sha256":sha(source.raw)}
-    return {**continuation,"status":"RESUMED","input_snapshot":current["input_snapshot"],"accepted_result_ids":recovered["accepted_result_ids"],"pending_assignments":recovered["pending_assignments"],"tasks":sorted(tasks,key=lambda task:str(task["assignment_id"])),"ready_groups":[{"group_id":group,"assignment_ids":sorted(items)} for group,items in sorted(groups.items()) if items],"stale_result_ids":sorted(stale),"current_source_outcomes":source_selection,"current_final_audit":audit_selection,"selection_state":selection_state,"current_iceberg_views":iceberg_projection,"current_iceberg_views_sha256":sha(canon_yaml(iceberg_projection)),"iceberg_selection_state":iceberg_state,**architecture_checkpoint_fields(architecture),"routing_status":orchestration.get("routing_status","INVALID") if orchestration is not None else "NOT_CONFIGURED","orchestration":orchestration,"metrics":{"elapsed_ms":str(int((time.monotonic()-started)*1000)),"accepted_reused_results":str(sum(1 for count in reused.values() if count>1)),"tokens":"UNAVAILABLE","cost":"UNAVAILABLE"},"scope":"STRUCTURAL_ONLY"}
+    effect_projection={"effect_task_states":recovered["effect_task_states"]} if effect_tasks else {}
+    return {**continuation,**effect_projection,"status":"RESUMED","input_snapshot":current["input_snapshot"],"accepted_result_ids":recovered["accepted_result_ids"],"pending_assignments":recovered["pending_assignments"],"tasks":sorted(tasks,key=lambda task:str(task["assignment_id"])),"ready_groups":[{"group_id":group,"assignment_ids":sorted(items)} for group,items in sorted(groups.items()) if items],"stale_result_ids":sorted(stale),"current_source_outcomes":source_selection,"current_final_audit":audit_selection,"selection_state":selection_state,"current_iceberg_views":iceberg_projection,"current_iceberg_views_sha256":sha(canon_yaml(iceberg_projection)),"iceberg_selection_state":iceberg_state,**architecture_checkpoint_fields(architecture),"routing_status":orchestration.get("routing_status","INVALID") if orchestration is not None else "NOT_CONFIGURED","orchestration":orchestration,"metrics":{"elapsed_ms":str(int((time.monotonic()-started)*1000)),"accepted_reused_results":str(sum(1 for count in reused.values() if count>1)),"tokens":"UNAVAILABLE","cost":"UNAVAILABLE"},"scope":"STRUCTURAL_ONLY"}
 
 def _prep_exact_inputs(run: Path) -> dict[str,dict[str,Any]]:
     """Exact local bytes for the pure preparation validator; never external paths."""
@@ -6029,7 +6100,7 @@ def _validate_locked(args: argparse.Namespace,run: Path) -> dict[str, Any]:
         elif isinstance(value,list):
             for item in value: found.update(requirement_refs(item))
         return found
-    required_r={item for item in bank.get("requirements",[]) if isinstance(item,str)}
+    required_r=_requirement_ids(bank)
     planned_r=set().union(*(requirement_refs(doc) for result_id,doc in docs.items() if results.get(result_id,{}).get("artifact_type")=="PLAN" and (plan_projection is None or result_id in plan_projection))) if docs else set()
     unclosed_r=sorted(required_r-planned_r)
     if unclosed_r: errors.append("requirement_plan_coverage")
@@ -6439,7 +6510,8 @@ def _recover_locked(args: argparse.Namespace, run: Path, projection_override: An
             raw=snap.get("original_bank",{}); raw_path=child(run,raw.get("path", "")) if isinstance(raw,dict) else None
             if not isinstance(raw,dict) or raw.get("provided")!="true" or not raw_path or not raw_path.is_file() or sha(raw_path.read_bytes())!=raw.get("sha256"): raise QSError("original_snapshot_drift")
             current=replay_current_transitions_if_needed(run,current,snap)
-        _question_projection(command_journal(run))
+        journal=command_journal(run)
+        _question_projection(journal)
     except QSError as exc: return {"status":"FAIL","errors":["index_or_input_corrupt:"+str(exc)],"scope":"STRUCTURAL_ONLY"}
     transactions=[]; tx_errors=[]; pending_results={}; committed_contexts={}; transaction_ids=set(); transaction_paths=set(); transaction_pairs=set()
     prior_index=state_file(run,"assignments")
@@ -6564,6 +6636,7 @@ def _recover_locked(args: argparse.Namespace, run: Path, projection_override: An
             if terminal_attempt(run,assignment["assignment_id"],assignment["attempt_id"]):
                 if entry["status"]=="ACCEPTED": raise QSError("terminal_attempt_has_accepted_result")
                 entry["status"]="REJECTED"
+        effect_tasks=_effect_task_states(run,{"registered":recovered_registered,"results":rebuilt},current,journal)
     except (QSError,OSError,ValueError) as exc:
         return {"status":"FAIL","errors":["launch_intent_recovery:"+str(exc)],"scope":"STRUCTURAL_ONLY"}
     # Retained retries need one explicit current attempt. A single historical
@@ -6638,14 +6711,13 @@ def _recover_locked(args: argparse.Namespace, run: Path, projection_override: An
         if not target.is_file() or captured_argument(target,64 * 1024**2).raw!=raw:
             atomic(target,raw)
     pending=[]
-    for entry in state.get("registered",{}).values():
-        if isinstance(entry,dict) and entry.get("status")=="ASSIGNED":
-            assignment=entry.get("assignment",{})
-            if not terminal_attempt(run,assignment.get("assignment_id"),assignment.get("attempt_id")):
-                pending.append(assignment.get("assignment_id"))
+    for pair,entry in recovered_registered.items():
+        if entry["status"]=="ASSIGNED" and pair not in effect_tasks:
+            pending.append(entry["assignment"]["assignment_id"])
     stale_ids={item for item in current.get("stale_result_ids",[]) if isinstance(item,str)}
     iceberg_state={kind:("NEEDS_RECHECK" if binding.get("result_id") in stale_ids else "CURRENT") for kind,binding in iceberg_projection.items()}
-    return {"status":"RECOVERED","accepted_result_ids":sorted(rebuilt),"pending_assignments":sorted(x for x in pending if isinstance(x,str)),"replayed_index":replayed,"input_snapshot":current["input_snapshot"],"current_source_outcomes":source_selection,"current_final_audit":audit_selection,"current_iceberg_views":iceberg_projection,"current_iceberg_views_sha256":sha(canon_yaml(iceberg_projection)),"iceberg_selection_state":iceberg_state,**architecture_checkpoint_fields(architecture),"scope":"STRUCTURAL_ONLY"}
+    effect_projection={"effect_task_states":[effect_tasks[pair] for pair in sorted(effect_tasks)]} if effect_tasks else {}
+    return {**effect_projection,"status":"RECOVERED","accepted_result_ids":sorted(rebuilt),"pending_assignments":sorted(pending),"replayed_index":replayed,"input_snapshot":current["input_snapshot"],"current_source_outcomes":source_selection,"current_final_audit":audit_selection,"current_iceberg_views":iceberg_projection,"current_iceberg_views_sha256":sha(canon_yaml(iceberg_projection)),"iceberg_selection_state":iceberg_state,**architecture_checkpoint_fields(architecture),"scope":"STRUCTURAL_ONLY"}
 
 def administrative_review_binding(run: Path, state: dict[str,Any], current: dict[str,Any], snapshot: str) -> dict[str,str] | None:
     """Resolve the one post-audit review which may sit outside the core.

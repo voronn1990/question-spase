@@ -1150,16 +1150,25 @@ class QsTest(unittest.TestCase):
         stored.write_bytes(original_context)
 
 
-    def test_bank_import_is_one_way_and_tamper_checked(self) -> None:
-        """BANK init copies a foreign approved Vector once and pins every byte."""
+    def bank_import_fixture(self, *, object_requirement: bool = False):
         workspace=self.base/"bank-work"; goal=self.base/"bank-goal.md"; statement=self.base/"bank-statement.md"
         goal.write_text("bank goal\n",encoding="utf-8"); statement.write_text("foreign statement\n",encoding="utf-8")
         source_snapshot="a"*64
         vector={"schema_version":"question-space-v4","id":"FOREIGN-VECTOR","run_id":"SOURCE-RUN","input_snapshot":source_snapshot,"author_role":"OP-VECTOR","role_id":"OP-VECTOR","agent_id":"/source/vector","knowledge_status":"DERIVED","workflow_status":"ACCEPTED","source_refs":[],"related_ids":[],"revision":"7","created_at":"2026-10-21T00:00:00Z","updated_at":"2026-10-21T00:00:00Z","artifact_type":"OPERATOR","G":"goal","NOT_G":["not goal"],"value_recipient":"owner","scope":"fixture","success_criteria":["criterion"],"requirements":["R-001"],"requirement_definitions":[{"id":"R-001","text":"Satisfy the exact bounded imported requirement for this fixture.","hard_requirement":"true","approved_contract":"true","working_assumption":"false"}],"hard_constraints":["64 MiB"],"changeable_assumptions":["choice"],"current_state":"research","resources":"local","authority":"owner","owner_decisions":[{"id":"OD-1","decision_needed":"approve","why_owner_only":"owner","known_context":"fixture","answer_effect":"continue"}],"open_research_questions":["unknown"]}
+        if object_requirement:
+            vector["requirements"].append("R-002")
+            vector["requirement_definitions"].append({
+                "id":"R-002","text":"Check the separate bounded requirement.",
+                "hard_requirement":"true","approved_contract":"true","working_assumption":"false",
+            })
+            vector["G"]="Check the exact scope of R-002"
         vector_path=self.base/"foreign-vector.yaml"; put(vector_path,vector); vector_hash=qs.sha(vector_path.read_bytes())
         approval={"schema_version":"question-space-v4","approval_id":"FOREIGN-APP","run_id":"SOURCE-RUN","input_snapshot":source_snapshot,"vector_result_id":"FOREIGN-VECTOR","vector_sha256":vector_hash,"vector_revision":"7","decision":"APPROVE","approval_mode":"SIMULATED_TEST","approver_id":"ROOT-AS-SIMULATED_TEST_OWNER","authority_basis":"fixture","observation_provenance":"fixture-1","statement_path":"source/statement.md","statement_sha256":qs.sha(statement.read_bytes()),"created_at":"2026-10-21T00:00:00Z","fixture_only":"YES"}
         approval_path=self.base/"foreign-approval.yaml"; put(approval_path,approval)
         bank={"schema_version":"bank-v1","questions":[{"id":f"Q-{number:03d}","text":f"investigate {number}","source_offset":str(number),"unknown_key":f"u-{number}","mechanism":f"m-{number}","applicability":f"a-{number}","changeable_decision":f"d-{number}","evidence_needed":f"e-{number}","lineage":{"operation":"DERIVED_UNKNOWN","source_question_ids":[f"SOURCE-Q-{number:03d}"],"source_result_ids":["FOREIGN-VECTOR"],"source_roles":["OP-VECTOR"],"reason":"import"},"g_refs":["G-1"],"r_refs":["R-001"],"not_g_refs":[]} for number in range(1,4)],"requirements":["R-001"]}
+        if object_requirement:
+            bank["requirements"].append({"id":"R-002","text":"Keep this source record verbatim."})
+            bank["questions"][1]["r_refs"].append("R-002")
         bank_path=self.base/"bank-import.yaml"; put(bank_path,bank)
         init=self.call("init","--root",str(workspace),"--run-id","BANK1","--mode","BANK_TO_PLAN","--goal",str(goal),"--bank",str(bank_path),"--approved-vector",str(vector_path),"--vector-approval",str(approval_path),"--approval-statement",str(statement),"--test-fixture")
         run=workspace/"runs"/"BANK1"; snap=qs.load_yaml(run/"input/snapshot.yaml"); binding=snap["import_binding"]
@@ -1187,11 +1196,82 @@ class QsTest(unittest.TestCase):
         admission={"schema_version":"prep-admission-v1","id":"ADMISSION-BANK","run_id":"BANK1","input_snapshot":init["input_snapshot"],"input_mode":"BANK_TO_PLAN","goal_sha256":snap["goal_sha256"],"vector_binding":{"result_id":"FOREIGN-VECTOR","sha256":vector_hash},"approval_binding":{"id":"FOREIGN-APP","sha256":binding["approval_sha256"]},"perspective_map_binding":{"id":"MAP-BANK","sha256":map_out["perspective_map_sha256"]},"initial_set_bindings":[],"expansion_bindings":[],"normalization_decisions":[{"id":"N-1","decision":"import retained"}],"bank_path":"input/bank.yaml","bank_sha256":snap["bank_sha256"],"requirements_sha256":snap["requirements_sha256"],"question_count":"3","size_assessment":{"classification":"BELOW_TARGET_WITH_RATIONALE","rationale":"small complete fixture"},"source_checks":source_checks,"uncovered_areas":[],"generation_performed":"NO","status":"ADMITTED"}
         # The applicability proof is pre-admission PREP-3 evidence and binds this exact admission outcome set.
         applicability={"schema_version":"question-space-v4","id":"APPLY-BANK","run_id":"BANK1","input_snapshot":init["input_snapshot"],"author_role":"OP-VECTOR","role_id":"OP-VECTOR","agent_id":"/root/OP-VECTOR","knowledge_status":"DERIVED","workflow_status":"ACCEPTED","source_refs":[],"related_ids":[],"revision":"1","created_at":"2026-10-21T00:00:00Z","updated_at":"2026-10-21T00:00:00Z","assignment_id":"A-APPLY-BANK","attempt_id":"TRY-1","artifact_type":"OPERATOR","lifecycle_scope":"PREP","prep_stage":"PREP-3_EXPAND_NORMALIZE","operator_contract":"BANK_APPLICABILITY","current_run_id":"BANK1","current_input_snapshot":init["input_snapshot"],"import_payload_sha256":binding["import_payload_sha256"],"current_goal_sha256":snap["goal_sha256"],"current_material_hashes":snap["materials"],"current_bank_sha256":snap["bank_sha256"],"current_requirements_sha256":snap["requirements_sha256"],"g_comparison":{"outcome":"UNCHANGED","basis":"exact goal"},"requirement_comparisons":[{"source_requirement_id":"R-001","current_requirement_id":"R-001","outcome":"UNCHANGED"}],"authority_comparison":{"outcome":"UNCHANGED","basis":"exact authority"},"source_check_outcomes":{check_id:"PASS" for check_id in source_ids},"overall":"UNCHANGED"}
+        if object_requirement:
+            applicability["requirement_comparisons"].append({
+                "source_requirement_id":"R-002","current_requirement_id":"R-002","outcome":"UNCHANGED",
+            })
         a_assignment={"assignment_id":"A-APPLY-BANK","attempt_id":"TRY-1","role_id":"OP-VECTOR","agent_id":"/root/OP-VECTOR","input_snapshot":init["input_snapshot"],"artifact_type":"OPERATOR","output_path":"operators/APPLY-BANK.yaml","dependency_hashes":[],"result_id":"APPLY-BANK","lifecycle_scope":"PREP","selection_authority":"ROOT","group_id":"1","prep_stage":"PREP-3_EXPAND_NORMALIZE"}
         aap=self.base/"bank-apply.assignment.yaml"; arp=self.base/"bank-apply.result.yaml"; put(aap,a_assignment); put(arp,applicability); self.call("assign","--root",str(workspace),"--run-id","BANK1","--assignment",str(aap)); applied=self.call("accept","--root",str(workspace),"--run-id","BANK1","--assignment",str(aap),"--result",str(arp))
         admission_path=self.base/"bank-admission.yaml"; put(admission_path,admission)
         admitted=self.call("admit-bank","--root",str(workspace),"--run-id","BANK1","--bank",str(bank_path),"--admission",str(admission_path),"--test-fixture")
         self.assertEqual(admitted["status"],"CORE_ADMITTED")
+        return workspace, run, init, binding, vector_hash, admission_path, bank_path
+
+    def test_bank_requirement_objects_are_addressable_in_core(self) -> None:
+        workspace, run, init, _, _, admission_path, bank_path = self.bank_import_fixture(object_requirement=True)
+        args=("--root",str(workspace),"--run-id",run.name)
+        core={
+            "attempt_id":"TRY-1","agent_id":"/root/P-01","role_id":"P-01",
+            "input_snapshot":init["input_snapshot"],"dependency_hashes":[],
+            "lifecycle_scope":"CORE","prep_admission_sha256":qs.sha(admission_path.read_bytes()),
+        }
+        for name, ids, error in (
+            ("STRING", ["R-001"], None),
+            ("OBJECT", ["R-002", "R-001"], None),
+            ("UNKNOWN", ["R-001", "R-999"], "context_assigned_obligations"),
+            ("BAD-TYPE", [{"id":"R-002"}], "assignment_assigned_ids"),
+        ):
+            with self.subTest(name=name):
+                assignment={**core,"artifact_type":"PRIMARY","assignment_id":"A-"+name,
+                            "result_id":name,"output_path":f"positions/{name}.yaml",
+                            "assigned_ids":{"requirements":ids}}
+                path=self.base/f"{name}.assignment.yaml"; put(path,assignment)
+                if error=="assignment_assigned_ids":
+                    rejected=self.call("assign",*args,"--assignment",str(path),ok=False)
+                    self.assertEqual(rejected["error"],error)
+                    continue
+                self.call("assign",*args,"--assignment",str(path))
+                packet=self.base/f"{name}.context.yaml"
+                response=self.call("context",*args,"--assignment",str(path),"--output",str(packet),ok=error is None)
+                if error:
+                    self.assertEqual(response["error"],error)
+                    self.assertFalse(packet.exists())
+                else:
+                    self.assertEqual(qs.load_yaml(packet)["requirements"],[{"id":rid} for rid in ids])
+
+        blind={**core,"assignment_id":"A-FRAME","result_id":"FRAME-R",
+               "artifact_type":"FRAMING","output_path":"positions/FRAME-R.yaml",
+               "role_instruction_paths":["references/roles/perspectives.md"],
+               "allowed_reads":["references/phases/01-intake.md","references/invariants.md"]}
+        handoff={"handoff_id":"HANDOFF-R","assignment_id":"A-FRAME","attempt_id":"TRY-1",
+                 "role_id":"P-01","input_snapshot":init["input_snapshot"],"phase":"FRAMING",
+                 "constraints":["Work independently."]}
+        for rid in ("R-001", "R-002"):
+            with self.subTest(blind_handoff=rid):
+                path=self.base/f"blind-{rid}.assignment.yaml"
+                put(path,{**blind,"blind_handoff":{**handoff,"objective":f"Consider {rid}."}})
+                rejected=self.call("assign",*args,"--assignment",str(path),ok=False)
+                self.assertEqual(rejected["error"],"blind_handoff_bank_disclosure")
+        path=self.base/"safe-blind-requirements.assignment.yaml"
+        put(path,{**blind,"assignment_id":"A-FRAME-SAFE",
+                  "blind_handoff":{**handoff,"assignment_id":"A-FRAME-SAFE",
+                                   "objective":"Identify material unknowns."}})
+        self.call("assign",*args,"--assignment",str(path))
+        packet=self.base/"blind-requirements.context.yaml"
+        with self.subTest(blind_goal="R-002"):
+            rejected=self.call("context",*args,"--assignment",str(path),"--output",str(packet),ok=False)
+            self.assertEqual(rejected["error"],"blind_goal_bank_disclosure")
+            self.assertFalse(packet.exists())
+
+        with self.subTest(coverage="object and string"):
+            report=self.call("validate",*args,"--phase","core",ok=False)
+            self.assertEqual(report["unclosed_r_ids"],["R-001","R-002"])
+        self.assertEqual((run/"input/bank.yaml").read_bytes(),bank_path.read_bytes())
+
+    def test_bank_import_is_one_way_and_tamper_checked(self) -> None:
+        """BANK init copies a foreign approved Vector once and pins every byte."""
+        workspace, run, init, binding, vector_hash, admission_path, _ = self.bank_import_fixture()
+        original=(run/binding["vector_path"]).read_bytes()
         # Isolate the fault probe from the complete lifecycle fixture so that
         # its extra registered attempt does not change routing obligations.
         capture_workspace=self.base/"bank-capture-work"

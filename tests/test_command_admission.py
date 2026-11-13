@@ -785,6 +785,10 @@ raise SystemExit(qs.main(sys.argv[3:]))
         alias_request,_=self.request("claim-alias","/root/cut",test_qs.qs.sha(alias.read_bytes()),**alias_binding)
         self.assertEqual(fixture.call(*self.command("claim-effect","--request",str(alias_request)),ok=False)["error"],
                          "effect_occurrence_fenced")
+        resumed=fixture.call(*self.command("resume"))
+        states={item["assignment_id"]:item["status"] for item in resumed["tasks"]}
+        self.assertEqual((states["A-CUT"],states["A-ALIAS"]),("DISPATCH_UNKNOWN","DISPATCH_UNKNOWN"))
+        self.assertEqual(resumed["ready_groups"],[])
         independent,_=self.pending(label="B",occurrence="OCC-LOCAL-B")
         other_request,_=self.request("claim-independent","/root/cut",test_qs.qs.sha(independent.read_bytes()),
                                      **{**binding,"assignment_id":"A-B","logical_occurrence_id":"OCC-LOCAL-B"})
@@ -1298,6 +1302,154 @@ raise SystemExit(qs.main(sys.argv[3:]))
 
     def resource_journal_bytes(self):
         return [path.read_bytes() for path in sorted((self.fixture.run/"transactions/commands").glob("*.yaml"))]
+
+    def test_observed_author_outcomes_project_non_dispatchable_attempts(self):
+        fixture = self.fixture
+        assignments = {}
+        first_claims = {}
+        scopes = {"FAILED": {"resource_keys": ["RESOURCE-FAILED"]},
+                  "CANCELLED": {"resource_keys": ["RESOURCE-CANCELLED"]},
+                  "SUCCESS": {"resource_keys": ["RESOURCE-SUCCESS"]},
+                  "UNKNOWN": {"resource_keys": ["RESOURCE-UNKNOWN"]},
+                  "ACK": {"sole_writer_paths": ["reports/./bound"]},
+                  "UNRELATED": {"sole_writer_paths": ["reports/boundary/a.yaml"]}}
+        for q_index, label in enumerate(("FAILED", "CANCELLED", "SUCCESS", "UNKNOWN", "ACK", "UNRELATED")):
+            questions = [f"Q-{q_index+1:03d}"] if q_index < 3 else []
+            ap, rp, binding = self.resource_assignment(
+                label, **scopes[label], selection_authority="ROOT",
+                assigned_ids={"questions": questions},
+            )
+            assignments[label] = (ap, rp, binding)
+            if label != "UNRELATED":
+                first_claims[label] = self.resource_claim("claim-"+label, ap, binding)
+                claim = fixture.call(*first_claims[label])
+                self.assertEqual(claim["dispatch_action"], "SEND_ONCE")
+                assignments[label] = (ap, rp, {**binding, "assignment_sha256": claim["assignment_sha256"],
+                                                 "claim_key": "claim-"+label})
+
+        def observe(label, claimant, **fields):
+            binding = assignments[claimant][2]
+            result = fixture.common(label, "P-05", "/root/observer")
+            result.update(knowledge_status="OBSERVED", changed="UNCHANGED", tool_id="TEST-TOOL", tool_version="1",
+                          policy_hash="TEST-POLICY", exposure_hash="TEST-EXPOSURE", freshness="CURRENT", **fields)
+            accepted = fixture.register_and_accept(label, "P-05", "EVIDENCE", "evidence/"+label+".yaml",
+                                                    result, result["agent_id"], root_assignment=True)
+            request, _ = self.request("observe-"+label, result["agent_id"], accepted["content_hash"],
+                                      authority_result_id=label, **{k: binding[k] for k in
+                                      ("assignment_id", "attempt_id", "logical_occurrence_id")})
+            return fixture.call(*self.command("reconcile-effect", "--request", str(request)))
+
+        def ack(label):
+            return {**assignments[label][2], "disposition": "RECIPIENT_CONFIRMED",
+                    "authoritative_receipt": "TEST_ONLY recipient confirmed"}
+
+        def terminal(label, execution_state):
+            return {**assignments[label][2], "execution_state": execution_state,
+                    "recipient_agent_id": "/root/cut", "authoritative_receipt": "TEST_ONLY termination observed"}
+
+        self.assertEqual(observe("FAILED-OBS", "FAILED", effect_reconciliation=ack("FAILED"),
+                                 effect_terminal=terminal("FAILED", "FAILED"))["resource_terminal_state"], "FAILED")
+        for label in ("CANCELLED", "SUCCESS", "ACK"):
+            self.assertEqual(observe(label+"-ACK", label, effect_reconciliation=ack(label))["effect_state"],
+                             "RECIPIENT_CONFIRMED")
+        self.assertEqual(observe("CANCELLED-TERM", "CANCELLED",
+                                 effect_terminal=terminal("CANCELLED", "CANCELLED"))["status"],
+                         "EFFECT_RESOURCE_RELEASED")
+        success_ap, success_rp, _ = assignments["SUCCESS"]
+        test_qs.put(success_rp, {**test_qs.qs.load_yaml(success_rp), "addressed_q_ids": ["Q-003"]})
+        fixture.call(*self.command("commit", "--assignment", str(success_ap), "--result", str(success_rp)))
+
+        immutable = [*fixture.run.glob("intents/*.yaml"), *fixture.run.glob("transactions/*.yaml"),
+                     fixture.run/"state/launch-intents.yaml"]
+        original = {path: path.read_bytes() for path in immutable}
+        journal = self.resource_journal_bytes()
+        expected = {"A-FAILED": "REJECTED", "A-CANCELLED": "REJECTED", "A-UNKNOWN": "DISPATCH_UNKNOWN",
+                    "A-ACK": "WAITING", "A-SUCCESS": "ACCEPTED", "A-UNRELATED": "READY"}
+        recovered = fixture.call(*self.command("recover"))
+        self.assertEqual(recovered["pending_assignments"], ["A-UNRELATED"])
+        self.assertEqual({item["assignment_id"]: item["state"] for item in recovered["effect_task_states"]},
+                         {label: expected[label] for label in ("A-FAILED", "A-CANCELLED", "A-UNKNOWN", "A-ACK")})
+        self.assertIn("RESULT-SUCCESS", recovered["accepted_result_ids"])
+        self.assertNotIn("RESULT-FAILED", recovered["accepted_result_ids"])
+        self.assertNotIn("RESULT-CANCELLED", recovered["accepted_result_ids"])
+
+        def check_resume(*options):
+            resumed = fixture.call(*self.command("resume", *options))
+            self.assertEqual({item["assignment_id"]: item["status"] for item in resumed["tasks"]
+                              if item["assignment_id"] in expected}, expected)
+            self.assertEqual(resumed["ready_groups"], [{"group_id": "1", "assignment_ids": ["A-UNRELATED"]}])
+            self.assertEqual(resumed["effect_task_states"], recovered["effect_task_states"])
+            return resumed
+
+        check_resume()
+        approved_path = fixture.base/"effect-root-map.yaml"
+        test_qs.put(approved_path, {
+            "input_snapshot": fixture.init["input_snapshot"], "allowed_roles": sorted(test_qs.qs.ROLES),
+            "role_competence": {role: ["analysis"] if role == "P-01" else [] for role in test_qs.qs.ROLES},
+            "question_routes": {f"Q-{i:03d}": {"primary_assignment_id": "A-"+label, "required_tags": ["analysis"]}
+                                for i, label in enumerate(("FAILED", "CANCELLED", "SUCCESS"), 1)},
+        })
+        routed = check_resume("--approved-map", str(approved_path))
+        self.assertEqual(routed["routing_status"], "VALIDATED")
+        self.assertEqual([row["assignment_id"] for row in routed["orchestration"]["proposals"]], ["A-UNRELATED"])
+        self.assertEqual(check_resume()["routing_status"], "VALIDATED")
+
+        for label in ("FAILED", "CANCELLED"):
+            ap, _, binding = assignments[label]
+            self.assertEqual(fixture.call(*first_claims[label])["dispatch_action"], "HOLD_RECONCILE")
+            fresh_claim = self.resource_claim("fresh-"+label, ap, {key: binding[key] for key in
+                                              ("assignment_id", "attempt_id", "logical_occurrence_id")})
+            self.assertEqual(fixture.call(*fresh_claim, ok=False)["error"], "effect_occurrence_fenced")
+            successor = fixture.base/(label+"-successor.yaml")
+            test_qs.put(successor, {**test_qs.qs.load_yaml(ap), "attempt_id": "TRY-2",
+                                   "supersedes_attempt_id": "TRY-1"})
+            self.assertEqual(fixture.call(*self.command("assign", "--assignment", str(successor)), ok=False)["error"],
+                             "retry_predecessor_not_terminal")
+        self.assertEqual({path: path.read_bytes() for path in immutable}, original)
+        self.assertEqual(self.resource_journal_bytes(), journal)
+
+        waiters = {}
+        waiter_states = {"FAILED": None, "CANCELLED": None, "UNKNOWN": "UNKNOWN",
+                         "ACK": "RECIPIENT_CONFIRMED", "SUCCESS": "RECIPIENT_CONFIRMED"}
+        for label, effect_state in waiter_states.items():
+            scope = {"sole_writer_paths": ["reports\\bound/a.yaml"]} if label == "ACK" else scopes[label]
+            ap, _, binding = self.resource_assignment("WAITER-"+label, **scope, selection_authority="ROOT")
+            waiters[label] = (ap, binding)
+            if effect_state is not None:
+                request = self.resource_claim("claim-waiting-"+label, ap, binding)
+                self.assertEqual(fixture.call(*request, ok=False)["error"],
+                                 f"effect_resource_occupied:OCC-{label}:claim-{label}:{effect_state}")
+
+        def watch_waiters(blocked, holder_states):
+            resumed = fixture.call(*self.command("resume"))
+            self.assertEqual(resumed["routing_status"], "VALIDATED")
+            tasks = {item["assignment_id"]: item["status"] for item in resumed["tasks"]}
+            ready = {item for group in resumed["ready_groups"] for item in group["assignment_ids"]}
+            proposed = {item["assignment_id"] for item in resumed["orchestration"]["proposals"]}
+            available = {"A-UNRELATED"}|{"A-WAITER-"+label for label in waiters.keys()-blocked}
+            self.assertEqual(ready, available)
+            self.assertEqual(proposed, available)
+            for label in waiters:
+                self.assertEqual(tasks["A-WAITER-"+label], "WAITING" if label in blocked else "READY")
+                self.assertEqual("A-WAITER-"+label in resumed["pending_assignments"], label not in blocked)
+            for label, expected_state in holder_states.items():
+                self.assertEqual(tasks["A-"+label], expected_state)
+
+        watch_waiters({"UNKNOWN", "ACK", "SUCCESS"},
+                      {"UNKNOWN": "DISPATCH_UNKNOWN", "ACK": "WAITING", "SUCCESS": "ACCEPTED"})
+        self.assertEqual(observe("UNKNOWN-UNSENT", "UNKNOWN", effect_reconciliation={
+            **ack("UNKNOWN"), "disposition": "NOT_SENT",
+            "authoritative_receipt": "TEST_ONLY provider proved no send",
+        })["effect_state"], "NOT_SENT")
+        for label in ("ACK", "SUCCESS"):
+            self.assertEqual(observe(label+"-TERM", label,
+                                     effect_terminal=terminal(label, "COMPLETED"))["resource_terminal_state"], "COMPLETED")
+        watch_waiters(set(), {"UNKNOWN": "WAITING", "ACK": "WAITING", "SUCCESS": "ACCEPTED"})
+        for label, (ap, binding) in waiters.items():
+            self.assertEqual(fixture.call(*self.resource_claim("claim-ready-"+label, ap, binding))["dispatch_action"],
+                             "SEND_ONCE")
+        for label in ("UNKNOWN", "ACK", "SUCCESS"):
+            self.assertEqual(fixture.call(*first_claims[label])["dispatch_action"], "HOLD_RECONCILE")
 
     def test_shared_effect_resource_holds_through_ack_and_result_until_terminal(self):
         fixture = self.fixture

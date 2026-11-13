@@ -7,10 +7,10 @@
     "windows_process_recovery_qualification": "NOT_RUN"
   },
   "core_manifest_path": "tests/evidence/package-core.yaml",
-  "core_manifest_sha256": "64240bc07b5287ca0fa562131508efac9aaaeb449fca6f4b486c16783a650e6c",
+  "core_manifest_sha256": "2715e468bf3daf41c53ab84093fa5f3623494cc3e7cc60ce7e98e42786df3cce",
   "current_suite_path": "tests/evidence/current-suite.yaml",
-  "current_suite_sha256": "ff374e350543ce791c6aa0f90665be882e698e7eefe538cb05bf4b5b53ab0dea",
+  "current_suite_sha256": "6b7745f08098f2b46f9579fabaade582fd650adaa575495b5e7c544c7ea43841",
   "schema_version": "question-space-local-qualification-v1",
   "status": "LOCAL_STRUCTURAL_ONLY",
-  "version": "4.3.0-rc2"
+  "version": "4.3.0-rc3"
 }
