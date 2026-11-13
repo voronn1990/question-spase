@@ -17,7 +17,9 @@ from prep_validation import (  # noqa: E402
     PERSPECTIVE_ROLES,
     PRESERVED_COUNTS,
     SOURCE_CHECK_IDS,
+    approved_map_plan_transition_valid,
     canonical_yaml_bytes,
+    plan_projection_transition_valid,
     resolve_admission_state,
     validate_prep,
 )
@@ -1244,6 +1246,38 @@ class PrepValidationTest(unittest.TestCase):
         fixture = CompletePrep()
         fixture.advance_with_plan_projection()
         self.assertEqual(fixture.validate(), [])
+
+    def test_plan_selection_retires_only_a_superseded_seal(self) -> None:
+        rows = [{"logical_stage_id": stage, "result_id": stage} for stage in ("S-000", "S-001")]
+        old = {"plan_version": "1", "stages": rows}
+        new = {"plan_version": "2", "stages": [{**row, "result_id": row["result_id"] + "-R2"} for row in rows]}
+        release = {"release_id": "REL-1", "release_sha256": digest("release"), "verdict": "BLOCKED"}
+        before = {"status": "SEALED", "revision": "8", "current_plan_projection": old,
+                  "current_plan_projection_sha256": canonical_hash(old), "current_final_audit": {"result_id": "AUDIT-1"},
+                  **release}
+        after = {"status": "STALE", "revision": "9", "current_plan_projection": new,
+                 "current_plan_projection_sha256": canonical_hash(new), "current_final_audit": before["current_final_audit"]}
+        self.assertTrue(plan_projection_transition_valid(before, after))
+        reordered = {**old, "stages": list(reversed(rows))}
+        self.assertTrue(approved_map_plan_transition_valid(before, {**before, "approved_map_sha256": digest("new-map")}))
+        self.assertFalse(approved_map_plan_transition_valid(before, {**before, "current_plan_projection": reordered}))
+        self.assertFalse(approved_map_plan_transition_valid(before, {**before, "current_plan_projection_sha256": canonical_hash(new)}))
+        self.assertTrue(approved_map_plan_transition_valid(after, {**after, "current_plan_projection": reordered}))
+        for case, bad_before, bad_after in (
+            ("retained seal", before, {**after, "status": "SEALED"}),
+            ("retained verdict", before, {**after, "verdict": "BLOCKED"}),
+            ("cleared to null", before, {**after, "release_id": None}),
+            ("same projection", before, {**after, "current_plan_projection": old,
+                                         "current_plan_projection_sha256": canonical_hash(old)}),
+            ("reordered projection", before, {**after, "current_plan_projection": reordered,
+                                              "current_plan_projection_sha256": canonical_hash(reordered)}),
+            ("new audit selector", before, {**after, "current_final_audit": {"result_id": "AUDIT-2"}}),
+            ("unknown null field", before, {**after, "unrelated": None}),
+            ("unbound seal", {**before, "release_sha256": "invalid"}, after),
+            ("unsupported initial status", {**before, "status": "PREP_OPEN"}, after),
+        ):
+            with self.subTest(case=case):
+                self.assertFalse(plan_projection_transition_valid(bad_before, bad_after))
 
     def test_current_descendant_requires_parsed_exact_images(self) -> None:
         fixture = CompletePrep()

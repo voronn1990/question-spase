@@ -21,6 +21,16 @@ spec.loader.exec_module(qs)
 def put(path: Path, value: object) -> None:
     path.write_bytes(qs.canon_yaml(value))
 
+def plan_stage_row(stage: dict) -> dict:
+    return {
+        "stage_id": stage["identity_result"]["stage_id"], "result_id": stage["id"],
+        "path": "plan/" + stage["id"] + ".yaml",
+        "task_refs": [task["id"] for task in stage["tasks"]],
+        "check_refs": [check["id"] for check in stage["acceptance_exit"]],
+        **{field: stage["local_execution_graph"][field]
+           for field in ("entry", "exit", "predecessors", "next_stages")},
+    }
+
 def source_swap(invocation, source, before, after):
     """Run a public entry point with an atomic post-capture fault."""
     script=r"""
@@ -599,6 +609,11 @@ class QsTest(unittest.TestCase):
             if arch_mode and artifact in {"PLAN","FINAL_AUDIT"}:
                 graph=source.docs["SYNTHESIS-001"]["architecture_graph"]
                 value["architecture_ref"]={"synthesis_id":"SYNTHESIS-001","synthesis_sha256":registry()["SYNTHESIS-001"]["content_hash"],"graph_sha256":qs.sha(qs.canon_yaml(graph))}
+                if artifact == "PLAN" and value["identity_result"]["stage_id"] == "S-000":
+                    child = copy.deepcopy(source.docs["S-001"])
+                    child["id"], = value["local_execution_graph"]["next_stages"]
+                    child["local_execution_graph"]["predecessors"] = [result_id]
+                    value["local_execution_graph"]["stage_dag"] = [plan_stage_row(value), plan_stage_row(child)]
                 if artifact == "FINAL_AUDIT":
                     state=qs.load_yaml(self.run/"state/assignments.yaml")
                     current=qs.load_yaml(self.run/"state/current.yaml")

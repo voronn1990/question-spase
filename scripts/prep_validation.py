@@ -116,6 +116,10 @@ CURRENT_MUTABLE_FIELDS = frozenset(
         "verdict",
     }
 )
+PLAN_SELECTION_STATUSES = frozenset({"INITIALIZED", "CORE_ADMITTED", "STALE", "SEALED"})
+PLAN_SELECTION_RELEASE_FIELDS = frozenset({"release_id", "release_sha256", "verdict"})
+PLAN_SELECTION_FIELDS = frozenset({"revision", "current_plan_projection", "current_plan_projection_sha256"})
+
 CURRENT_ALLOWED_DIFFS = {
     "APPROVED_MAP_SET": frozenset(
         {"revision", "approved_map_sha256", "current_plan_projection", "current_plan_projection_sha256"}
@@ -129,9 +133,7 @@ CURRENT_ALLOWED_DIFFS = {
             "current_plan_projection_sha256",
         }
     ),
-    "PLAN_PROJECTION_SELECT": frozenset(
-        {"revision", "current_plan_projection", "current_plan_projection_sha256"}
-    ),
+    "PLAN_PROJECTION_SELECT": PLAN_SELECTION_FIELDS | {"status"} | PLAN_SELECTION_RELEASE_FIELDS,
     "APPLICABILITY_FRONTIER_ADVANCE": frozenset({"revision", "applicability_frontier"}),
     "STALE_SET_EXTEND": frozenset({"revision", "status", "stale_result_ids"}),
     "SOURCE_OUTCOMES_SELECT": frozenset({"revision", "current_source_outcomes", "stale_result_ids"}),
@@ -1929,6 +1931,9 @@ def _validate_current_chain(
             if "revision" not in changed or changed - allowed:
                 errors.append(f"{prefix}:changed_fields:invalid:{','.join(sorted(changed))}")
                 valid = False
+            if mutation in {"APPROVED_MAP_SET", "APPROVED_MAP_REVISE"} and not approved_map_plan_transition_valid(before_doc, after_doc):
+                errors.append(f"{prefix}:approved_map_sealed_plan:invalid")
+                valid = False
             if mutation == "APPROVED_MAP_SET":
                 if before_doc.get("approved_map_sha256") is not None or not _hash(after_doc.get("approved_map_sha256")):
                     errors.append(f"{prefix}:approved_map_set:invalid")
@@ -2259,15 +2264,48 @@ def frontier_transition_valid(before: Any, after: Any, command: Any) -> bool:
     )
 
 
+def plan_projections_match(left: Any, right: Any) -> bool:
+    """Compare exact stage bindings independently of their listing order."""
+    return (
+        isinstance(left, dict) and isinstance(right, dict)
+        and set(left) == set(right) == {"plan_version", "stages"}
+        and left["plan_version"] == right["plan_version"]
+        and isinstance(left["stages"], list) and isinstance(right["stages"], list)
+        and sorted(map(canonical_yaml_bytes, left["stages"])) == sorted(map(canonical_yaml_bytes, right["stages"]))
+    )
+
+
+def approved_map_plan_transition_valid(before: dict, after: dict) -> bool:
+    if before.get("status") != "SEALED":
+        return True
+    return all(
+        (field in before) == (field in after) and before.get(field) == after.get(field)
+        for field in ("current_plan_projection", "current_plan_projection_sha256")
+    )
+
+
 def plan_projection_transition_valid(before: Any, after: Any) -> bool:
     if not isinstance(before, dict) or not isinstance(after, dict):
         return False
+    status = before.get("status")
+    if not isinstance(status, str) or status not in PLAN_SELECTION_STATUSES:
+        return False
     revision = _revision(before.get("revision"))
     projection = after.get("current_plan_projection")
-    changed = {key for key in before.keys() | after.keys() if before.get(key) != after.get(key)}
+    missing = object()
+    changed = {key for key in before.keys() | after.keys() if before.get(key, missing) != after.get(key, missing)}
+    required_changes = PLAN_SELECTION_FIELDS
+    if status == "SEALED":
+        # Reordering the same accepted bindings cannot retire a release.
+        if (not _text(before.get("release_id")) or not _hash(before.get("release_sha256"))
+            or not _text(before.get("verdict")) or after.get("status") != "STALE"
+            or PLAN_SELECTION_RELEASE_FIELDS.intersection(after)
+            or plan_projections_match(before.get("current_plan_projection"), projection)):
+            return False
+        required_changes = CURRENT_ALLOWED_DIFFS["PLAN_PROJECTION_SELECT"]
     return (
         revision is not None and after.get("revision") == str(revision + 1)
-        and changed == CURRENT_ALLOWED_DIFFS["PLAN_PROJECTION_SELECT"]
+        and changed == required_changes
         and isinstance(projection, dict) and set(projection) == {"plan_version", "stages"}
         and _text(projection.get("plan_version")) and isinstance(projection.get("stages"), list)
         and bool(projection["stages"])

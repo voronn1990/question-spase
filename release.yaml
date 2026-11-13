@@ -1,13 +1,13 @@
 {
   "core_manifest_path": "tests/evidence/package-core.yaml",
-  "core_manifest_sha256": "446697e34e9025baf3fa8a13f02ce0412d635322ffab82104664a1714bcca890",
+  "core_manifest_sha256": "64240bc07b5287ca0fa562131508efac9aaaeb449fca6f4b486c16783a650e6c",
   "current_suite_path": "tests/evidence/current-suite.yaml",
-  "current_suite_sha256": "781f73b38fd82038f21953f42d84e2253dfaae4ca66cdd6e69889c77976fd17c",
+  "current_suite_sha256": "ff374e350543ce791c6aa0f90665be882e698e7eefe538cb05bf4b5b53ab0dea",
   "name": "question-space",
   "qualification": "LOCAL_STRUCTURAL_ONLY",
   "qualification_path": "tests/evidence/qualification.yaml",
-  "qualification_sha256": "70202a63cb9ac88d463674af68658a17d3f9a436aa0f55ea0bc4ccaf9634cd99",
+  "qualification_sha256": "7a22a46ff1f225c5c127755ff915d6a54d0e2800170a952eecee72fed6b21bf9",
   "schema_version": "question-space-portable-release-v1",
-  "scope": "Release candidate for review with local structural qualification.",
-  "version": "4.3.0-rc1"
+  "scope": "Release with local structural qualification.",
+  "version": "4.3.0-rc2"
 }

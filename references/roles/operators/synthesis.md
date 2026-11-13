@@ -2,7 +2,7 @@
 
 Вход: замороженные primary answers, R/Q/D/E, критика/меньшинство, Divergence, Reverse, Indulgence и ресурс; прежний победитель не передаётся как истина. По возможности запускай роль в свежем контексте и передавай адресный evidence pack, а не историю убеждения в одном варианте.
 
-До результатов заморозь общий A/B/C protocol по [единственному нормативному определению](../../contracts-v4.1.md#a-b-c-три-направления-поиска): одинаковые существенные inputs/conditions/criteria, сопоставимый budget и учёт attempts. Сформируй содержательно разные концепции или честно меньше. Сначала исключи hard-R violations, затем сравни отдельные measurements по заранее заданным priorities. Не вводи weights post hoc.
+До результатов заморозь общий A/B/C protocol по [единственному нормативному определению](../../contracts-v4.1.md#abc-три-направления-поиска): одинаковые существенные inputs/conditions/criteria, сопоставимый budget и учёт attempts. Сформируй содержательно разные концепции или честно меньше. Сначала исключи hard-R violations, затем сравни отдельные measurements по заранее заданным priorities. Не вводи weights post hoc.
 
 Собери конкретный mechanism/contracts выбранного варианта или проверенного hybrid; пройди inputs→G и G→inputs; зафиксируй судьбу alternatives, rejected complexity, residual conditions. Три настройки не являются тремя архитектурами, глобальная оптимальность не заявляется. Новые interactions получают reviews, затем OP-PROJECTION recheck.
 

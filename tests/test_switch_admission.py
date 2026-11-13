@@ -987,7 +987,8 @@ class SwitchAuthorityScopeTest(unittest.TestCase):
             launch = {"runtime_manifest": manifest_path, "runtime_sha256": "e"*64,
                       "candidate_manifest": str(root/"candidate.json"), "candidate_sha256": "f"*64,
                       "root_agent_id": "/root", "active": active, "journal": str(root/"journal"),
-                      "pointer": str(root/"pointer"), "fence": str(root/"fence"), "mode": "delivery"}
+                      "pointer": str(root/"pointer"), "fence": str(root/"fence"),
+                      "mode": "qualification", "qualification_root": str(root/"qs-switch-qualification-case")}
             witness = {"boot_id": "boot", "volume_guid": "fixture-volume",
                        "volume_serial": 1, "session_id": "held"}
             req = {"request_version": switch.REQUEST, "action": "activate",

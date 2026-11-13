@@ -125,3 +125,66 @@ limits:
   windows_qualification: NOT_RUN
   os_crash_and_power_loss_namespace_persistence: OUTSIDE_SELECTED_PROFILE_UNQUALIFIED
   old_volume_namespace_barrier: UNMET_CURRENT_TOKEN
+delivery:
+  version: question-space-sealed-delivery-v1
+  launch_extra: delivery
+  launch_delivery: [source, owner, repository, ref, metadata_root, handoff]
+  source: [root, run_id, release_sha256]
+  raw_ref: [path, sha256]
+  repository: voronn1990/question-spase
+  local_run: >-
+    Use an off-autoload mutable initialized run with only EVIDENCE assignments.
+    Register a logical occurrence with ordinary assign and admit each local evidence
+    record through ordinary commit. The source remains a separate verified SEALED run.
+  switch_delivery_handoff: [version, source, sealed, candidate_sha256, repository, ref, owner,
+                            metadata_root, scope, logical_occurrence_id, effect_scope, paths,
+                            autoload_roots, predecessors]
+  sealed: [input_snapshot, plan_sha256, graph_sha256, authority_result_id, authority_sha256,
+           source_revision, stages]
+  stage_bindings: [S-QSSELF-04, S-QSSELF-05, S-QSSELF-06]
+  trusted_namespace: >-
+    Provision one durable Linux metadata_root with a stable delivery-anchor.lock
+    outside all autoload roots. Use the same owner-bound namespace for the
+    physical installation across runs, aliases and profiles. The exclusive active
+    anchor binds the run, handoff, occurrence, profile and fixed metadata paths.
+  grant_extra: [publication, legacy, bootstrap_recovery]
+  predecessor_extra: [receipt]
+  c04_output: [path, sha256]
+  c05_output: [id, readme_sha256, review]
+  quiescence_extra: [source_revision, source_effects, external]
+  source_effects: >-
+    Discover applicable effects in the sealed run using the delivery physical
+    paths and handoff resource and writer coverage. If the selected sealed S-000
+    declares this named scope, its profile and active must match the request.
+    Include its assignment IDs, resource keys and writer paths. Handoff assignment
+    IDs resolve only in the mutable execution run. Applicable UNKNOWN in either
+    run blocks delivery.
+  external_quiescence: [receipt, effects]
+  external_effect: [id, state]
+  external_terminal_states: [RECONCILED, TERMINAL, QUIESCENT]
+  switch_publication: [repository, ref, commit, receipt, retrieved_tree, candidate_sha256,
+                       tree_sha256, git_modes]
+  switch_legacy: [request_sha256, prior, backup, legacy_manifest_sha256, authoritative_pointer]
+  switch_bootstrap_recovery: [continuity, request_sha256, intent_sha256, proposed_pointer_sha256,
+                             cut_sha256]
+  adopt_legacy:
+    request_version: question-space-adopt-legacy-v1
+    action: adopt_legacy
+    request_common: Same fields as request.common without target
+    extra: [backup, legacy_manifest_sha256]
+    cut: 'ABSENT, expected generation 0, target generation 1, observed installed 4.2.2'
+    immutable_files: [OP.baseline.json, OP.baseline-commit.json]
+    result: LEGACY_ADOPTED_FENCED
+    transition: >-
+      Bind the installed manifest and the complete active and independent backup
+      tree inventories. Under command locks write immutable intent, close the shared
+      fence, publish the generation-one INSTALLED pointer exclusively, and commit.
+      The operation leaves the physical namespace in place. Exact replay preserves
+      the proposed pointer bytes, including historical continuity. A renewed witness
+      needs fresh independent quiescence and switch_bootstrap_recovery.
+  first_activation: >-
+    The first switch from the closed committed generation-one baseline must
+    activate the reviewed release. It binds the exact pointer and independently
+    verified backup before writing an ordinary intent. A fresh-witness activation needs
+    current independent switch_recovery for that baseline or a verified released
+    rollback predecessor. Restore and reactivation advance the generation by one.

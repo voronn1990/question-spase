@@ -1,5 +1,6 @@
 """Ordinary CLI controls for captured commands and durable result publication."""
 
+from copy import deepcopy
 import json
 import shutil
 import subprocess
@@ -31,6 +32,8 @@ def fault(path, raw):
         os._exit(73)
     if boundary == "before_context_revision_packet" and "state" in path.parts and path.name == "00000002.yaml":
         os._exit(74)
+    if boundary == "before_release_alias" and path.name == "release.yaml":
+        os._exit(75)
     atomic(path, raw)
     if boundary == "before_ack" and path.name == "events.yaml":
         os._exit(72)
@@ -293,6 +296,278 @@ class CommandAdmissionTest(unittest.TestCase):
         fixture._core_propagation_hook=check
         with self.assertRaises(Checked):
             fixture.test_public_lifecycle_allows_renamed_administrative_gate6_review_path()
+
+    def test_sealed_plan_successor_requires_fresh_release(self):
+        fixture = self.fixture
+        qs, put = test_qs.qs, test_qs.put
+
+        class Checked(Exception):
+            pass
+
+        def check(phase, case):
+            if phase != "sealed":
+                return
+            run = case.run
+
+            def cli(operation, *args, **kwargs):
+                return case.call(operation, "--root", str(case.workspace), "--run-id", run.name, *args, **kwargs)
+            current, index = run / "state/current.yaml", run / "state/assignments.yaml"
+            sealed_raw = current.read_bytes()
+            sealed = qs.load_yaml(current)
+            self.assertEqual(sealed["status"], "SEALED")
+            self.assertEqual(cli("verify")["status"], "PASS")
+            archive = run / "releases/REL-2.yaml"
+            historical = [archive, run / "release.yaml", run / sealed["current_final_audit"]["path"],
+                          run / "state/approved-map.yaml", run / "gates/GATE-5.yaml"]
+            history = {path: path.read_bytes() for path in historical}
+            journal = run / "transactions/current"
+            previous = {path: path.read_bytes() for path in journal.glob("*.yaml")}
+            request = case.base / "sealed-selection.yaml"
+
+            def registry():
+                return qs.load_yaml(index)["results"]
+
+            def selection(projection):
+                root = next(row for row in projection["stages"] if row["logical_stage_id"] == "S-000")
+                authority = qs.load_yaml(index)["registered"][root["assignment_id"] + "\0" + root["attempt_id"]]
+                return {
+                    "actor": "ROOT", "authority_sha256": authority["assignment_sha256"],
+                    "run_id": run.name, "input_snapshot": sealed["input_snapshot"],
+                    "expected_revision": sealed["revision"], "expected_head_sha256": qs.sha(sealed_raw),
+                    "architecture_ref": qs.load_yaml(run / registry()[root["result_id"]]["path"])["architecture_ref"],
+                    "plan_version": projection["plan_version"], "current_plan_graph": projection,
+                }
+
+            def unchanged():
+                self.assertEqual(current.read_bytes(), sealed_raw)
+                self.assertEqual({path: path.read_bytes() for path in journal.glob("*.yaml")}, previous)
+                self.assertEqual({path: path.read_bytes() for path in history}, history)
+
+            same = deepcopy(sealed["current_plan_projection"])
+            for _ in range(2):
+                put(request, selection(same))
+                receipt = cli("select-plan", "--selection", str(request))
+                self.assertEqual(receipt["revision"], sealed["revision"])
+                self.assertEqual(receipt["current_plan_projection_sha256"], sealed["current_plan_projection_sha256"])
+                unchanged()
+                same["stages"].reverse()
+
+            evidence = case.common("E-POST-SEAL", "P-04", "/root/P-04")
+            evidence.update({"changed": "UNCHANGED", "command_intake_scope": ["E-001"],
+                             "tool_id": "FIXTURE-TOOL", "tool_version": "1", "policy_hash": "FIXTURE-POLICY",
+                             "exposure_hash": "FIXTURE-EXPOSURE", "freshness": "CURRENT-AS-DECLARED"})
+            proof = case.register_and_accept("post-seal-evidence", "P-04", "EVIDENCE",
+                                             "evidence/E-POST-SEAL.yaml", evidence, "/root/P-04", root_assignment=True)
+            command = case.base / "evidence-intake-after-seal.yaml"
+            def refresh_command():
+                put(command, {"key": "post-seal-intake", "actor": "/root/P-04",
+                              "authority_sha256": proof["content_hash"], "run_id": run.name,
+                              "input_snapshot": sealed["input_snapshot"],
+                              "expected_revision": cli("command-cut")["expected_revision"],
+                              "authority_result_id": "E-POST-SEAL", "evidence_result_id": "E-POST-SEAL"})
+
+            refresh_command()
+            self.assertEqual(cli("evidence-intake", "--request", str(command), ok=False)["error"],
+                             "sealed_run_command_refused")
+            unchanged()
+
+            stages = []
+            for row in sealed["current_plan_projection"]["stages"]:
+                logical, prior = row["logical_stage_id"], row["result_id"]
+                stage = qs.load_yaml(run / registry()[prior]["path"])
+                stage.update({"id": logical + "-R4", "revision": "4", "plan_version": "4",
+                              "supersedes": prior, "related_ids": [prior]})
+                stage.pop("supersedes_attempt_id", None)
+                stage["identity_result"]["plan_version"] = "4"
+                for name in ("predecessors", "next_stages"):
+                    stage["local_execution_graph"][name] = [item.replace("-R3", "-R4")
+                                                              for item in stage["local_execution_graph"][name]]
+                stages.append(stage)
+            root = next(stage for stage in stages if stage["identity_result"]["stage_id"] == "S-000")
+            root["local_execution_graph"]["stage_dag"] = [test_qs.plan_stage_row(stage) for stage in stages]
+            rows = []
+            for stage in stages:
+                rid = stage["id"]
+                case.register_and_accept(rid, "PLAN-AUTHOR", "PLAN", "plan/" + rid + ".yaml",
+                                         stage, "/root/PLAN-AUTHOR", root_assignment=True)
+                entry = registry()[rid]
+                rows.append({"logical_stage_id": stage["identity_result"]["stage_id"], "result_id": rid,
+                             "sha256": entry["content_hash"], "assignment_id": entry["assignment_id"],
+                             "attempt_id": entry["attempt_id"]})
+            projection = {"plan_version": "4", "stages": rows}
+            envelope = selection(projection)
+            stored_map = run / "state/approved-map.yaml"
+            successor_map = case.base / "successor-map.yaml"
+            put(successor_map, {**qs.load_yaml(stored_map), "version": "4",
+                                "supersedes_sha256": sealed["approved_map_sha256"], "current_plan_graph": projection})
+            map_receipt = cli("resume", "--approved-map", str(successor_map), ok=False)
+            self.assertEqual(map_receipt["error"], "approved_map_sealed_plan_requires_selection")
+            unchanged()
+            incomplete = {"plan_version": "4", "stages": [rows[0]]}
+            for changes, error in (
+                ({"expected_revision": "0"}, "plan_selection_revision_conflict"),
+                ({"expected_head_sha256": "0" * 64}, "plan_selection_revision_conflict"),
+                ({"authority_sha256": "0" * 64}, "plan_selection_authority_hash"),
+                ({"actor": "PLAN-AUTHOR"}, "plan_selection_actor"),
+                ({"current_plan_graph": incomplete}, "plan_selection_stage_membership"),
+            ):
+                with self.subTest(error=error, changes=changes):
+                    put(request, {**envelope, **changes})
+                    self.assertEqual(cli("select-plan", "--selection", str(request), ok=False)["error"], error)
+                    unchanged()
+
+            put(request, envelope)
+            selected = cli("select-plan", "--selection", str(request))
+            revision = str(int(sealed["revision"]) + 1)
+            self.assertEqual(selected["revision"], revision)
+            selected_raw = current.read_bytes()
+            after = qs.load_yaml(current)
+            self.assertEqual(after["status"], "STALE")
+            self.assertEqual(after["current_plan_projection"], projection)
+            self.assertEqual(after["current_plan_projection_sha256"], selected["current_plan_projection_sha256"])
+            self.assertTrue({"release_id", "release_sha256", "verdict"}.isdisjoint(after))
+            self.assertEqual(after["current_final_audit"], sealed["current_final_audit"])
+            self.assertEqual(after["approved_map_sha256"], sealed["approved_map_sha256"])
+            self.assertEqual({path: path.read_bytes() for path in history}, history)
+            self.assertEqual({path: path.read_bytes() for path in previous}, previous)
+            marker, = set(journal.glob("*.yaml")) - previous.keys()
+            self.assertEqual(qs.load_yaml(marker)["mutation_type"], "PLAN_PROJECTION_SELECT")
+            marker_raw = marker.read_bytes()
+            self.assertEqual(cli("select-plan", "--selection", str(request)), selected)
+            self.assertEqual(current.read_bytes(), selected_raw)
+            current.write_bytes(sealed_raw)  # Durable marker survived the interrupted projection.
+            self.assertEqual(cli("recover")["status"], "RECOVERED")
+            self.assertEqual(current.read_bytes(), selected_raw)
+            self.assertEqual(marker.read_bytes(), marker_raw)
+            for options in ((), ("--approved-map", str(stored_map))):
+                resumed = cli("resume", *options)
+                self.assertEqual(resumed["status"], "RESUMED")
+                self.assertEqual(resumed["current_plan"]["version"], "4")
+                self.assertEqual(resumed["routing_status"], "VALIDATED")
+                self.assertEqual(current.read_bytes(), selected_raw)
+            invalid_map = case.base / "new-map-with-old-graph.yaml"
+            put(invalid_map, {**qs.load_yaml(stored_map), "version": "4",
+                              "supersedes_sha256": sealed["approved_map_sha256"]})
+            rejected = cli("resume", "--approved-map", str(invalid_map), ok=False)
+            self.assertTrue(any("plan_projection_recovery:plan_projection_" in error for error in rejected["errors"]))
+            self.assertEqual(current.read_bytes(), selected_raw)
+            self.assertEqual(stored_map.read_bytes(), history[stored_map])
+            self.assertIn("current_pointer", cli("verify", ok=False)["errors"])
+            self.assertEqual(cli("seal", "--phase", "prepare", "--release-id", "REL-3", ok=False)["error"],
+                             "cannot_seal_invalid_run")
+            changed_route = cli("resume", "--approved-map", str(successor_map))
+            self.assertEqual(changed_route["status"], "RESUMED")
+            self.assertEqual(changed_route["current_plan"]["version"], "4")
+            self.assertEqual(qs.load_yaml(current)["approved_map_sha256"], qs.sha(successor_map.read_bytes()))
+            refresh_command()
+            self.assertEqual(cli("evidence-intake", "--request", str(command))["status"], "EVIDENCE_PENDING")
+            self.check_successor_seal_crash(case, archive, historical[2], history, proof)
+            raise Checked()
+
+        fixture._core_propagation_hook = check
+        with self.assertRaises(Checked):
+            fixture.test_goal_admission_is_atomic_replayable_and_tamper_checked()
+
+    def check_successor_seal_crash(self, case, old_archive, old_audit, history, evidence):
+        qs, put = test_qs.qs, test_qs.put
+        run = case.run
+        root_args = ("--root", str(case.workspace), "--run-id", run.name)
+        current = run / "state/current.yaml"
+        index = run / "state/assignments.yaml"
+        release_alias = run / "release.yaml"
+        review = qs.load_yaml(run / "reviews/admin-final-review.yaml")
+        disposition_id = "REVIEW-POST-SEAL-EVIDENCE"
+        disposition = {**review, "id": disposition_id, "target_result_id": "E-POST-SEAL",
+                       "target_hash": evidence["content_hash"], "evidence_disposition": "SAME",
+                       "reviewed_affected_result_ids": ["E-001"],
+                       "procedure": "Compare the repeat observation with the accepted E-001 input to T-000.",
+                       "counterexample_or_observation": "The repeat observation confirms E-001 for T-000 and its C-000 check.",
+                       "execution_edges": [
+                           {"from_type": "E", "from_id": "E-POST-SEAL", "to_type": "REVIEW", "to_id": disposition_id},
+                           {"from_type": "REVIEW", "from_id": disposition_id, "to_type": "T", "to_id": "T-000"},
+                       ]}
+        accepted = case.register_and_accept(disposition_id, disposition["author_role"], "REVIEW", "reviews/" + disposition_id + ".yaml",
+                                            disposition, disposition["agent_id"], root_assignment=True)
+        command = case.base / "evidence-disposition-after-seal.yaml"
+        put(command, {"key": "post-seal-disposition", "actor": disposition["agent_id"],
+                      "authority_sha256": accepted["content_hash"], "run_id": run.name,
+                      "input_snapshot": case.init["input_snapshot"], "expected_revision": case.call("command-cut", *root_args)["expected_revision"],
+                      "authority_result_id": disposition_id, "evidence_result_id": "E-POST-SEAL"})
+        self.assertEqual(case.call("evidence-disposition", *root_args, "--request", str(command))["disposition"], "SAME")
+        gate5_path = run / "gates/GATE-5.yaml"
+        gate5 = qs.load_yaml(gate5_path)
+        ids = [*gate5["required_objects"], "S-000-R4", "S-001-R4"]
+        gate5["required_objects"] = ids
+        registry = qs.load_yaml(index)["results"]
+        gate5["content_review"]["target_hashes"] = [registry[rid]["content_hash"] for rid in ids]
+        put(gate5_path, gate5)
+        self.assertEqual(case.call("validate", *root_args, "--phase", "core")["errors"], [])
+        prepared = case.call("seal", *root_args, "--phase", "prepare", "--release-id", "REL-3")
+        audit = qs.load_yaml(old_audit)
+        audit_id = "AUDIT-SEALED-SUCCESSOR"
+        predecessor = audit["id"]
+        audit.update({"id": audit_id, "revision": "3", "supersedes": predecessor, "related_ids": [predecessor],
+                      "core_manifest_sha256": prepared["core_manifest_sha256"]})
+        for detail in audit["area_details"].values():
+            detail["files"] = ["plan/S-000-R4.yaml"]
+            detail["hashes"] = [registry["S-000-R4"]["content_hash"]]
+        state, selected, bank = qs.accepted(run)
+        architecture = qs.architecture_projection_for_run(run, state, selected, bank)
+        audit["architecture_review"]["structural_report_sha256"] = qs.sha(qs.canon_yaml(architecture["report"]))
+        audit_receipt = case.register_and_accept(audit_id, "FINAL-AUDITOR", "FINAL_AUDIT", "audit/final/" + audit_id + ".yaml",
+                                                 audit, audit["agent_id"], root_assignment=True)
+        self.assertEqual(audit_receipt["current_selection"]["result_id"], audit_id)
+        review_id = "REVIEW-SEALED-SUCCESSOR"
+        review.update({"id": review_id, "target_result_id": audit_id, "target_hash": audit_receipt["content_hash"]})
+        reviewed = case.register_and_accept(review_id, review["author_role"], "REVIEW", "reviews/" + review_id + ".yaml",
+                                            review, review["agent_id"], root_assignment=True)
+        gate6 = qs.load_yaml(run / "gates/GATE-6" / (predecessor + ".yaml"))
+        gate6["required_objects"] = [audit_id if rid == predecessor else rid for rid in gate6["required_objects"]]
+        registry = qs.load_yaml(index)["results"]
+        gate6["content_review"].update({"result_id": review_id, "sha256": reviewed["content_hash"],
+                                       "target_hashes": [registry[rid]["content_hash"] for rid in gate6["required_objects"]]})
+        gate6["evidence_refs"][0].update({"result_id": audit_id, "sha256": audit_receipt["content_hash"]})
+        gate6["completed_checks"][0].update({"evidence_result_id": audit_id, "evidence_sha256": audit_receipt["content_hash"]})
+        put(run / "gates/GATE-6" / (audit_id + ".yaml"), gate6)
+
+        before = current.read_bytes()
+        markers = set((run / "transactions/current").glob("*.yaml"))
+        invocation = ("seal", *root_args, "--phase", "finalize", "--release-id", "REL-3")
+        proc = subprocess.run([sys.executable, "-B", "-c", CRASH_SCRIPT, str(test_qs.QS), "before_release_alias", *invocation],
+                              capture_output=True, text=True, check=False, timeout=60)
+        self.assertEqual(proc.returncode, 75, proc.stdout + proc.stderr)
+        marker, = set((run / "transactions/current").glob("*.yaml")) - markers
+        marker_raw = marker.read_bytes()
+        self.assertEqual(qs.load_yaml(marker)["mutation_type"], "RELEASE_SEAL")
+        self.assertEqual(current.read_bytes(), before)
+        self.assertEqual(release_alias.read_bytes(), history[release_alias])
+        release_alias.write_bytes(b"unrelated alias\n")
+        denied = case.call("recover", *root_args, ok=False)
+        self.assertEqual(denied["errors"], ["index_or_input_corrupt:release_replay_projection_drift"])
+        self.assertEqual(current.read_bytes(), before)
+        self.assertEqual(release_alias.read_bytes(), b"unrelated alias\n")
+        release_alias.write_bytes(history[release_alias])
+        self.assertEqual(case.call("recover", *root_args)["status"], "RECOVERED")
+        self.assertEqual(qs.load_yaml(current)["release_id"], "REL-3")
+        self.assertEqual(release_alias.read_bytes(), (run / "releases/REL-3.yaml").read_bytes())
+        self.assertEqual(marker.read_bytes(), marker_raw)
+        self.assertEqual(old_archive.read_bytes(), history[old_archive])
+        self.assertEqual(old_audit.read_bytes(), history[old_audit])
+        self.assertEqual(case.call("verify", *root_args)["status"], "PASS")
+        sealed = qs.load_yaml(current)
+        current_route = run / "state/approved-map.yaml"
+        route = qs.load_yaml(current_route)
+        route.update({"version": "5", "supersedes_sha256": qs.sha(current_route.read_bytes())})
+        route["current_plan_graph"]["stages"].reverse()
+        route_path = case.base / "equivalent-sealed-routing-map.yaml"
+        put(route_path, route)
+        self.assertEqual(case.call("resume", *root_args, "--approved-map", str(route_path))["status"], "RESUMED")
+        after = qs.load_yaml(current)
+        self.assertEqual(after["approved_map_sha256"], qs.sha(route_path.read_bytes()))
+        self.assertEqual(after["status"], "SEALED")
+        self.assertEqual(after["release_sha256"], sealed["release_sha256"])
+        self.assertEqual(after["current_plan_projection"], sealed["current_plan_projection"])
+        self.assertEqual(case.call("verify", *root_args)["status"], "PASS")
 
     def test_context_protected_destination_and_alias(self):
         fixture = self.fixture

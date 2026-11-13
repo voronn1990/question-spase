@@ -137,9 +137,10 @@ from model_validation import (
 from architecture_validation import architecture_impact, derive_architecture_views, render_architecture_mermaid
 from orchestration import ADVISER_ROLE, dispatch_resource_conflict, ordinary_adviser_assignment, validate_orchestration
 from prep_validation import (
-    MATERIAL_UNKNOWNS_V1, PERSPECTIVE_PROFILE_FIELDS, approved_import_for_framing,
+    MATERIAL_UNKNOWNS_V1, PERSPECTIVE_PROFILE_FIELDS, PLAN_SELECTION_RELEASE_FIELDS, PLAN_SELECTION_STATUSES,
+    approved_import_for_framing, approved_map_plan_transition_valid,
     current_initial_framings, frontier_transition_valid, initial_questions_policy_valid, perspective_profile_hash,
-    plan_projection_transition_valid, resolve_admission_state, validate_empty_initial_questions,
+    plan_projection_transition_valid, plan_projections_match, resolve_admission_state, validate_empty_initial_questions,
     validate_expansion_proposals, validate_initial_questions, validate_prep,
 )
 from question_admission import Arm, prepare_question_receipt, replay_question_receipts
@@ -4361,11 +4362,6 @@ def resume(args: argparse.Namespace) -> dict[str,Any]:
     return locked_command(args, _resume_locked)
 
 
-def _same_approved_plan(current, map_hash, projection):
-    return (map_hash==current.get("approved_map_sha256")
-            and projection==current.get("current_plan_projection"))
-
-
 def _resume_locked(args: argparse.Namespace, run: Path) -> dict[str,Any]:
     """Recover and classify known assignments without dispatching or guessing routes."""
     # A first current-plan selection is admitted atomically with the Root map.
@@ -4398,9 +4394,10 @@ def _resume_locked(args: argparse.Namespace, run: Path) -> dict[str,Any]:
                 lineage=before_recovery.get("approved_map_lineage",[])
                 if not isinstance(lineage,list) or any(not isinstance(item,str) for item in lineage):
                     raise QSError("approved_map_lineage_corrupt")
-        projection_override=proposed.get("current_plan_graph")
-        if _same_approved_plan(before_recovery,map_hash,projection_override):
-            projection_override=None
+        # An already-installed map supplies routing. A later standalone plan
+        # selection is the authoritative graph for this same map hash.
+        if map_hash!=before_recovery.get("approved_map_sha256"):
+            projection_override=_approved_map_plan_override(run,before_recovery,proposed)
     started=time.monotonic(); recovered=_recover_locked(args,run,projection_override)
     if recovered.get("status")!="RECOVERED": return {**recovered,"status":"FAIL"}
     state,current,bank=accepted(run); results=state.get("results",{})
@@ -4432,15 +4429,13 @@ def _resume_locked(args: argparse.Namespace, run: Path) -> dict[str,Any]:
         latest=load_state(run,"current"); stored=state_file(run,"approved-map")
         prior=latest.get("approved_map_sha256")
         if prior is not None and (not stored.is_file() or sha(stored.read_bytes())!=prior): raise QSError("approved_map_drift")
-        projection=None
-        if "current_plan_graph" in approved_map:
-            supplied=approved_map["current_plan_graph"]
-            if _same_approved_plan(latest,map_hash,supplied):
-                _,projection=plan_projection_for_run(run,state,latest,allow_stale=True)
-            else:
+        if prior!=map_hash:
+            projection=None
+            supplied=_approved_map_plan_override(run,latest,approved_map)
+            if "current_plan_graph" in approved_map and latest.get("status")!="SEALED":
+                if supplied is None: raise QSError("plan_projection_contract")
                 prospective={**latest,"stale_result_ids":sorted(stale)}
                 _,projection=plan_projection_for_run(run,state,prospective,supplied)
-        if prior!=map_hash:
             after={**latest,"approved_map_sha256":map_hash,**({"current_plan_projection":projection,"current_plan_projection_sha256":sha(canon_yaml(projection))} if projection is not None else {})}
             _require_plan_advice_resolution(run,state,latest,{**after,"stale_result_ids":sorted(stale)},bank,projection)
             archives={map_hash:approved_raw}
@@ -4736,6 +4731,7 @@ def commit_current_transition(run: Path, current: dict[str,Any], after: dict[str
     if isinstance(current.get("prep_admission_sha256"),str): tx["prep_admission_sha256"]=current["prep_admission_sha256"]
     if approved_map_raw is not None:
         if sha(approved_map_raw)!=after.get("approved_map_sha256"): raise QSError("approved_map_projection_hash")
+        if not approved_map_plan_transition_valid(current,after): raise QSError("approved_map_sealed_plan_requires_selection")
         tx["approved_map_projection"]="STAGED_ARCHIVE"
     if release_raw is not None:
         if sha(release_raw)!=after.get("release_sha256"): raise QSError("release_projection_hash")
@@ -4747,6 +4743,8 @@ def commit_current_transition(run: Path, current: dict[str,Any], after: dict[str
     elif frontier_command is not None:
         raise QSError("applicability_frontier_transition_type")
     if mutation=="PLAN_PROJECTION_SELECT":
+        if not plan_projection_transition_valid(current,after):
+            raise QSError("plan_selection_transition")
         if not isinstance(plan_selection_request,dict):
             raise QSError("plan_selection_request_binding")
         tx["plan_selection_request"]=plan_selection_request
@@ -4949,7 +4947,7 @@ def plan_projection_for_run(run: Path, state: dict[str,Any], current: dict[str,A
 
 
 def plan_selection_proof(run, state, current, bank, supplied):
-    if current.get("status") not in {"INITIALIZED","CORE_ADMITTED","STALE"}:
+    if current.get("status") not in PLAN_SELECTION_STATUSES:
         raise QSError("plan_selection_current_status")
     docs=_prep_documents(run,state,strict=True)
     mapping,projection=plan_projection_for_run(run,state,current,supplied,documents=docs)
@@ -5014,6 +5012,51 @@ def plan_selection_receipt(current):
             "current_plan_projection_sha256":current["current_plan_projection_sha256"],"scope":"STRUCTURAL_ONLY"}
 
 
+def _plan_selection_baseline(run, current):
+    """Recover the selected graph of a seal that predates an explicit projection."""
+    if current.get("status")!="SEALED":
+        return current
+    projection=current.get("current_plan_projection")
+    digest=current.get("current_plan_projection_sha256")
+    if "current_plan_projection" not in current and "current_plan_projection_sha256" not in current:
+        release_id=ident(current.get("release_id"),"release_id")
+        release=load_bound_yaml(run,"releases/"+release_id+".yaml",current.get("release_sha256"),"plan_selection_sealed_release")
+        if (not isinstance(release,dict) or release.get("release_id")!=release_id
+            or any(release.get(field)!=current.get(field) for field in ("run_id","input_snapshot","verdict"))):
+            raise QSError("plan_selection_sealed_release")
+        projection=release.get("current_plan_projection")
+        digest=release.get("current_plan_projection_sha256")
+    if not plan_projections_match(projection,projection) or digest!=sha(canon_yaml(projection)):
+        raise QSError("plan_projection_hash_drift")
+    return {**current,"current_plan_projection":projection,"current_plan_projection_sha256":digest}
+
+
+def _approved_map_plan_override(run, current, approved_map):
+    projection=approved_map.get("current_plan_graph")
+    if "current_plan_graph" not in approved_map or current.get("status")!="SEALED":
+        return projection
+    baseline=_plan_selection_baseline(run,current)
+    if not plan_projections_match(baseline["current_plan_projection"],projection):
+        raise QSError("approved_map_sealed_plan_requires_selection")
+    return None
+
+
+def _plan_selection_after(current, baseline, projection):
+    previous=baseline.get("current_plan_projection")
+    digest=sha(canon_yaml(projection))
+    sealed=current.get("status")=="SEALED"
+    if previous==projection or (sealed and plan_projections_match(previous,projection)):
+        if not sealed and baseline.get("current_plan_projection_sha256")!=digest:
+            raise QSError("plan_projection_hash_drift")
+        return None
+    after={**current,"current_plan_projection":projection,"current_plan_projection_sha256":digest}
+    if sealed:
+        after["status"]="STALE"
+        for field in PLAN_SELECTION_RELEASE_FIELDS:
+            after.pop(field,None)
+    return after
+
+
 def plan_selection_replay_receipt(run,state,request,raw):
     request_sha=sha(raw)
     matches=[]
@@ -5046,12 +5089,8 @@ def plan_selection_replay_receipt(run,state,request,raw):
     image=load_yaml(CapturedInput("plan selection committed image",after))
     projection=image.get("current_plan_projection") if isinstance(image,dict) else None
     supplied=request["current_plan_graph"]
-    if (not isinstance(projection,dict) or not isinstance(supplied,dict)
-        or set(supplied)!={"plan_version","stages"} or not isinstance(supplied["stages"],list)
-        or not isinstance(projection.get("stages"),list)
-        or projection.get("plan_version")!=request["plan_version"]
-        or supplied["plan_version"]!=request["plan_version"]
-        or sorted(canon_yaml(row) for row in projection["stages"])!=sorted(canon_yaml(row) for row in supplied["stages"])
+    if (not plan_projections_match(projection,supplied)
+        or projection["plan_version"]!=request["plan_version"]
         or image.get("current_plan_projection_sha256")!=sha(canon_yaml(projection))):
         raise QSError("plan_selection_replay_subject")
     _,root_stage=_admitted_document(run,state,result_id,"PLAN")
@@ -5082,17 +5121,16 @@ def _select_plan_locked(args,run):
         raise QSError("plan_selection_authority_hash")
     if request["architecture_ref"]!=reference or request["plan_version"]!=projection["plan_version"]:
         raise QSError("plan_selection_expected_subject")
-    digest=sha(canon_yaml(projection))
     if (request["expected_revision"]!=current.get("revision")
         or request["expected_head_sha256"]!=sha(captured_argument(state_file(run,"current")).raw)):
         raise QSError("plan_selection_revision_conflict")
-    if current.get("current_plan_projection")!=projection:
-        after={**current,"current_plan_projection":projection,"current_plan_projection_sha256":digest}
-        _require_plan_advice_resolution(run,state,current,after,bank,projection)
-        current=commit_current_transition(run,current,after,"PLAN_PROJECTION_SELECT",backing,
-                                          plan_selection_request={"request_sha256":sha(captured.raw),"authority":authority})
-    elif current.get("current_plan_projection_sha256")!=digest:
-        raise QSError("plan_projection_hash_drift")
+    baseline=_plan_selection_baseline(run,current)
+    after=_plan_selection_after(current,baseline,projection)
+    if after is None:
+        return plan_selection_receipt(baseline)
+    _require_plan_advice_resolution(run,state,baseline,after,bank,projection)
+    current=commit_current_transition(run,current,after,"PLAN_PROJECTION_SELECT",backing,
+                                      plan_selection_request={"request_sha256":sha(captured.raw),"authority":authority})
     return plan_selection_receipt(current)
 
 
@@ -6108,6 +6146,40 @@ def restore_frontier_command(run, tx, after_doc, before_doc=None):
     atomic(target,raw)
 
 
+def _retired_release_alias_matches(run, prior_rows, alias_sha256):
+    """Prove an archived seal retired by a preceding plan selection in this chain."""
+    seal_index=next((index for index in range(len(prior_rows)-1,-1,-1)
+                     if prior_rows[index][0].get("mutation_type")=="RELEASE_SEAL"),None)
+    if seal_index is None:
+        return False
+    seal_tx,seal_raw=prior_rows[seal_index]
+    seal=load_yaml(CapturedInput("previous seal current image",seal_raw))
+    if (not isinstance(seal,dict) or seal.get("status")!="SEALED" or seal.get("revision")!=seal_tx.get("to_revision")
+        or seal.get("run_id")!=run.name or seal.get("input_snapshot")!=seal_tx.get("input_snapshot")
+        or alias_sha256!=seal.get("release_sha256")):
+        return False
+    release_id=ident(seal.get("release_id"),"release_id")
+    path="releases/"+release_id+".yaml"
+    if {"kind":"RELEASE_ARCHIVE","path":path,"sha256":alias_sha256} not in seal_tx.get("backing_records",[]):
+        return False
+    release_fields={field:seal.get(field) for field in PLAN_SELECTION_RELEASE_FIELDS}
+    for index in range(seal_index+1,len(prior_rows)):
+        transition,after_raw=prior_rows[index]
+        if transition.get("mutation_type")!="PLAN_PROJECTION_SELECT":
+            continue
+        before=load_yaml(CapturedInput("retiring selection before image",prior_rows[index-1][1]))
+        after=load_yaml(CapturedInput("retiring selection after image",after_raw))
+        if (not plan_projection_transition_valid(before,after) or before.get("status")!="SEALED"
+            or before.get("revision")!=transition.get("from_revision") or after.get("revision")!=transition.get("to_revision")
+            or any(before.get(field)!=value for field,value in release_fields.items())):
+            continue
+        archive=load_bound_yaml(run,path,alias_sha256,"release_replay_predecessor_archive_drift")
+        return (isinstance(archive,dict) and archive.get("release_id")==release_id
+                and archive.get("run_id")==run.name and archive.get("input_snapshot")==seal_tx.get("input_snapshot")
+                and archive.get("verdict")==seal.get("verdict"))
+    return False
+
+
 def replay_current_transitions_if_needed(run: Path, current: dict[str,Any], snap: dict[str,Any]) -> dict[str,Any]:
     """Validate one CAS chain and replay only the suffix after the current image."""
     paths=sorted((run/"transactions/current").glob("*.yaml"))
@@ -6135,7 +6207,7 @@ def replay_current_transitions_if_needed(run: Path, current: dict[str,Any], snap
     for tx,after in rows[:start]:
         if tx.get("mutation_type")=="APPLICABILITY_FRONTIER_ADVANCE":
             restore_frontier_command(run,tx,load_yaml(CapturedInput("frontier committed image",after)))
-    for tx,after in rows[start:]:
+    for index,(tx,after) in enumerate(rows[start:],start):
         if sha((run/"state/current.yaml").read_bytes())!=tx.get("before_current_sha256"): raise QSError("current_replay_cas_conflict")
         mutation=tx.get("mutation_type")
         if mutation=="APPLICABILITY_FRONTIER_ADVANCE":
@@ -6155,6 +6227,12 @@ def replay_current_transitions_if_needed(run: Path, current: dict[str,Any], snap
                 raise QSError("plan_selection_replay_request")
             if projection!=after_doc["current_plan_projection"] or backing!=tx.get("backing_records"):
                 raise QSError("plan_selection_replay_backing")
+            baseline=_plan_selection_baseline(run,before)
+            derived=_plan_selection_after(before,baseline,projection)
+            if derived is None or canon_yaml({**derived,"revision":tx["to_revision"]})!=after:
+                raise QSError("plan_selection_replay_transition")
+            if before.get("status")=="SEALED":
+                _require_plan_advice_resolution(run,state,baseline,derived,bank,projection)
         if mutation in {"SOURCE_OUTCOMES_SELECT","FINAL_AUDIT_SELECT"}:
             after_doc=load_yaml(CapturedInput("current after image",after))
             field="current_source_outcomes" if mutation=="SOURCE_OUTCOMES_SELECT" else "current_final_audit"
@@ -6171,13 +6249,16 @@ def replay_current_transitions_if_needed(run: Path, current: dict[str,Any], snap
             digest=after_doc.get("approved_map_sha256") if isinstance(after_doc,dict) else None
             if mutation not in {"APPROVED_MAP_SET","APPROVED_MAP_REVISE"} or not isinstance(digest,str):
                 raise QSError("current_replay_approved_map_contract")
+            before=load_state(run,"current")
+            if not approved_map_plan_transition_valid(before,after_doc):
+                raise QSError("approved_map_sealed_plan_requires_selection")
             archive_path="state/approved-maps/"+ident(digest,"approved_map_sha256")+".yaml"
             if {"kind":"APPROVED_MAP_ARCHIVE","path":archive_path,"sha256":digest} not in tx.get("backing_records",[]):
                 raise QSError("current_replay_approved_map_backing")
             approved_raw=captured_argument(child(run,archive_path)).raw
             if sha(approved_raw)!=digest: raise QSError("current_replay_approved_map_backing")
             projection=state_file(run,"approved-map")
-            previous=load_state(run,"current").get("approved_map_sha256")
+            previous=before.get("approved_map_sha256")
             if projection.exists() and sha(captured_argument(projection).raw) not in {digest,previous}:
                 raise QSError("current_replay_approved_map_projection_drift")
             atomic(projection,approved_raw)
@@ -6200,8 +6281,11 @@ def replay_current_transitions_if_needed(run: Path, current: dict[str,Any], snap
                 if sha(source.raw)!=release.get(name+"_sha256"): raise QSError("release_replay_"+name+"_drift")
             target=child(run,"release.yaml")
             previous=load_state(run,"current").get("release_sha256")
-            if target.exists() and sha(captured_argument(target,48 * 1024**2).raw) not in {digest,previous}:
-                raise QSError("release_replay_projection_drift")
+            if target.exists():
+                alias_sha256=sha(captured_argument(target,48 * 1024**2).raw)
+                if alias_sha256 not in {digest,previous} and (previous is not None
+                    or not _retired_release_alias_matches(run,rows[:index],alias_sha256)):
+                    raise QSError("release_replay_projection_drift")
             atomic(target,raw)
         atomic(run/"state/current.yaml",after)
     return load_state(run,"current")
