@@ -40,6 +40,61 @@ raise SystemExit(module.main(argv))
 """
 
 
+def build_portable_fixture(fixture, *, transitive=False):
+    """Public C01 two-task source reused for directory and archive controls."""
+    def command(operation, *options):
+        return (operation, "--root", str(fixture.workspace), "--run-id", fixture.run.name, *options)
+
+    evidence=fixture.common("E-LATE","P-04","/root/evidence")
+    evidence["changed"]="UNCHANGED"
+    if transitive:
+        source = "input/materials/Данные проверки.txt"
+        material = fixture.run / source
+        material.parent.mkdir()
+        material.write_bytes("проверяемые данные\n".encode("utf-8"))
+        evidence["source_refs"] = [source]
+    accepted=fixture.register_and_accept("late","P-04","EVIDENCE","evidence/E-LATE.yaml",evidence,"/root/evidence")
+    vector=fixture.common("VECTOR-PORT","OP-VECTOR","/root/vector")
+    vector.update({"G":"bounded goal","NOT_G":["outside scope"]})
+    fixture.register_and_accept("vector-port","OP-VECTOR","OPERATOR","operators/VECTOR-PORT.yaml",vector,"/root/vector")
+    early=fixture.common("E-EARLY","P-04","/root/evidence")
+    early_assignment={"assignment_id":"A-EARLY","attempt_id":"TRY-1","role_id":"P-04",
+                      "agent_id":early["agent_id"],"input_snapshot":fixture.init["input_snapshot"],
+                      "artifact_type":"EVIDENCE","output_path":"evidence/E-EARLY.yaml",
+                      "result_id":"E-EARLY","goal_result_id":"VECTOR-PORT",
+                      "dependency_result_ids":["E-LATE"],"dependency_hashes":[accepted["content_hash"]]}
+    early_path=fixture.base/"early-assignment.yaml"
+    test_qs.put(early_path,early_assignment)
+    fixture.call(*command("assign","--assignment",str(early_path)))
+    fixture.call(*command("context","--assignment",str(early_path),"--output",str(fixture.base/"early-bounded.yaml")))
+    expanded=fixture.base/"early-expanded.yaml"
+    expanded_receipt=fixture.call(*command("context","--assignment",str(early_path),"--output",str(expanded),"--expand","E-LATE"))
+    early.update({"changed":"UNCHANGED","context_packet_sha256":expanded_receipt["sha256"],
+                  **{field:early_assignment[field] for field in ("assignment_id","attempt_id","artifact_type")}})
+    result=fixture.base/"early-result.yaml"
+    test_qs.put(result,early)
+    early_accepted=fixture.call(*command("commit","--assignment",str(early_path),"--result",str(result)))
+    plan=fixture.common("PLAN-L","PLAN-AUTHOR","/root/planner")
+    plan.update({"plan_version":"fixture", "identity_result":{"stage_id":"STAGE-L"},
+                 "dependency_edges":[{"from_id":"E-LATE","to_id":"PLAN-L"}],
+                 "local_execution_graph":{"entry":"START","exit":"END","edges":[["T-EARLY","T-LATE"]]},
+                 "tasks":[{"id":"T-EARLY","checks":["C-EARLY"],"e_refs":["E-EARLY"],
+                           "fixture_action":{"operation":"ASSERT_EVIDENCE_UNCHANGED",
+                                             "result_id":"E-EARLY","sha256":early_accepted["content_hash"]}},
+                          {"id":"T-LATE","checks":["C-LATE"],"e_refs":["E-LATE"],
+                           "dependencies":["T-EARLY"]}]})
+    plan_commit = fixture.register_and_accept("plan","PLAN-AUTHOR","PLAN","plan/PLAN-L.yaml",plan,"/root/planner")
+    if transitive:
+        review = fixture.common("REVIEW-LATE", "P-05", "/root/reviewer")
+        review.update({
+            "target_result_id": "E-LATE", "target_hash": accepted["content_hash"],
+            "outcome": "PASS", "review_kind": "SUBJECT", "check_provenance": "source hash and scope",
+            "risk_coverage": "the late evidence contains the approved fixture observation",
+        })
+        fixture.register_and_accept("review-late", "P-05", "REVIEW", "reviews/REVIEW-LATE.yaml", review, review["agent_id"])
+    return accepted, early_accepted, expanded, plan_commit
+
+
 class CommandAdmissionTest(unittest.TestCase):
     def setUp(self):
         self.fixture = test_qs.QsTest()
@@ -744,39 +799,7 @@ raise SystemExit(qs.main(sys.argv[3:]))
 
     def test_portable_clean_consumer_recomputes_required_relation(self):
         fixture=self.fixture
-        evidence=fixture.common("E-LATE","P-04","/root/evidence")
-        evidence["changed"]="UNCHANGED"
-        accepted=fixture.register_and_accept("late","P-04","EVIDENCE","evidence/E-LATE.yaml",evidence,"/root/evidence")
-        vector=fixture.common("VECTOR-PORT","OP-VECTOR","/root/vector")
-        vector.update({"G":"bounded goal","NOT_G":["outside scope"]})
-        fixture.register_and_accept("vector-port","OP-VECTOR","OPERATOR","operators/VECTOR-PORT.yaml",vector,"/root/vector")
-        early=fixture.common("E-EARLY","P-04","/root/evidence")
-        early_assignment={"assignment_id":"A-EARLY","attempt_id":"TRY-1","role_id":"P-04",
-                          "agent_id":early["agent_id"],"input_snapshot":fixture.init["input_snapshot"],
-                          "artifact_type":"EVIDENCE","output_path":"evidence/E-EARLY.yaml",
-                          "result_id":"E-EARLY","goal_result_id":"VECTOR-PORT",
-                          "dependency_result_ids":["E-LATE"],"dependency_hashes":[accepted["content_hash"]]}
-        early_path=fixture.base/"early-assignment.yaml"
-        test_qs.put(early_path,early_assignment)
-        fixture.call(*self.command("assign","--assignment",str(early_path)))
-        self.context_revision_command(early_path,fixture.base/"early-bounded.yaml")
-        expanded=fixture.base/"early-expanded.yaml"
-        expanded_receipt=self.context_revision_command(early_path,expanded,"--expand","E-LATE")
-        early.update({"changed":"UNCHANGED","context_packet_sha256":expanded_receipt["sha256"],
-                      **{field:early_assignment[field] for field in ("assignment_id","attempt_id","artifact_type")}})
-        result=fixture.base/"early-result.yaml"
-        test_qs.put(result,early)
-        early_accepted=fixture.call(*self.command("commit","--assignment",str(early_path),"--result",str(result)))
-        plan=fixture.common("PLAN-L","PLAN-AUTHOR","/root/planner")
-        plan.update({"plan_version":"fixture", "identity_result":{"stage_id":"STAGE-L"},
-                     "dependency_edges":[{"from_id":"E-LATE","to_id":"PLAN-L"}],
-                     "local_execution_graph":{"entry":"START","exit":"END","edges":[["T-EARLY","T-LATE"]]},
-                     "tasks":[{"id":"T-EARLY","checks":["C-EARLY"],"e_refs":["E-EARLY"],
-                               "fixture_action":{"operation":"ASSERT_EVIDENCE_UNCHANGED",
-                                                 "result_id":"E-EARLY","sha256":early_accepted["content_hash"]}},
-                              {"id":"T-LATE","checks":["C-LATE"],"e_refs":["E-LATE"],
-                               "dependencies":["T-EARLY"]}]})
-        fixture.register_and_accept("plan","PLAN-AUTHOR","PLAN","plan/PLAN-L.yaml",plan,"/root/planner")
+        accepted, early_accepted, expanded, _ = build_portable_fixture(fixture)
         output=fixture.base/"portable"
         export=fixture.call(*self.command("export-portable","--task-id","T-EARLY","--check-id","C-EARLY","--output",str(output)))
         self.assertEqual(export["status"],"PORTABLE_EXPORTED")

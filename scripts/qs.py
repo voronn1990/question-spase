@@ -14,7 +14,8 @@ if _PROTECTED_SWITCH and not (sys.flags.isolated and sys.flags.dont_write_byteco
                      '"scope":"STRUCTURAL_ONLY"}\n')
     raise SystemExit(2)
 
-import argparse, base64, binascii, errno, hashlib, json, os, re, shutil, stat, tempfile, time
+import argparse, base64, binascii, errno, hashlib, io, json, os, re, shutil, stat, struct, tempfile, time
+import unicodedata, zipfile
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -116,7 +117,7 @@ import yaml
 
 if not _PROTECTED_SWITCH:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-from command_admission import CapturedInput, Committed, Request, admit, cached_loader, capture_file, command_cut, publish_bytes, publish_locked
+from command_admission import AdmissionError, CapturedInput, Committed, Request, admit, cached_loader, capture_file, command_cut, publish_bytes, publish_locked
 from model_validation import (
     current_iceberg_consumer_result_ids,
     current_iceberg_view_projection,
@@ -6826,6 +6827,11 @@ def portable_subject(run: Path, task_id: str, check_id: str):
         document=load_bound_yaml(run,entry.get("path"),entry.get("content_hash"),"portable_result_bytes:"+result_id)
         if not isinstance(document,dict) or document.get("id")!=result_id:
             raise QSError("portable_result_binding:"+result_id)
+        if document.get("schema_version")!=SCHEMA:
+            raise QSError("portable_result_schema:"+result_id)
+        kind=entry.get("artifact_type")
+        if not isinstance(kind,str) or kind not in ARTIFACT_TYPES or document.get("artifact_type")!=kind:
+            raise QSError("portable_result_type:"+result_id)
         docs[result_id]=document
     selected,selection=plan_projection_for_run(run,state,current,documents=docs)
     for path in sorted(child(run,"transactions").glob("*.yaml")):
@@ -6915,8 +6921,12 @@ def portable_subject(run: Path, task_id: str, check_id: str):
         txn=f"transactions/{result_id}.yaml"
         intent="intents/"+sha(pair.encode()).upper()+".yaml"
         for field,path in (("transaction",txn),("assignment_attempt",intent)):
+            if not child(run,path).is_file():
+                raise QSError("portable_missing_relation:"+result_id+":"+field+":"+path)
             relation(result_id,field,path)
             paths.add("subject/"+path)
+        if entry["artifact_type"]=="REVIEW" and _immutable_accepted_attempt_result(run,state,assignment_id,attempt_id)!=result_id:
+            raise QSError("portable_reviewer_attempt_binding:"+result_id)
         tx=load_yaml(captured_argument(child(run,txn),48 * 1024**2))
         intent_doc=load_yaml(captured_argument(child(run,intent),48 * 1024**2))
         if (not isinstance(tx,dict) or tx.get("entry")!=entry
@@ -6990,14 +7000,216 @@ def _portable_file_limit(relative):
     return 48 * 1024**2
 
 
+PORTABLE_ARCHIVE_BYTES = 128 * 1024**2
+PORTABLE_EXPANDED_BYTES = 256 * 1024**2
+PORTABLE_ARCHIVE_MEMBERS = 4096
+PORTABLE_ARCHIVE_CENTRAL_BYTES = 4 * 1024**2
+_PORTABLE_ZIP_END = struct.Struct("<4s4H2LH")
+_PORTABLE_ZIP_CENTRAL = struct.Struct("<4s24x3H12x")
+_PORTABLE_ZIP_LOCAL = struct.Struct("<4s5H3L2H")
+_PORTABLE_ZIP_CHUNK = 64 * 1024
+_PORTABLE_WINDOWS_DEVICE = re.compile(r"(?:con|prn|aux|nul|conin\$|conout\$|(?:com|lpt)[1-9¹²³])")
+
+
+def _portable_zip_name(name, directory):
+    parts = tuple((name[:-1] if directory else name).split("/"))
+    if len(parts) > 64 or len(name.encode("utf-8")) > 4095 or any(
+        not part or len(part.encode("utf-8")) > 255 or part in {".", ".."} or part.endswith((" ", "."))
+        or any(character in '<>:"\\|?*' or ord(character) < 32 for character in part)
+        or _PORTABLE_WINDOWS_DEVICE.fullmatch(part.partition(".")[0].rstrip().casefold())
+        for part in parts
+    ):
+        raise QSError("portable_archive_path:" + repr(name))
+    return parts
+
+
+def _portable_zip_members(archive, raw, directory_limit, count):
+    infos = sorted(archive.infolist(), key=lambda member: member.header_offset)
+    if len(infos) != count:
+        raise QSError("portable_archive_directory")
+    paths = {}
+    explicit = set()
+    view = memoryview(raw)
+    members = []
+    expanded = 0
+    offset = 0
+    for member in infos:
+        name = member.orig_filename
+        directory = name.endswith("/")
+        parts = _portable_zip_name(name, directory)
+        if parts in explicit:
+            raise QSError("portable_archive_duplicate:" + name)
+        explicit.add(parts)
+        aliases = tuple(unicodedata.normalize("NFC", unicodedata.normalize("NFC", part).casefold()) for part in parts)
+        for index in range(1, len(parts) + 1):
+            path = parts[:index]
+            key = aliases[:index]
+            is_directory = index < len(parts) or directory
+            previous = paths.setdefault(key, (path, is_directory))
+            if previous != (path, is_directory):
+                raise QSError("portable_archive_alias:" + name)
+        mode = stat.S_IFMT(member.external_attr >> 16)
+        if (mode not in (0, stat.S_IFDIR if directory else stat.S_IFREG)
+            or member.external_attr & 0x400  # DOS reparse point
+            or (member.external_attr & 0x10 and not directory)
+            or member.extra or member.comment or member.volume):
+            raise QSError("portable_archive_member_type:" + name)
+        if member.flag_bits & ~0x800 or member.compress_type != zipfile.ZIP_STORED:
+            raise QSError("portable_archive_member_encoding:" + name)
+        expanded += member.file_size
+        # Archive names include the run ID; directory export's logical cap does not.
+        logical = re.sub(r"^subject/[^/]+/", "subject/", name)
+        if member.file_size > _portable_file_limit(logical) or expanded > PORTABLE_EXPANDED_BYTES:
+            raise QSError("portable_archive_expansion_budget:" + name)
+        if directory and (member.file_size or member.compress_size or member.CRC):
+            raise QSError("portable_archive_member_type:" + name)
+
+        if member.header_offset != offset or offset + _PORTABLE_ZIP_LOCAL.size > directory_limit:
+            raise QSError("portable_archive_local_header:" + name)
+        magic, version, flags, method, _, _, crc, compressed, size, name_length, extra_length = (
+            _PORTABLE_ZIP_LOCAL.unpack_from(raw, offset)
+        )
+        name_start = offset + _PORTABLE_ZIP_LOCAL.size
+        start = name_start + name_length
+        offset = start + compressed
+        expected_name = name.encode("utf-8" if flags & 0x800 else "cp437")
+        if (magic != b"PK\x03\x04" or version != member.extract_version or flags != member.flag_bits
+            or extra_length or method != member.compress_type or crc != member.CRC
+            or compressed != member.compress_size or size != member.file_size or offset > directory_limit
+            or compressed != size or expected_name != view[name_start:start]):
+            raise QSError("portable_archive_local_header:" + name)
+        if binascii.crc32(view[start:offset]) != crc:
+            raise QSError("portable_archive_member_bytes:" + name)
+        members.append((member, parts, start))
+    if offset != directory_limit:
+        raise QSError("portable_archive_directory")
+    return members
+
+
+def _portable_zip_preflight(raw):
+    if len(raw) < _PORTABLE_ZIP_END.size or len(raw) > PORTABLE_ARCHIVE_BYTES:
+        raise QSError("portable_archive_input_budget")
+    end = len(raw) - _PORTABLE_ZIP_END.size
+    magic, disk, central_disk, disk_count, count, size, start, comment = _PORTABLE_ZIP_END.unpack_from(raw, end)
+    if magic != b"PK\x05\x06" or disk or central_disk or disk_count != count or start + size != end or comment:
+        raise QSError("portable_archive_directory")
+    if not 1 <= count <= PORTABLE_ARCHIVE_MEMBERS or size > PORTABLE_ARCHIVE_CENTRAL_BYTES:
+        raise QSError("portable_archive_member_budget")
+    # Check declared lengths before zipfile can return a truncated extra or comment.
+    offset = start
+    for _ in range(count):
+        header_end = offset + _PORTABLE_ZIP_CENTRAL.size
+        if header_end > end:
+            raise QSError("portable_archive_central_record")
+        magic, name_length, extra_length, comment_length = _PORTABLE_ZIP_CENTRAL.unpack_from(raw, offset)
+        offset = header_end + name_length + extra_length + comment_length
+        if magic != b"PK\x01\x02" or offset > end:
+            raise QSError("portable_archive_central_record")
+        if extra_length or comment_length:
+            raise QSError("portable_archive_member_type:" + repr(raw[header_end:header_end + name_length]))
+    if offset != end:
+        raise QSError("portable_archive_central_record")
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw), allowZip64=False) as archive:
+            return _portable_zip_members(archive, raw, start, count)
+    except (zipfile.BadZipFile, UnicodeError, NotImplementedError) as exc:
+        raise QSError("portable_archive_encoding") from exc
+
+
+def _extract_portable_zip(raw, members, directory):
+    view = memoryview(raw)
+    for member, parts, start in members:
+        target = directory.joinpath(*parts)
+        if member.is_dir():
+            target.mkdir(parents=True, exist_ok=True)
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        end = start + member.file_size
+        with target.open("xb") as output:
+            for offset in range(start, end, _PORTABLE_ZIP_CHUNK):
+                output.write(view[offset:min(end, offset + _PORTABLE_ZIP_CHUNK)])
+
+
+def _portable_archive_output(value):
+    output = Path(value).absolute()
+    if (output.exists() or output.is_symlink() or output.resolve() != output
+        or output.is_relative_to(Path(__file__).resolve().parent.parent)):
+        raise QSError("portable_output_protected_or_exists")
+    return output
+
+
+def _publish_portable_archive(source, output):
+    # Publish only to an absent name, including when another writer wins the race.
+    import ctypes
+
+    rename = getattr(ctypes.CDLL(None, use_errno=True), "renameat2", None) if sys.platform.startswith("linux") else None
+    if rename is None:
+        raise QSError("portable_archive_no_replace_unavailable")
+    rename.argtypes = (ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint)
+    rename.restype = ctypes.c_int
+    if rename(-100, os.fsencode(source), -100, os.fsencode(output), 1):  # AT_FDCWD, RENAME_NOREPLACE
+        error = ctypes.get_errno()
+        if error == errno.EEXIST:
+            raise QSError("portable_output_protected_or_exists")
+        raise QSError("portable_archive_publish:" + os.strerror(error))
+
+
+def _portable_zip_export(draft, archive_path, members):
+    names = [(len(name.encode("utf-8")), (draft / name).stat().st_size) for name in members]
+    central = sum(_PORTABLE_ZIP_CENTRAL.size + length for length, _ in names)
+    expanded = sum(size for _, size in names)
+    archive_size = _PORTABLE_ZIP_END.size + central + expanded + sum(_PORTABLE_ZIP_LOCAL.size + length for length, _ in names)
+    if len(names) > PORTABLE_ARCHIVE_MEMBERS or central > PORTABLE_ARCHIVE_CENTRAL_BYTES:
+        raise QSError("portable_archive_member_budget")
+    if expanded > PORTABLE_EXPANDED_BYTES or archive_size > PORTABLE_ARCHIVE_BYTES:
+        raise QSError("portable_archive_input_budget")
+    with zipfile.ZipFile(archive_path, "w", allowZip64=False) as archive:
+        for name in sorted(members):
+            archive.write(draft / name, name)
+    raw = captured_argument(archive_path, PORTABLE_ARCHIVE_BYTES).raw
+    _portable_zip_preflight(raw)
+    return sha(raw)
+
+
+def _portable_verify_archive(args):
+    if not args.output or not args.archive_sha256 or not re.fullmatch(r"[0-9a-f]{64}", args.archive_sha256):
+        raise QSError("portable_archive_arguments")
+    output = _portable_archive_output(args.output)
+    try:
+        raw = captured_argument(Path(args.archive), PORTABLE_ARCHIVE_BYTES).raw
+    except (OSError, AdmissionError) as exc:
+        raise QSError("portable_archive_input_file_or_budget") from exc
+    digest = sha(raw)
+    if digest != args.archive_sha256:
+        raise QSError("portable_archive_raw_hash")
+    members = _portable_zip_preflight(raw)
+    with tempfile.TemporaryDirectory(prefix=".qs-portable-", dir=output.parent) as temporary:
+        draft = Path(temporary) / "bundle"
+        draft.mkdir()
+        _extract_portable_zip(raw, members, draft)
+        result = portable_verify(argparse.Namespace(package=str(draft)))
+        raw_manifest = captured_argument(draft / "portable-manifest.yaml", _portable_file_limit("")).raw
+        manifest = load_yaml(CapturedInput("portable-manifest.yaml", raw_manifest))
+        root = "subject/" + manifest["original"]["run_id"] + "/"
+        expected = {"portable-manifest.yaml"} | {
+            root + name.removeprefix("subject/") if name.startswith("subject/") else name
+            for name in manifest["files"]
+        }
+        actual = {"/".join(parts) for member, parts, _ in members if not member.is_dir()}
+        if actual != expected:
+            raise QSError("portable_archive_inventory:" + ",".join(sorted(expected ^ actual)))
+        _publish_portable_archive(draft, output)
+    return {**result, "archive_sha256":digest, "manifest_sha256":sha(raw_manifest)}
+
+
 def _export_portable_locked(args, run):
     package=Path(__file__).resolve().parent.parent
     output=Path(args.output).absolute()
     if (output.exists() or output.is_symlink() or output.resolve()!=output
         or output.is_relative_to(package) or output.is_relative_to(run.parent)):
         raise QSError("portable_output_protected_or_exists")
-    original,paths=portable_subject(run,ident(args.task_id,"task_id"),ident(args.check_id,"check_id"))
     revision=command_revision(run)
+    original,paths=portable_subject(run,ident(args.task_id,"task_id"),ident(args.check_id,"check_id"))
     switch_required=original.get("switch_output_required",False)
     switch_source=getattr(args,"switch_output",None)
     if switch_required!=bool(switch_source):
@@ -7009,6 +7221,7 @@ def _export_portable_locked(args, run):
             raise QSError("portable_switch_source_path")
         paths.update(ATTACHMENTS|PACKAGE_MEMBERS)
     manifest={"schema_version":SCHEMA,"original":original,"files":{}}
+    archive_sha256=None
     with tempfile.TemporaryDirectory(prefix=".qs-portable-",dir=output.parent) as temporary:
         draft=Path(temporary)/"bundle"
         for relative in sorted(paths):
@@ -7026,13 +7239,28 @@ def _export_portable_locked(args, run):
                 lambda path:captured_argument(child(draft,path),256 * 1024).raw,original)
         save_yaml(draft/"portable-manifest.yaml",manifest)
         portable_verify(argparse.Namespace(package=str(draft)))
+        if getattr(args,"archive",False):
+            archive_path=Path(temporary)/"bundle.zip"
+            members={"portable-manifest.yaml"} | {
+                "subject/"+run.name+"/"+path.removeprefix("subject/") if path.startswith("subject/") else path
+                for path in paths
+            }
+            archive_sha256=_portable_zip_export(draft,archive_path,members)
         if command_revision(run)!=revision:
             raise QSError("portable_publish_cut_drift")
-        os.rename(draft,output)
-    return {"status":"PORTABLE_EXPORTED","manifest_sha256":sha(canon_yaml(manifest)),"scope":"STRUCTURAL_ONLY"}
+        if archive_sha256 is None:
+            os.rename(draft,output)
+        else:
+            _publish_portable_archive(archive_path,output)
+    return {"status":"PORTABLE_EXPORTED","manifest_sha256":sha(canon_yaml(manifest)),"scope":"STRUCTURAL_ONLY",
+            **({"archive_sha256":archive_sha256} if archive_sha256 is not None else {})}
 
 
 def portable_verify(args):
+    if getattr(args,"archive",None):
+        return _portable_verify_archive(args)
+    if getattr(args,"output",None) or getattr(args,"archive_sha256",None):
+        raise QSError("portable_archive_arguments")
     package=Path(args.package).absolute()
     if package.resolve()!=package: raise QSError("portable_package_path")
     manifest=load_yaml(captured_argument(child(package,"portable-manifest.yaml"),48 * 1024**2))
@@ -7040,6 +7268,8 @@ def portable_verify(args):
     inventory=manifest.get("files") if isinstance(manifest,dict) else None
     if not isinstance(original,dict) or not isinstance(inventory,dict):
         raise QSError("portable_manifest_contract")
+    if manifest.get("schema_version")!=SCHEMA:
+        raise QSError("portable_manifest_schema")
     for helper in PORTABLE_HELPERS:
         if helper not in inventory or not child(package,helper).is_file():
             raise QSError("portable_missing_helper:"+helper)
@@ -7103,8 +7333,11 @@ def main(argv:list[str]|None=None)->int:
     p=sub.add_parser("context"); p.add_argument("--root",required=True); p.add_argument("--run-id",required=True); p.add_argument("--assignment",required=True); p.add_argument("--output",required=True); p.add_argument("--expand",action="append",default=[]); p.add_argument("--historical",action="store_true"); p.add_argument("--packet-sha256")
     p=sub.add_parser("export-portable"); p.add_argument("--root",required=True); p.add_argument("--run-id",required=True)
     p.add_argument("--output",required=True); p.add_argument("--task-id",required=True); p.add_argument("--check-id",required=True)
-    p.add_argument("--switch-output")
-    p=sub.add_parser("portable-verify"); p.add_argument("--package",required=True)
+    p.add_argument("--switch-output"); p.add_argument("--archive",action="store_true")
+    p=sub.add_parser("portable-verify")
+    source=p.add_mutually_exclusive_group(required=True)
+    source.add_argument("--package"); source.add_argument("--archive")
+    p.add_argument("--archive-sha256"); p.add_argument("--output")
     _switch_arguments(sub.add_parser("switch-session",allow_abbrev=False))
     p=sub.add_parser("graph-query"); p.add_argument("--root",required=True); p.add_argument("--run-id",required=True)
     p.add_argument("--duty",required=True,choices=sorted(GRAPH_DUTIES)); p.add_argument("--ref",required=True)

@@ -41,3 +41,9 @@ effects:
 portable:
   commands: ["export-portable", "portable-verify"]
   check: "OFFLINE_BOUND_ARTIFACT_INTEGRITY"
+  archive:
+    export: "export-portable --archive --output FILE"
+    verify: "Trusted portable-verify --archive FILE --archive-sha256 RAW_SHA256 --output ABSENT_DIRECTORY"
+    profile: "Classic single-disk ZIP with stored regular files and optional empty directory records. No compression, encryption, data descriptors, ZIP64, member extras, comments, links, absolute or traversal paths, Windows aliases, duplicate names or ambiguous file/directory prefixes."
+    limits: "128 MiB raw ZIP, 4096 members, 4 MiB central directory, 256 MiB expanded, 48 MiB per file and 66 MiB per context revision proof. Member paths at most 64 components, 4095 UTF-8 bytes overall and 255 UTF-8 bytes per component."
+    binding: "Check raw archive SHA-256, member paths, types, sizes and CRC before staging. Verify derived closure and exact file set in a private sibling directory using the trusted controller. Return exact raw archive and manifest SHA-256. Linux filesystems with RENAME_NOREPLACE publish to an absent name only."
